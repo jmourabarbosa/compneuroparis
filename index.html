@@ -4,9 +4,9 @@
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
   <title>Neuroscience in Paris</title>
-  <meta name="description" content="A directory of neuroscience research groups in the Paris area.">
+  <meta name="description" content="A directory of neuroscience PIs and researchers in the Paris area.">
   <meta property="og:title" content="Neuroscience in Paris">
-  <meta property="og:description" content="Discover neuroscience research groups in Paris.">
+  <meta property="og:description" content="Discover neuroscience PIs and researchers in Paris.">
   <meta property="og:type" content="website">
   <meta property="og:url" content="https://jmourabarbosa.github.io/compneuroparis/">
   <link rel="icon" href="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'><text y='.9em' font-size='90'>🧠</text></svg>">
@@ -22,7 +22,7 @@
     <div class="header-inner">
       <div class="header-title">
         <h1>Neuroscience in Paris</h1>
-        <p class="subtitle">Research groups in the Paris area</p>
+        <p class="subtitle">PIs and researchers in the Paris area</p>
       </div>
       <div class="header-actions">
         <button id="btn-admin-login" class="btn btn-outline" aria-label="Login">Login</button>
@@ -40,28 +40,28 @@
   </header>
 
   <!-- ========== SEARCH / FILTER ========== -->
-  <section class="search-section" aria-label="Search and filter groups">
+  <section class="search-section" aria-label="Search and filter PIs">
     <div class="search-inner">
       <div class="search-bar">
         <svg class="search-icon" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><circle cx="11" cy="11" r="8"/><line x1="21" y1="21" x2="16.65" y2="16.65"/></svg>
-        <input type="search" id="search-input" placeholder="Search groups by name, keyword, or summary..." aria-label="Search groups" autocomplete="off">
+        <input type="search" id="search-input" placeholder="Search PIs by name, keyword, or summary..." aria-label="Search PIs" autocomplete="off">
       </div>
       <div id="keyword-filters" class="keyword-filters" aria-label="Filter by keyword"></div>
     </div>
   </section>
 
   <!-- ========== GROUPS SECTIONS ========== -->
-  <main class="groups-section" aria-label="Research groups">
+  <main class="groups-section" aria-label="PIs and researchers">
     <div id="groups-loading" class="loading-state">
       <div class="spinner" aria-label="Loading"></div>
-      <p>Loading groups...</p>
+      <p>Loading PIs...</p>
     </div>
     <div id="groups-empty" class="empty-state hidden">
-      <p>No groups found. Try adjusting your search or filters.</p>
+      <p>No PIs found. Try adjusting your search or filters.</p>
     </div>
 
     <div id="institute-filter-banner" class="institute-filter-banner hidden">
-      <span>Showing groups from <strong id="institute-filter-name"></strong></span>
+      <span>Showing PIs from <strong id="institute-filter-name"></strong></span>
       <button id="institute-filter-clear" class="institute-filter-clear">Clear filter</button>
     </div>
 
@@ -111,12 +111,12 @@
   </main>
 
   <!-- ========== ADD YOUR GROUP ========== -->
-  <section class="submit-section" id="submit-section" aria-label="Submit your group">
+  <section class="submit-section" id="submit-section" aria-label="Submit a PI">
     <div class="submit-inner">
-      <button id="btn-show-form" class="btn btn-primary btn-add-group">Add New Research Group</button>
+      <button id="btn-show-form" class="btn btn-primary btn-add-group">Add New PI / Researcher</button>
       <div id="submission-form-wrapper" class="hidden">
-        <h2>Add Your Group</h2>
-        <p class="submit-description">Know a neuroscience group in Paris? Create an account and submit it for review.</p>
+        <h2>Add a PI</h2>
+        <p class="submit-description">Know a neuroscience PI in Paris? Create an account and submit it for review.</p>
 
         <!-- Submission Auth Section -->
         <div id="submission-auth" class="submission-auth">
@@ -146,7 +146,7 @@
 
       <form id="submission-form" class="submission-form" novalidate>
         <div class="form-group">
-          <label for="sub-name">Group / Lab Name <span class="required">*</span></label>
+          <label for="sub-name">PI Name <span class="required">*</span></label>
           <input type="text" id="sub-name" name="name" required>
         </div>
         <div class="form-row">
@@ -255,7 +255,8 @@
       <div class="modal-body">
         <div class="tabs" role="tablist">
           <button class="tab active" data-tab="tab-pending" role="tab" aria-selected="true">Pending</button>
-          <button class="tab" data-tab="tab-manage" role="tab" aria-selected="false">Manage Groups</button>
+          <button class="tab" data-tab="tab-manage" role="tab" aria-selected="false">Manage PIs</button>
+          <button class="tab" data-tab="tab-claims" role="tab" aria-selected="false">Claims</button>
           <button class="tab" data-tab="tab-admins" role="tab" aria-selected="false">Admins</button>
           <button class="tab" data-tab="tab-institutes" role="tab" aria-selected="false">Institutes</button>
         </div>
@@ -271,15 +272,23 @@
           <div id="pending-list" class="admin-list"></div>
         </div>
 
-        <!-- Manage Groups Tab -->
+        <!-- Manage PIs Tab -->
         <div id="tab-manage" class="tab-panel" role="tabpanel">
           <div id="manage-loading" class="loading-state">
             <div class="spinner"></div>
           </div>
           <div id="manage-empty" class="empty-state hidden">
-            <p>No groups yet.</p>
+            <p>No PIs yet.</p>
           </div>
           <div id="manage-list" class="admin-list"></div>
+        </div>
+
+        <!-- Claims Tab -->
+        <div id="tab-claims" class="tab-panel" role="tabpanel">
+          <div id="claims-empty" class="empty-state hidden">
+            <p>No pending claims.</p>
+          </div>
+          <div id="claims-list" class="admin-list"></div>
         </div>
 
         <!-- Admins Tab -->
@@ -320,17 +329,17 @@
   </div>
 
   <!-- ========== EDIT GROUP MODAL ========== -->
-  <div id="modal-edit" class="modal-overlay hidden" role="dialog" aria-modal="true" aria-label="Edit Group">
+  <div id="modal-edit" class="modal-overlay hidden" role="dialog" aria-modal="true" aria-label="Edit PI">
     <div class="modal">
       <div class="modal-header">
-        <h3>Edit Group</h3>
+        <h3>Edit PI</h3>
         <button class="modal-close" data-close-modal="modal-edit" aria-label="Close">&times;</button>
       </div>
       <div class="modal-body">
         <form id="edit-form" novalidate>
           <input type="hidden" id="edit-id">
           <div class="form-group">
-            <label for="edit-name">Group / Lab Name <span class="required">*</span></label>
+            <label for="edit-name">PI Name <span class="required">*</span></label>
             <input type="text" id="edit-name" required>
           </div>
           <div class="form-row">
@@ -379,6 +388,40 @@
     </div>
   </div>
 
+  <!-- ========== PI DETAIL MODAL ========== -->
+  <div id="modal-pi-detail" class="modal-overlay hidden" role="dialog" aria-modal="true" aria-label="PI Details">
+    <div class="modal modal-lg">
+      <div class="modal-header">
+        <h3 id="pi-detail-title">PI Details</h3>
+        <button class="modal-close" data-close-modal="modal-pi-detail" aria-label="Close">&times;</button>
+      </div>
+      <div class="modal-body">
+        <div class="pi-detail-content">
+          <div class="pi-detail-photo-wrap">
+            <img id="pi-detail-photo" class="pi-detail-photo" src="" alt="">
+          </div>
+          <div class="pi-detail-info">
+            <div id="pi-detail-institute" class="pi-detail-institute"></div>
+            <span id="pi-detail-subfield" class="pi-detail-subfield-badge"></span>
+            <div id="pi-detail-keywords" class="card-keywords" style="margin-top:0.75rem"></div>
+            <p id="pi-detail-summary" class="pi-detail-summary"></p>
+            <div id="pi-detail-links" class="card-links"></div>
+          </div>
+        </div>
+        <div id="pi-detail-claim-section" class="pi-detail-claim-section hidden">
+          <p class="pi-detail-claim-hint">Are you this PI? Claim this page to manage your own information.</p>
+          <button id="btn-claim-pi" class="btn btn-accent">Claim this page</button>
+        </div>
+        <div id="pi-detail-claim-pending" class="pi-detail-claim-pending hidden">
+          Your claim for this page is pending admin review.
+        </div>
+        <div id="pi-detail-claimed" class="pi-detail-claimed hidden">
+          This page is managed by the PI.
+        </div>
+      </div>
+    </div>
+  </div>
+
   <!-- ========== SUBMISSION DETAIL MODAL (for admin review) ========== -->
   <div id="modal-submission" class="modal-overlay hidden" role="dialog" aria-modal="true" aria-label="Review Submission">
     <div class="modal">
@@ -388,7 +431,7 @@
       </div>
       <div class="modal-body">
         <div class="form-group">
-          <label for="review-name">Group / Lab Name</label>
+          <label for="review-name">PI Name</label>
           <input type="text" id="review-name">
         </div>
         <div class="form-row">
@@ -406,7 +449,7 @@
           </div>
         </div>
         <div id="review-institute-warning" class="institute-warning hidden">
-          Institute is pending approval. You cannot approve this group until the institute is approved.
+          Institute is pending approval. You cannot approve this PI until the institute is approved.
         </div>
         <div class="form-group">
           <label for="review-keywords">Keywords <span class="hint">(comma-separated)</span></label>

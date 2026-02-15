@@ -267,7 +267,7 @@ async function handleSubmit(e) {
         institute: instituteName,
         creatorUid: user.uid
       });
-      showMessage(formMessage, 'Group added successfully!', 'success');
+      showMessage(formMessage, 'PI added successfully!', 'success');
       await loadGroups();
     } else {
       await createSubmission({

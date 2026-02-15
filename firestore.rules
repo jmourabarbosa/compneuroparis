@@ -7,14 +7,27 @@ service cloud.firestore {
         && exists(/databases/$(database)/documents/admins/$(request.auth.uid));
     }
 
-    // Groups: public read, admin full write, creators can update own groups
+    // Groups (PIs): public read, admin full write, creators and claimedBy users can update own groups
     match /groups/{groupId} {
       allow read: if true;
       allow create, delete: if isAdmin();
       allow update: if isAdmin()
         || (request.auth != null
             && resource.data.creatorUid == request.auth.uid
-            && request.resource.data.creatorUid == resource.data.creatorUid);
+            && request.resource.data.creatorUid == resource.data.creatorUid
+            && request.resource.data.claimedBy == resource.data.claimedBy)
+        || (request.auth != null
+            && resource.data.claimedBy == request.auth.uid
+            && request.resource.data.creatorUid == resource.data.creatorUid
+            && request.resource.data.claimedBy == resource.data.claimedBy);
+    }
+
+    // Claims: authenticated create, admin + claimant read, admin update/delete
+    match /claims/{claimId} {
+      allow create: if request.auth != null;
+      allow read: if isAdmin()
+        || (request.auth != null && resource.data.claimantUid == request.auth.uid);
+      allow update, delete: if isAdmin();
     }
 
     // Submissions: public create, admin read/write

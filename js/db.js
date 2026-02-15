@@ -144,6 +144,84 @@ export async function rejectInstitute(id) {
   await deleteDoc(doc(db, 'institutes', id));
 }
 
+// ========== CLAIMS ==========
+
+export async function createClaim({ piId, piName, claimantUid, claimantEmail }) {
+  const docRef = await addDoc(collection(db, 'claims'), {
+    piId,
+    piName,
+    claimantUid,
+    claimantEmail,
+    status: 'pending',
+    createdAt: serverTimestamp()
+  });
+  return docRef.id;
+}
+
+export async function fetchPendingClaims() {
+  const q = query(
+    collection(db, 'claims'),
+    where('status', '==', 'pending'),
+    orderBy('createdAt', 'desc')
+  );
+  const snapshot = await getDocs(q);
+  return snapshot.docs.map(d => ({ id: d.id, ...d.data() }));
+}
+
+export async function approveClaim(claimId) {
+  const claimDoc = doc(db, 'claims', claimId);
+  const claimSnap = await getDoc(claimDoc);
+  if (!claimSnap.exists()) throw new Error('Claim not found');
+
+  const claim = claimSnap.data();
+
+  // Set claimedBy on the PI (group) doc
+  await updateDoc(doc(db, 'groups', claim.piId), {
+    claimedBy: claim.claimantUid,
+    updatedAt: serverTimestamp()
+  });
+
+  // Mark this claim as approved
+  await updateDoc(claimDoc, {
+    status: 'approved',
+    reviewedAt: serverTimestamp()
+  });
+
+  // Auto-reject other pending claims for the same PI
+  const othersQ = query(
+    collection(db, 'claims'),
+    where('piId', '==', claim.piId),
+    where('status', '==', 'pending')
+  );
+  const othersSnap = await getDocs(othersQ);
+  for (const d of othersSnap.docs) {
+    if (d.id !== claimId) {
+      await updateDoc(d.ref, {
+        status: 'rejected',
+        reviewedAt: serverTimestamp()
+      });
+    }
+  }
+}
+
+export async function rejectClaim(claimId) {
+  await updateDoc(doc(db, 'claims', claimId), {
+    status: 'rejected',
+    reviewedAt: serverTimestamp()
+  });
+}
+
+export async function fetchMyClaimForPi(uid, piId) {
+  const q = query(
+    collection(db, 'claims'),
+    where('claimantUid', '==', uid),
+    where('piId', '==', piId),
+    where('status', '==', 'pending')
+  );
+  const snapshot = await getDocs(q);
+  return snapshot.docs.length > 0 ? { id: snapshot.docs[0].id, ...snapshot.docs[0].data() } : null;
+}
+
 // ========== ADMINS ==========
 
 export async function fetchAdmins() {

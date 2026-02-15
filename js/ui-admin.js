@@ -3,7 +3,8 @@ import {
   fetchGroups, updateGroup, deleteGroup,
   fetchAdmins, removeAdmin,
   fetchApprovedInstitutes, fetchPendingInstitutes,
-  approveInstitute, rejectInstitute
+  approveInstitute, rejectInstitute,
+  fetchPendingClaims, approveClaim, rejectClaim
 } from './db.js';
 import { getCurrentUser, createAdminUser } from './auth.js';
 import { loadGroups, loadPublicInstitutes } from './ui-groups.js';
@@ -54,6 +55,10 @@ const newAdminEmail = document.getElementById('new-admin-email');
 const newAdminPassword = document.getElementById('new-admin-password');
 const btnAddAdmin = document.getElementById('btn-add-admin');
 const adminAddMessage = document.getElementById('admin-add-message');
+
+// Claims tab
+const claimsList = document.getElementById('claims-list');
+const claimsEmpty = document.getElementById('claims-empty');
 
 // Institutes tab
 const institutesPendingList = document.getElementById('institutes-pending-list');
@@ -266,9 +271,10 @@ export async function loadManageGroups() {
       const item = document.createElement('div');
       item.className = 'admin-item';
       const subfieldLabel = g.subfield ? ` [${g.subfield}]` : '';
+      const claimedLabel = g.claimedBy ? ' (claimed)' : '';
       item.innerHTML = `
         <div class="admin-item-info">
-          <div class="admin-item-name">${escapeHTML(g.name)}${escapeHTML(subfieldLabel)}</div>
+          <div class="admin-item-name">${escapeHTML(g.name)}${escapeHTML(subfieldLabel)}${claimedLabel}</div>
           <div class="admin-item-meta">${(g.keywords || []).join(', ')}</div>
         </div>
         <div class="admin-item-actions">
@@ -391,6 +397,69 @@ async function handleDelete(group) {
   } catch (err) {
     console.error('Delete error:', err);
     alert('Error deleting group.');
+  }
+}
+
+// ========== CLAIMS TAB ==========
+
+export async function loadPendingClaims() {
+  claimsList.innerHTML = '';
+  claimsEmpty.classList.add('hidden');
+
+  try {
+    const claims = await fetchPendingClaims();
+
+    if (claims.length === 0) {
+      claimsEmpty.classList.remove('hidden');
+      return;
+    }
+
+    claims.forEach(claim => {
+      const item = document.createElement('div');
+      item.className = 'admin-item';
+      item.innerHTML = `
+        <div class="admin-item-info">
+          <div class="admin-item-name">${escapeHTML(claim.piName)}</div>
+          <div class="admin-item-meta">Claimed by: ${escapeHTML(claim.claimantEmail)}</div>
+        </div>
+        <div class="admin-item-actions">
+          <button class="btn btn-success btn-sm btn-approve-claim" aria-label="Approve claim">Approve</button>
+          <button class="btn btn-danger btn-sm btn-reject-claim" aria-label="Reject claim">Reject</button>
+        </div>
+      `;
+
+      item.querySelector('.btn-approve-claim').addEventListener('click', async (e) => {
+        const btn = e.currentTarget;
+        btn.disabled = true;
+        try {
+          await approveClaim(claim.id);
+          await loadPendingClaims();
+          await loadGroups();
+        } catch (err) {
+          console.error('Approve claim error:', err);
+          alert('Error approving claim.');
+          btn.disabled = false;
+        }
+      });
+
+      item.querySelector('.btn-reject-claim').addEventListener('click', async (e) => {
+        const btn = e.currentTarget;
+        if (!confirm(`Reject claim by ${claim.claimantEmail}?`)) return;
+        btn.disabled = true;
+        try {
+          await rejectClaim(claim.id);
+          await loadPendingClaims();
+        } catch (err) {
+          console.error('Reject claim error:', err);
+          alert('Error rejecting claim.');
+          btn.disabled = false;
+        }
+      });
+
+      claimsList.appendChild(item);
+    });
+  } catch (err) {
+    console.error('Error loading pending claims:', err);
   }
 }
 

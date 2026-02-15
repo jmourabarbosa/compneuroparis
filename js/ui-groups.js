@@ -1,4 +1,4 @@
-import { fetchGroups, fetchApprovedInstitutes } from './db.js';
+import { fetchGroups, fetchApprovedInstitutes, createClaim, fetchMyClaimForPi } from './db.js';
 import { getCurrentUser, getIsAdmin } from './auth.js';
 
 let allGroups = [];
@@ -27,6 +27,22 @@ const keywordFilters = document.getElementById('keyword-filters');
 const instituteFilterBanner = document.getElementById('institute-filter-banner');
 const instituteFilterName = document.getElementById('institute-filter-name');
 const instituteFilterClear = document.getElementById('institute-filter-clear');
+
+// PI Detail modal refs
+const modalPiDetail = document.getElementById('modal-pi-detail');
+const piDetailTitle = document.getElementById('pi-detail-title');
+const piDetailPhoto = document.getElementById('pi-detail-photo');
+const piDetailInstitute = document.getElementById('pi-detail-institute');
+const piDetailSubfield = document.getElementById('pi-detail-subfield');
+const piDetailKeywords = document.getElementById('pi-detail-keywords');
+const piDetailSummary = document.getElementById('pi-detail-summary');
+const piDetailLinks = document.getElementById('pi-detail-links');
+const piDetailClaimSection = document.getElementById('pi-detail-claim-section');
+const piDetailClaimPending = document.getElementById('pi-detail-claim-pending');
+const piDetailClaimed = document.getElementById('pi-detail-claimed');
+const btnClaimPi = document.getElementById('btn-claim-pi');
+
+let currentDetailGroup = null;
 
 export async function loadGroups() {
   groupsLoading.classList.remove('hidden');
@@ -173,7 +189,13 @@ function createCard(group) {
     </div>
   `;
 
-  // Show Edit button for creators on their own cards (not for admins — they use admin panel)
+  // Click card to open PI detail (skip if clicking a link or button)
+  card.addEventListener('click', (e) => {
+    if (e.target.closest('a') || e.target.closest('button')) return;
+    openPiDetail(group);
+  });
+
+  // Show Edit button for creators or claimedBy users (not for admins — they use admin panel)
   const user = getCurrentUser();
   const isAdmin = getIsAdmin();
   if (user && !isAdmin && group.creatorUid && group.creatorUid === user.uid) {
@@ -184,9 +206,103 @@ function createCard(group) {
       document.dispatchEvent(new CustomEvent('creator-edit-group', { detail: group }));
     });
     card.querySelector('.card-body').appendChild(editBtn);
+  } else if (user && !isAdmin && group.claimedBy && group.claimedBy === user.uid) {
+    const editBtn = document.createElement('button');
+    editBtn.className = 'card-edit-btn';
+    editBtn.textContent = 'Edit';
+    editBtn.addEventListener('click', () => {
+      document.dispatchEvent(new CustomEvent('creator-edit-group', { detail: group }));
+    });
+    card.querySelector('.card-body').appendChild(editBtn);
   }
 
   return card;
+}
+
+async function openPiDetail(group) {
+  currentDetailGroup = group;
+
+  // Populate modal fields
+  piDetailTitle.textContent = group.name || 'PI Details';
+  piDetailPhoto.src = group.photoURL || 'assets/placeholder-lab.svg';
+  piDetailPhoto.alt = group.name || '';
+  piDetailInstitute.textContent = group.institute || '';
+  piDetailInstitute.classList.toggle('hidden', !group.institute);
+
+  const sf = group.subfield || 'computational';
+  piDetailSubfield.textContent = sf;
+  piDetailSubfield.dataset.subfield = sf;
+
+  piDetailKeywords.innerHTML = (group.keywords || [])
+    .map(k => `<span class="keyword-pill">${escapeHTML(k)}</span>`)
+    .join('');
+
+  piDetailSummary.textContent = group.summary || '';
+
+  piDetailLinks.innerHTML = (group.links || [])
+    .map(l => `<a href="${escapeHTML(l.url)}" class="card-link" target="_blank" rel="noopener noreferrer">${escapeHTML(l.label)}</a>`)
+    .join('');
+
+  // Reset claim sections
+  piDetailClaimSection.classList.add('hidden');
+  piDetailClaimPending.classList.add('hidden');
+  piDetailClaimed.classList.add('hidden');
+  btnClaimPi.disabled = false;
+  btnClaimPi.textContent = 'Claim this page';
+
+  // Claim logic
+  if (group.claimedBy) {
+    piDetailClaimed.classList.remove('hidden');
+  } else {
+    const user = getCurrentUser();
+    const isAdmin = getIsAdmin();
+    if (user && !isAdmin && !(group.creatorUid && group.creatorUid === user.uid)) {
+      // Check for existing pending claim
+      try {
+        const existingClaim = await fetchMyClaimForPi(user.uid, group.id);
+        if (existingClaim) {
+          piDetailClaimPending.classList.remove('hidden');
+        } else {
+          piDetailClaimSection.classList.remove('hidden');
+        }
+      } catch (err) {
+        console.error('Error checking claim:', err);
+        piDetailClaimSection.classList.remove('hidden');
+      }
+    }
+  }
+
+  modalPiDetail.classList.remove('hidden');
+}
+
+async function handleClaimClick() {
+  if (!currentDetailGroup) return;
+  const user = getCurrentUser();
+  if (!user) return;
+
+  btnClaimPi.disabled = true;
+  btnClaimPi.textContent = 'Submitting...';
+
+  try {
+    await createClaim({
+      piId: currentDetailGroup.id,
+      piName: currentDetailGroup.name,
+      claimantUid: user.uid,
+      claimantEmail: user.email
+    });
+    // Swap to pending message
+    piDetailClaimSection.classList.add('hidden');
+    piDetailClaimPending.classList.remove('hidden');
+  } catch (err) {
+    console.error('Claim error:', err);
+    btnClaimPi.disabled = false;
+    btnClaimPi.textContent = 'Claim this page';
+    alert('Error submitting claim. Please try again.');
+  }
+}
+
+export function initPiDetail() {
+  btnClaimPi.addEventListener('click', handleClaimClick);
 }
 
 function escapeHTML(str) {

@@ -1,11 +1,12 @@
-import { loadGroups, initSearch, initSections, loadPublicInstitutes } from './ui-groups.js';
+import { loadGroups, initSearch, initSections, loadPublicInstitutes, initPiDetail } from './ui-groups.js';
 import { initForm, updateSubmissionAuthUI } from './ui-form.js';
 import { onAuthChange, login, logout, resetPassword, authReady } from './auth.js';
 import {
   initTabs, loadPending, loadManageGroups, loadAdmins,
   initSubmissionActions, initEditForm, initAddAdmin,
   showEditModalForCreator,
-  loadPendingInstitutes, loadApprovedInstitutes
+  loadPendingInstitutes, loadApprovedInstitutes,
+  loadPendingClaims
 } from './ui-admin.js';
 
 // ========== DOM REFS ==========
@@ -106,6 +107,7 @@ btnAdminPanel.addEventListener('click', () => {
   openModal(modalAdmin);
   loadPending();
   loadManageGroups();
+  loadPendingClaims();
   loadAdmins();
   loadPendingInstitutes();
   loadApprovedInstitutes();
@@ -179,6 +181,7 @@ initTabs();
 initSubmissionActions();
 initEditForm();
 initAddAdmin();
+initPiDetail();
 
 // Load groups and institutes (public data)
 loadGroups();
