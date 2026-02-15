@@ -1225,6 +1225,29 @@ img {
   border: 1px solid var(--color-success);
 }
 
+/* ========== CLAIM MODAL ========== */
+.claim-step {
+  margin-bottom: 1.25rem;
+}
+
+.claim-step:last-child {
+  margin-bottom: 0;
+}
+
+.claim-step-label {
+  font-size: 0.9rem;
+  font-weight: 500;
+  margin-bottom: 0.75rem;
+  color: var(--color-text);
+}
+
+#claim-step-auth {
+  background: var(--color-primary-light);
+  border: 1.5px solid rgba(13, 115, 119, 0.2);
+  border-radius: var(--radius-md);
+  padding: 1.25rem;
+}
+
 /* ========== RESPONSIVE ========== */
 @media (max-width: 768px) {
   .header-inner {

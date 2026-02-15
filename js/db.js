@@ -146,12 +146,13 @@ export async function rejectInstitute(id) {
 
 // ========== CLAIMS ==========
 
-export async function createClaim({ piId, piName, claimantUid, claimantEmail }) {
+export async function createClaim({ piId, piName, claimantUid, claimantEmail, justification }) {
   const docRef = await addDoc(collection(db, 'claims'), {
     piId,
     piName,
     claimantUid,
     claimantEmail,
+    justification: justification || '',
     status: 'pending',
     createdAt: serverTimestamp()
   });

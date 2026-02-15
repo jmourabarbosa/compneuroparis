@@ -417,10 +417,14 @@ export async function loadPendingClaims() {
     claims.forEach(claim => {
       const item = document.createElement('div');
       item.className = 'admin-item';
+      const justificationHTML = claim.justification
+        ? `<div class="admin-item-meta"><strong>Justification:</strong> ${escapeHTML(claim.justification)}</div>`
+        : '';
       item.innerHTML = `
         <div class="admin-item-info">
           <div class="admin-item-name">${escapeHTML(claim.piName)}</div>
           <div class="admin-item-meta">Claimed by: ${escapeHTML(claim.claimantEmail)}</div>
+          ${justificationHTML}
         </div>
         <div class="admin-item-actions">
           <button class="btn btn-success btn-sm btn-approve-claim" aria-label="Approve claim">Approve</button>

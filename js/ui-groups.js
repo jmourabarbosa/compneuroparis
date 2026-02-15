@@ -1,5 +1,5 @@
 import { fetchGroups, fetchApprovedInstitutes, createClaim, fetchMyClaimForPi } from './db.js';
-import { getCurrentUser, getIsAdmin } from './auth.js';
+import { getCurrentUser, getIsAdmin, createAccount, login } from './auth.js';
 
 let allGroups = [];
 let activeKeyword = null;
@@ -234,60 +234,160 @@ async function openPiDetail(group) {
     piDetailEditSection.classList.remove('hidden');
   }
 
-  // Claim logic
+  // Show "managed by PI" badge if already claimed
   if (group.claimedBy) {
     piDetailClaimed.classList.remove('hidden');
-  } else if (user && !isAdmin && !isCreator) {
-    // Check for existing pending claim
-    try {
-      const existingClaim = await fetchMyClaimForPi(user.uid, group.id);
-      if (existingClaim) {
-        piDetailClaimPending.classList.remove('hidden');
-      } else {
-        piDetailClaimSection.classList.remove('hidden');
-      }
-    } catch (err) {
-      console.error('Error checking claim:', err);
-      piDetailClaimSection.classList.remove('hidden');
-    }
+  }
+
+  // Always show claim button initially (except for current claimer)
+  if (user && isClaimer) {
+    // Already the claimer — no button needed
+  } else {
+    piDetailClaimSection.classList.remove('hidden');
   }
 
   modalPiDetail.classList.remove('hidden');
+
+  // After modal is open, check for existing pending claim (logged-in users only)
+  if (user && !isClaimer) {
+    try {
+      const existingClaim = await fetchMyClaimForPi(user.uid, group.id);
+      if (existingClaim) {
+        piDetailClaimSection.classList.add('hidden');
+        piDetailClaimPending.classList.remove('hidden');
+      }
+    } catch (err) {
+      console.error('Error checking claim:', err);
+    }
+  }
 }
 
-async function handleClaimClick() {
+// Claim modal refs
+const modalClaim = document.getElementById('modal-claim');
+const claimStepAuth = document.getElementById('claim-step-auth');
+const claimStepJustify = document.getElementById('claim-step-justify');
+const claimAuthEmail = document.getElementById('claim-auth-email');
+const claimAuthPassword = document.getElementById('claim-auth-password');
+const claimAuthMessage = document.getElementById('claim-auth-message');
+const btnClaimCreate = document.getElementById('btn-claim-create');
+const btnClaimLogin = document.getElementById('btn-claim-login');
+const claimJustification = document.getElementById('claim-justification');
+const claimSubmitMessage = document.getElementById('claim-submit-message');
+const btnClaimSubmit = document.getElementById('btn-claim-submit');
+
+function openClaimModal() {
   if (!currentDetailGroup) return;
   const user = getCurrentUser();
-  if (!user) return;
 
-  btnClaimPi.disabled = true;
-  btnClaimPi.textContent = 'Submitting...';
+  // Reset form state
+  claimAuthEmail.value = '';
+  claimAuthPassword.value = '';
+  claimAuthMessage.classList.add('hidden');
+  claimJustification.value = '';
+  claimSubmitMessage.classList.add('hidden');
+  btnClaimCreate.disabled = false;
+  btnClaimLogin.disabled = false;
+  btnClaimSubmit.disabled = false;
+
+  if (user) {
+    // Already logged in: skip auth step
+    claimStepAuth.classList.add('hidden');
+  } else {
+    claimStepAuth.classList.remove('hidden');
+  }
+
+  modalClaim.classList.remove('hidden');
+}
+
+function showClaimMsg(el, text, type) {
+  el.textContent = text;
+  el.className = `form-message ${type}`;
+  el.classList.remove('hidden');
+}
+
+async function handleClaimAuth(isCreate) {
+  const email = claimAuthEmail.value.trim();
+  const password = claimAuthPassword.value.trim();
+  claimAuthMessage.classList.add('hidden');
+
+  if (!email || !password) {
+    showClaimMsg(claimAuthMessage, 'Email and password are required.', 'error');
+    return;
+  }
+  if (isCreate && password.length < 6) {
+    showClaimMsg(claimAuthMessage, 'Password must be at least 6 characters.', 'error');
+    return;
+  }
+
+  btnClaimCreate.disabled = true;
+  btnClaimLogin.disabled = true;
+
+  try {
+    if (isCreate) {
+      await createAccount(email, password);
+    } else {
+      await login(email, password);
+    }
+    // Auth succeeded — hide auth step
+    claimStepAuth.classList.add('hidden');
+  } catch (err) {
+    console.error('Claim auth error:', err);
+    showClaimMsg(claimAuthMessage, err.message || 'Authentication failed.', 'error');
+  } finally {
+    btnClaimCreate.disabled = false;
+    btnClaimLogin.disabled = false;
+  }
+}
+
+async function handleClaimSubmit() {
+  const user = getCurrentUser();
+  if (!user) {
+    showClaimMsg(claimSubmitMessage, 'Please log in or create an account first.', 'error');
+    return;
+  }
+
+  const justification = claimJustification.value.trim();
+  if (!justification) {
+    showClaimMsg(claimSubmitMessage, 'Please explain why you can claim this page.', 'error');
+    return;
+  }
+
+  btnClaimSubmit.disabled = true;
+  btnClaimSubmit.textContent = 'Submitting...';
 
   try {
     await createClaim({
       piId: currentDetailGroup.id,
       piName: currentDetailGroup.name,
       claimantUid: user.uid,
-      claimantEmail: user.email
+      claimantEmail: user.email,
+      justification
     });
-    // Swap to pending message
+    // Close claim modal, update PI detail to show pending
+    modalClaim.classList.add('hidden');
     piDetailClaimSection.classList.add('hidden');
     piDetailClaimPending.classList.remove('hidden');
   } catch (err) {
-    console.error('Claim error:', err);
-    btnClaimPi.disabled = false;
-    btnClaimPi.textContent = 'Claim this page';
-    alert('Error submitting claim. Please try again.');
+    console.error('Claim submit error:', err);
+    showClaimMsg(claimSubmitMessage, 'Error submitting claim. Please try again.', 'error');
+  } finally {
+    btnClaimSubmit.disabled = false;
+    btnClaimSubmit.textContent = 'Submit Claim';
   }
 }
 
 export function initPiDetail() {
-  btnClaimPi.addEventListener('click', handleClaimClick);
+  btnClaimPi.addEventListener('click', openClaimModal);
   btnPiDetailEdit.addEventListener('click', () => {
     if (!currentDetailGroup) return;
     modalPiDetail.classList.add('hidden');
     document.dispatchEvent(new CustomEvent('creator-edit-group', { detail: currentDetailGroup }));
   });
+
+  // Claim modal buttons
+  btnClaimCreate.addEventListener('click', () => handleClaimAuth(true));
+  btnClaimLogin.addEventListener('click', () => handleClaimAuth(false));
+  btnClaimSubmit.addEventListener('click', handleClaimSubmit);
 }
 
 function escapeHTML(str) {
