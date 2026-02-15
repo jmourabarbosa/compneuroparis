@@ -6,7 +6,7 @@ import {
   approveInstitute, rejectInstitute
 } from './db.js';
 import { getCurrentUser, createAdminUser } from './auth.js';
-import { loadGroups } from './ui-groups.js';
+import { loadGroups, loadPublicInstitutes } from './ui-groups.js';
 import { loadInstituteOptions } from './ui-form.js';
 
 // DOM refs
@@ -502,6 +502,7 @@ export async function loadPendingInstitutes() {
           await loadPendingInstitutes();
           await loadApprovedInstitutes();
           await loadInstituteOptions();
+          await loadPublicInstitutes();
         } catch (err) {
           console.error('Approve institute error:', err);
           alert('Error approving institute.');

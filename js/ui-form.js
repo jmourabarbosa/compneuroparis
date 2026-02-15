@@ -1,5 +1,6 @@
-import { createSubmission, fetchApprovedInstitutes, createInstitute } from './db.js';
-import { getCurrentUser, createAccount, login, logout, resetPassword } from './auth.js';
+import { createSubmission, createGroup, fetchApprovedInstitutes, createInstitute } from './db.js';
+import { getCurrentUser, getIsAdmin, createAccount, login, logout, resetPassword } from './auth.js';
+import { loadGroups } from './ui-groups.js';
 
 const form = document.getElementById('submission-form');
 const formWrapper = document.getElementById('submission-form-wrapper');
@@ -12,6 +13,8 @@ const btnAddLink = document.getElementById('btn-add-link');
 const subSubfield = document.getElementById('sub-subfield');
 const subInstitute = document.getElementById('sub-institute');
 const subInstituteNewName = document.getElementById('sub-institute-new-name');
+const subInstituteNewWebsite = document.getElementById('sub-institute-new-website');
+const subInstituteNewFields = document.getElementById('sub-institute-new-fields');
 
 // Auth elements
 const subAuthForm = document.getElementById('submission-auth-form');
@@ -36,14 +39,15 @@ export function initForm() {
 
   form.addEventListener('submit', handleSubmit);
 
-  // Institute picker: show/hide new name input
+  // Institute picker: show/hide new institute fields
   subInstitute.addEventListener('change', () => {
     if (subInstitute.value === '__new__') {
-      subInstituteNewName.classList.remove('hidden');
+      subInstituteNewFields.classList.remove('hidden');
       subInstituteNewName.focus();
     } else {
-      subInstituteNewName.classList.add('hidden');
+      subInstituteNewFields.classList.add('hidden');
       subInstituteNewName.value = '';
+      subInstituteNewWebsite.value = '';
     }
   });
 
@@ -241,30 +245,50 @@ async function handleSubmit(e) {
   submitBtn.textContent = 'Submitting...';
 
   try {
-    // If proposing a new institute, create it first
+    const isAdmin = getIsAdmin();
+    const instituteWebsite = subInstituteNewWebsite.value.trim();
+
+    // If proposing a new institute, create it first (auto-approve if admin)
     let instituteName = instituteValue;
     if (instituteValue === '__new__') {
-      await createInstitute(instituteNewName, user.uid);
+      await createInstitute(instituteNewName, user.uid, { website: instituteWebsite, autoApprove: isAdmin });
       instituteName = instituteNewName;
     }
 
-    await createSubmission({
-      name,
-      keywords,
-      summary,
-      links,
-      photoURL,
-      subfield,
-      institute: instituteName,
-      submitterEmail: user.email,
-      submitterNote,
-      creatorUid: user.uid
-    });
+    if (isAdmin) {
+      // Admin: create group directly, skip submission review
+      await createGroup({
+        name,
+        keywords,
+        summary,
+        links,
+        photoURL,
+        subfield,
+        institute: instituteName,
+        creatorUid: user.uid
+      });
+      showMessage(formMessage, 'Group added successfully!', 'success');
+      await loadGroups();
+    } else {
+      await createSubmission({
+        name,
+        keywords,
+        summary,
+        links,
+        photoURL,
+        subfield,
+        institute: instituteName,
+        submitterEmail: user.email,
+        submitterNote,
+        creatorUid: user.uid
+      });
+      showMessage(formMessage, 'Thank you! Your submission is pending review.', 'success');
+    }
 
-    showMessage(formMessage, 'Thank you! Your submission is pending review.', 'success');
     form.reset();
-    subInstituteNewName.classList.add('hidden');
+    subInstituteNewFields.classList.add('hidden');
     subInstituteNewName.value = '';
+    subInstituteNewWebsite.value = '';
     // Reset links to single row
     linksContainer.innerHTML = '';
     addLinkRow(linksContainer);

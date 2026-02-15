@@ -361,8 +361,28 @@ img {
   gap: 0.5rem;
 }
 
-.institute-new-input.hidden {
+.institute-new-fields.hidden {
   display: none;
+}
+
+.institute-new-fields {
+  display: flex;
+  flex-direction: column;
+  gap: 0.5rem;
+}
+
+.institute-new-fields input {
+  width: 100%;
+  padding: 0.5rem 0.75rem;
+  border: 1.5px solid var(--color-border);
+  border-radius: var(--radius-sm);
+  font-family: var(--font);
+  font-size: 0.85rem;
+}
+
+.institute-new-fields input:focus {
+  outline: none;
+  border-color: var(--color-primary);
 }
 
 .institute-display {
@@ -414,6 +434,33 @@ img {
   outline: none;
   border-color: var(--color-primary);
   box-shadow: 0 0 0 3px rgba(13, 115, 119, 0.1);
+}
+
+/* ========== INSTITUTES GRID ========== */
+.institutes-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(260px, 1fr));
+  gap: 1rem;
+}
+
+.institute-card {
+  background: var(--color-surface);
+  border: 1px solid var(--color-border);
+  border-radius: var(--radius-md);
+  padding: 1rem 1.25rem;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 0.75rem;
+}
+
+.institute-card-name {
+  font-weight: 600;
+  font-size: 0.95rem;
+}
+
+.institute-card-links {
+  flex-shrink: 0;
 }
 
 /* ========== GROUP CARD ========== */

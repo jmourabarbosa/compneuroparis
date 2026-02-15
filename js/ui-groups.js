@@ -1,4 +1,4 @@
-import { fetchGroups } from './db.js';
+import { fetchGroups, fetchApprovedInstitutes } from './db.js';
 import { getCurrentUser, getIsAdmin } from './auth.js';
 
 let allGroups = [];
@@ -189,6 +189,40 @@ export function initSearch() {
   searchInput.addEventListener('input', filterGroups);
 }
 
+// Institutes public section
+const institutesSection = document.querySelector('.subfield-section[data-subfield="institutes"]');
+const institutesPublicList = document.getElementById('institutes-public-list');
+const institutesPublicCount = document.getElementById('institutes-public-count');
+
+export async function loadPublicInstitutes() {
+  try {
+    const institutes = await fetchApprovedInstitutes();
+    institutesPublicCount.textContent = institutes.length;
+    institutesPublicList.innerHTML = '';
+
+    if (institutes.length === 0) {
+      institutesSection.classList.add('section-hidden');
+      return;
+    }
+
+    institutesSection.classList.remove('section-hidden');
+    institutes.forEach(inst => {
+      const card = document.createElement('div');
+      card.className = 'institute-card';
+      const websiteHTML = inst.website
+        ? `<a href="${escapeHTML(inst.website)}" class="card-link" target="_blank" rel="noopener noreferrer">Website</a>`
+        : '';
+      card.innerHTML = `
+        <div class="institute-card-name">${escapeHTML(inst.name)}</div>
+        <div class="institute-card-links">${websiteHTML}</div>
+      `;
+      institutesPublicList.appendChild(card);
+    });
+  } catch (err) {
+    console.error('Error loading public institutes:', err);
+  }
+}
+
 export function initSections() {
   SUBFIELDS.forEach(sf => {
     sections[sf].header.addEventListener('click', () => {
@@ -196,5 +230,12 @@ export function initSections() {
       const isCollapsed = section.classList.toggle('collapsed');
       sections[sf].header.setAttribute('aria-expanded', !isCollapsed);
     });
+  });
+
+  // Institutes section toggle
+  const instHeader = institutesSection.querySelector('.subfield-header');
+  instHeader.addEventListener('click', () => {
+    const isCollapsed = institutesSection.classList.toggle('collapsed');
+    instHeader.setAttribute('aria-expanded', !isCollapsed);
   });
 }

@@ -1,4 +1,4 @@
-import { loadGroups, initSearch, initSections } from './ui-groups.js';
+import { loadGroups, initSearch, initSections, loadPublicInstitutes } from './ui-groups.js';
 import { initForm, updateSubmissionAuthUI } from './ui-form.js';
 import { onAuthChange, login, logout, resetPassword, authReady } from './auth.js';
 import {
@@ -180,5 +180,6 @@ initSubmissionActions();
 initEditForm();
 initAddAdmin();
 
-// Load groups (public data)
+// Load groups and institutes (public data)
 loadGroups();
+loadPublicInstitutes();

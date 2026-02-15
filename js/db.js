@@ -117,14 +117,21 @@ export async function fetchPendingInstitutes() {
   return snapshot.docs.map(d => ({ id: d.id, ...d.data() }));
 }
 
-export async function createInstitute(name, proposedByUid) {
+export async function createInstitute(name, proposedByUid, { website = '', autoApprove = false } = {}) {
   const docRef = await addDoc(collection(db, 'institutes'), {
     name,
-    status: 'pending',
+    status: autoApprove ? 'approved' : 'pending',
     proposedBy: proposedByUid,
+    website,
     createdAt: serverTimestamp()
   });
   return docRef.id;
+}
+
+export async function fetchAllInstitutes() {
+  const q = query(collection(db, 'institutes'), where('status', '==', 'approved'), orderBy('name'));
+  const snapshot = await getDocs(q);
+  return snapshot.docs.map(d => ({ id: d.id, ...d.data() }));
 }
 
 export async function approveInstitute(id) {
