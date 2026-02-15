@@ -361,7 +361,15 @@
           </div>
           <div class="form-group">
             <label>Institute(s)</label>
-            <div id="edit-institute-display" class="institute-display"></div>
+            <div class="institute-picker">
+              <div class="institute-picker-row">
+                <select id="edit-institute-select">
+                  <option value="" disabled selected>Select institute...</option>
+                </select>
+                <button type="button" id="btn-edit-add-institute" class="btn btn-outline btn-sm">+</button>
+              </div>
+              <div id="edit-institute-pills" class="institute-pills"></div>
+            </div>
           </div>
           <div class="form-group">
             <label for="edit-keywords">Keywords <span class="hint">(comma-separated)</span></label>

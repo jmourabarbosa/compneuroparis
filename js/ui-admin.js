@@ -48,7 +48,12 @@ const editPhotoCurrentDiv = document.getElementById('edit-photo-current');
 const editPhotoImg = document.getElementById('edit-photo-img');
 const editMessage = document.getElementById('edit-message');
 const editSubfieldContainer = document.getElementById('edit-subfield');
-const editInstituteDisplay = document.getElementById('edit-institute-display');
+const editInstituteSelect = document.getElementById('edit-institute-select');
+const editInstitutePills = document.getElementById('edit-institute-pills');
+const btnEditAddInstitute = document.getElementById('btn-edit-add-institute');
+
+// Edit institute state
+let editSelectedInstitutes = [];
 
 // Institute edit modal
 const modalEditInstitute = document.getElementById('modal-edit-institute');
@@ -326,9 +331,10 @@ function showEditModal(group) {
     cb.checked = subfields.includes(cb.value);
   });
 
-  // Institute (read-only)
-  const institutes = toArray(group.institutes || group.institute);
-  editInstituteDisplay.textContent = institutes.length > 0 ? institutes.join(', ') : '(none)';
+  // Institute picker — pre-populate with existing institutes
+  editSelectedInstitutes = [...toArray(group.institutes || group.institute)];
+  loadEditInstituteOptions();
+  renderEditInstitutePills();
 
   // Populate links
   editLinksContainer.innerHTML = '';
@@ -366,8 +372,51 @@ function addEditLinkRow(label = '', url = '') {
   editLinksContainer.appendChild(row);
 }
 
+async function loadEditInstituteOptions() {
+  try {
+    const institutes = await fetchApprovedInstitutes();
+    editInstituteSelect.innerHTML = '';
+    const placeholder = document.createElement('option');
+    placeholder.value = '';
+    placeholder.disabled = true;
+    placeholder.selected = true;
+    placeholder.textContent = 'Select institute...';
+    editInstituteSelect.appendChild(placeholder);
+
+    institutes.forEach(inst => {
+      const opt = document.createElement('option');
+      opt.value = inst.name;
+      opt.textContent = inst.name;
+      editInstituteSelect.appendChild(opt);
+    });
+  } catch (err) {
+    console.error('Error loading edit institute options:', err);
+  }
+}
+
+function handleEditAddInstitute() {
+  const value = editInstituteSelect.value;
+  if (!value || editSelectedInstitutes.includes(value)) return;
+  editSelectedInstitutes.push(value);
+  editInstituteSelect.selectedIndex = 0;
+  renderEditInstitutePills();
+}
+
+function renderEditInstitutePills() {
+  editInstitutePills.innerHTML = editSelectedInstitutes.map(name =>
+    `<span class="institute-pill">${escapeHTML(name)} <button type="button" class="institute-pill-remove" data-name="${escapeHTML(name)}">&times;</button></span>`
+  ).join('');
+  editInstitutePills.querySelectorAll('.institute-pill-remove').forEach(btn => {
+    btn.addEventListener('click', () => {
+      editSelectedInstitutes = editSelectedInstitutes.filter(n => n !== btn.dataset.name);
+      renderEditInstitutePills();
+    });
+  });
+}
+
 export function initEditForm() {
   btnEditAddLink.addEventListener('click', () => addEditLinkRow());
+  btnEditAddInstitute.addEventListener('click', handleEditAddInstitute);
 
   editForm.addEventListener('submit', async (e) => {
     e.preventDefault();
@@ -394,7 +443,7 @@ export function initEditForm() {
     });
 
     const photoURL = editPhotoURL.value.trim();
-    const updateData = { name, keywords, summary, links, photoURL, subfields, subfield: subfields[0] };
+    const updateData = { name, keywords, summary, links, photoURL, subfields, subfield: subfields[0], institutes: editSelectedInstitutes, institute: editSelectedInstitutes[0] || '' };
 
     const submitBtn = editForm.querySelector('button[type="submit"]');
     submitBtn.disabled = true;
