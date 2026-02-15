@@ -70,9 +70,9 @@ img {
 
 /* ========== HEADER ========== */
 .site-header {
-  background: url('../assets/banner.png') center/cover no-repeat;
+  background: white url('../assets/banner.png') center/contain no-repeat;
   color: var(--color-text);
-  padding: 10rem 0;
+  padding: 14rem 0;
   position: relative;
   z-index: 100;
 }
