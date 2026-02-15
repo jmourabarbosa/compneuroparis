@@ -157,21 +157,24 @@
         </div>
         <div class="form-row">
           <div class="form-group">
-            <label for="sub-subfield">Subfield <span class="required">*</span></label>
-            <select id="sub-subfield" name="subfield" required>
-              <option value="" disabled selected>Select subfield...</option>
-              <option value="computational">Computational</option>
-              <option value="systems">Systems</option>
-              <option value="human">Human</option>
-            </select>
+            <label>Subfield(s) <span class="required">*</span></label>
+            <div id="sub-subfield" class="subfield-checkboxes">
+              <label class="subfield-checkbox"><input type="checkbox" name="subfield" value="computational"> Computational</label>
+              <label class="subfield-checkbox"><input type="checkbox" name="subfield" value="systems"> Systems</label>
+              <label class="subfield-checkbox"><input type="checkbox" name="subfield" value="human"> Human</label>
+            </div>
           </div>
           <div class="form-group">
-            <label for="sub-institute">Institute <span class="required">*</span></label>
+            <label>Institute(s) <span class="required">*</span></label>
             <div class="institute-picker">
-              <select id="sub-institute">
-                <option value="" disabled selected>Select institute...</option>
-                <option value="__new__">Propose new...</option>
-              </select>
+              <div class="institute-picker-row">
+                <select id="sub-institute">
+                  <option value="" disabled selected>Select institute...</option>
+                  <option value="__new__">Propose new...</option>
+                </select>
+                <button type="button" id="btn-add-institute" class="btn btn-outline btn-sm">+</button>
+              </div>
+              <div id="sub-institute-pills" class="institute-pills"></div>
               <div id="sub-institute-new-fields" class="institute-new-fields hidden">
                 <input type="text" id="sub-institute-new-name" placeholder="New institute name">
                 <input type="url" id="sub-institute-new-website" placeholder="Institute website (https://...)">
@@ -348,19 +351,17 @@
             <label for="edit-name">PI Name <span class="required">*</span></label>
             <input type="text" id="edit-name" required>
           </div>
-          <div class="form-row">
-            <div class="form-group">
-              <label for="edit-subfield">Subfield</label>
-              <select id="edit-subfield">
-                <option value="computational">Computational</option>
-                <option value="systems">Systems</option>
-                <option value="human">Human</option>
-              </select>
+          <div class="form-group">
+            <label>Subfield(s)</label>
+            <div id="edit-subfield" class="subfield-checkboxes">
+              <label class="subfield-checkbox"><input type="checkbox" name="edit-subfield" value="computational"> Computational</label>
+              <label class="subfield-checkbox"><input type="checkbox" name="edit-subfield" value="systems"> Systems</label>
+              <label class="subfield-checkbox"><input type="checkbox" name="edit-subfield" value="human"> Human</label>
             </div>
-            <div class="form-group">
-              <label>Institute</label>
-              <div id="edit-institute-display" class="institute-display"></div>
-            </div>
+          </div>
+          <div class="form-group">
+            <label>Institute(s)</label>
+            <div id="edit-institute-display" class="institute-display"></div>
           </div>
           <div class="form-group">
             <label for="edit-keywords">Keywords <span class="hint">(comma-separated)</span></label>
@@ -408,7 +409,7 @@
           </div>
           <div class="pi-detail-info">
             <div id="pi-detail-institute" class="pi-detail-institute"></div>
-            <span id="pi-detail-subfield" class="pi-detail-subfield-badge"></span>
+            <div id="pi-detail-subfields" class="pi-detail-subfields"></div>
             <div id="pi-detail-keywords" class="card-keywords" style="margin-top:0.75rem"></div>
             <p id="pi-detail-summary" class="pi-detail-summary"></p>
             <div id="pi-detail-links" class="card-links"></div>
@@ -573,19 +574,17 @@
           <label for="review-name">PI Name</label>
           <input type="text" id="review-name">
         </div>
-        <div class="form-row">
-          <div class="form-group">
-            <label for="review-subfield">Subfield</label>
-            <select id="review-subfield">
-              <option value="computational">Computational</option>
-              <option value="systems">Systems</option>
-              <option value="human">Human</option>
-            </select>
+        <div class="form-group">
+          <label>Subfield(s)</label>
+          <div id="review-subfield" class="subfield-checkboxes">
+            <label class="subfield-checkbox"><input type="checkbox" name="review-subfield" value="computational"> Computational</label>
+            <label class="subfield-checkbox"><input type="checkbox" name="review-subfield" value="systems"> Systems</label>
+            <label class="subfield-checkbox"><input type="checkbox" name="review-subfield" value="human"> Human</label>
           </div>
-          <div class="form-group">
-            <label>Institute</label>
-            <div id="review-institute-display" class="institute-display"></div>
-          </div>
+        </div>
+        <div class="form-group">
+          <label>Institute(s)</label>
+          <div id="review-institute-display" class="institute-display"></div>
         </div>
         <div id="review-institute-warning" class="institute-warning hidden">
           Institute is pending approval. You cannot approve this PI until the institute is approved.

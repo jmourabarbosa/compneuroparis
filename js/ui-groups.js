@@ -9,6 +9,9 @@ let activeInstitute = null;
 
 const SUBFIELDS = ['computational', 'systems', 'human'];
 
+// Normalize old string or new array format
+function toArray(val) { return Array.isArray(val) ? val : (val ? [val] : []); }
+
 // Section refs
 const sections = {};
 SUBFIELDS.forEach(sf => {
@@ -34,7 +37,7 @@ const modalPiDetail = document.getElementById('modal-pi-detail');
 const piDetailTitle = document.getElementById('pi-detail-title');
 const piDetailPhoto = document.getElementById('pi-detail-photo');
 const piDetailInstitute = document.getElementById('pi-detail-institute');
-const piDetailSubfield = document.getElementById('pi-detail-subfield');
+const piDetailSubfields = document.getElementById('pi-detail-subfields');
 const piDetailKeywords = document.getElementById('pi-detail-keywords');
 const piDetailSummary = document.getElementById('pi-detail-summary');
 const piDetailLinks = document.getElementById('pi-detail-links');
@@ -133,7 +136,8 @@ function renderGroups() {
   const filtered = allGroups.filter(g => {
     // Institute filter
     if (activeInstitute) {
-      if ((g.institute || '') !== activeInstitute) return false;
+      const institutes = toArray(g.institutes || g.institute);
+      if (!institutes.includes(activeInstitute)) return false;
     }
     // Keyword filter
     if (activeKeyword) {
@@ -152,11 +156,13 @@ function renderGroups() {
     return true;
   });
 
-  // Partition by subfield (default to "computational" if missing)
+  // Partition by subfield — a PI can appear in multiple sections
   const bySubfield = { computational: [], systems: [], human: [] };
   filtered.forEach(g => {
-    const sf = bySubfield[g.subfield] ? g.subfield : 'computational';
-    bySubfield[sf].push(g);
+    const sfs = toArray(g.subfields || g.subfield);
+    const validSfs = sfs.filter(sf => bySubfield[sf]);
+    if (validSfs.length === 0) validSfs.push('computational');
+    validSfs.forEach(sf => bySubfield[sf].push(g));
   });
 
   let totalVisible = 0;
@@ -199,15 +205,17 @@ function renderGroups() {
 function createCard(group) {
   const card = document.createElement('article');
   card.className = 'group-card';
-  const sf = group.subfield || 'computational';
+  const sfs = toArray(group.subfields || group.subfield);
+  const sf = sfs[0] || 'computational';
   card.dataset.subfield = sf;
 
   const keywordHTML = (group.keywords || [])
     .map(k => `<span class="keyword-pill">${escapeHTML(k)}</span>`)
     .join('');
 
-  const instituteHTML = group.institute
-    ? `<div class="card-institute">${escapeHTML(group.institute)}</div>`
+  const institutes = toArray(group.institutes || group.institute);
+  const instituteHTML = institutes.length > 0
+    ? `<div class="card-institute">${escapeHTML(institutes.join(', '))}</div>`
     : '';
 
   card.innerHTML = `
@@ -235,12 +243,15 @@ async function openPiDetail(group) {
   piDetailTitle.textContent = group.name || 'PI Details';
   piDetailPhoto.src = group.photoURL || 'assets/placeholder-lab.svg';
   piDetailPhoto.alt = group.name || '';
-  piDetailInstitute.textContent = group.institute || '';
-  piDetailInstitute.classList.toggle('hidden', !group.institute);
+  const institutes = toArray(group.institutes || group.institute);
+  piDetailInstitute.textContent = institutes.join(', ');
+  piDetailInstitute.classList.toggle('hidden', institutes.length === 0);
 
-  const sf = group.subfield || 'computational';
-  piDetailSubfield.textContent = sf;
-  piDetailSubfield.dataset.subfield = sf;
+  const sfs = toArray(group.subfields || group.subfield);
+  if (sfs.length === 0) sfs.push('computational');
+  piDetailSubfields.innerHTML = sfs.map(sf =>
+    `<span class="pi-detail-subfield-badge" data-subfield="${escapeHTML(sf)}">${escapeHTML(sf)}</span>`
+  ).join('');
 
   piDetailKeywords.innerHTML = (group.keywords || [])
     .map(k => `<span class="keyword-pill">${escapeHTML(k)}</span>`)

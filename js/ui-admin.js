@@ -30,7 +30,7 @@ const reviewPhotoURL = document.getElementById('review-photo-url');
 const reviewMeta = document.getElementById('review-meta');
 const btnApprove = document.getElementById('btn-approve');
 const btnReject = document.getElementById('btn-reject');
-const reviewSubfield = document.getElementById('review-subfield');
+const reviewSubfieldContainer = document.getElementById('review-subfield');
 const reviewInstituteDisplay = document.getElementById('review-institute-display');
 const reviewInstituteWarning = document.getElementById('review-institute-warning');
 
@@ -47,7 +47,7 @@ const editPhotoURL = document.getElementById('edit-photo-url');
 const editPhotoCurrentDiv = document.getElementById('edit-photo-current');
 const editPhotoImg = document.getElementById('edit-photo-img');
 const editMessage = document.getElementById('edit-message');
-const editSubfield = document.getElementById('edit-subfield');
+const editSubfieldContainer = document.getElementById('edit-subfield');
 const editInstituteDisplay = document.getElementById('edit-institute-display');
 
 // Institute edit modal
@@ -161,13 +161,17 @@ async function showSubmissionDetail(sub) {
   reviewSummary.value = sub.summary || '';
   reviewPhotoURL.value = sub.photoURL || '';
 
-  // Subfield
-  reviewSubfield.value = sub.subfield || 'computational';
+  // Subfield checkboxes
+  const subfields = toArray(sub.subfields || sub.subfield || 'computational');
+  reviewSubfieldContainer.querySelectorAll('input[type="checkbox"]').forEach(cb => {
+    cb.checked = subfields.includes(cb.value);
+  });
 
   // Institute display + warning
-  const instName = sub.institute || '';
+  const institutes = toArray(sub.institutes || sub.institute);
+  const instName = institutes.join(', ') || '';
   reviewInstituteDisplay.textContent = instName || '(none)';
-  const isPending = instName && !approvedInstituteNames.has(instName);
+  const isPending = institutes.length > 0 && institutes.some(n => !approvedInstituteNames.has(n));
   if (isPending) {
     reviewInstituteWarning.classList.remove('hidden');
     btnApprove.disabled = true;
@@ -212,7 +216,8 @@ function getReviewFormData() {
   const keywords = reviewKeywords.value.split(',').map(k => k.trim()).filter(Boolean);
   const summary = reviewSummary.value.trim();
   const photoURL = reviewPhotoURL.value.trim();
-  const subfield = reviewSubfield.value;
+  const subfields = [...reviewSubfieldContainer.querySelectorAll('input[type="checkbox"]:checked')].map(cb => cb.value);
+  if (subfields.length === 0) subfields.push('computational');
 
   const linkRows = reviewLinksContainer.querySelectorAll('.link-row');
   const links = [];
@@ -223,9 +228,9 @@ function getReviewFormData() {
   });
 
   // Institute comes from original submission (read-only in review)
-  const institute = currentSubmission?.institute || '';
+  const institutes = toArray(currentSubmission?.institutes || currentSubmission?.institute);
 
-  return { name, keywords, summary, links, photoURL, subfield, institute };
+  return { name, keywords, summary, links, photoURL, subfields, subfield: subfields[0], institutes, institute: institutes[0] || '' };
 }
 
 export function initSubmissionActions() {
@@ -285,7 +290,8 @@ export async function loadManageGroups() {
     groups.forEach(g => {
       const item = document.createElement('div');
       item.className = 'admin-item';
-      const subfieldLabel = g.subfield ? ` [${g.subfield}]` : '';
+      const sfs = toArray(g.subfields || g.subfield);
+      const subfieldLabel = sfs.length > 0 ? ` [${sfs.join(', ')}]` : '';
       const claimedLabel = g.claimedBy ? ' (claimed)' : '';
       item.innerHTML = `
         <div class="admin-item-info">
@@ -314,11 +320,15 @@ function showEditModal(group) {
   editKeywords.value = (group.keywords || []).join(', ');
   editSummary.value = group.summary || '';
 
-  // Subfield
-  editSubfield.value = group.subfield || 'computational';
+  // Subfield checkboxes
+  const subfields = toArray(group.subfields || group.subfield || 'computational');
+  editSubfieldContainer.querySelectorAll('input[type="checkbox"]').forEach(cb => {
+    cb.checked = subfields.includes(cb.value);
+  });
 
   // Institute (read-only)
-  editInstituteDisplay.textContent = group.institute || '(none)';
+  const institutes = toArray(group.institutes || group.institute);
+  editInstituteDisplay.textContent = institutes.length > 0 ? institutes.join(', ') : '(none)';
 
   // Populate links
   editLinksContainer.innerHTML = '';
@@ -372,7 +382,8 @@ export function initEditForm() {
 
     const keywords = editKeywords.value.split(',').map(k => k.trim()).filter(Boolean);
     const summary = editSummary.value.trim();
-    const subfield = editSubfield.value;
+    const subfields = [...editSubfieldContainer.querySelectorAll('input[type="checkbox"]:checked')].map(cb => cb.value);
+    if (subfields.length === 0) subfields.push('computational');
 
     const linkRows = editLinksContainer.querySelectorAll('.link-row');
     const links = [];
@@ -383,7 +394,7 @@ export function initEditForm() {
     });
 
     const photoURL = editPhotoURL.value.trim();
-    const updateData = { name, keywords, summary, links, photoURL, subfield };
+    const updateData = { name, keywords, summary, links, photoURL, subfields, subfield: subfields[0] };
 
     const submitBtn = editForm.querySelector('button[type="submit"]');
     submitBtn.disabled = true;
@@ -759,6 +770,8 @@ export function initEditInstituteForm() {
 }
 
 // ========== HELPERS ==========
+
+function toArray(val) { return Array.isArray(val) ? val : (val ? [val] : []); }
 
 function escapeHTML(str) {
   const div = document.createElement('div');

@@ -9,12 +9,18 @@ const formMessage = document.getElementById('form-message');
 const linksContainer = document.getElementById('links-container');
 const btnAddLink = document.getElementById('btn-add-link');
 
-// Subfield & institute
-const subSubfield = document.getElementById('sub-subfield');
+// Subfield checkboxes & institute
+const subSubfieldContainer = document.getElementById('sub-subfield');
 const subInstitute = document.getElementById('sub-institute');
+const subInstitutePills = document.getElementById('sub-institute-pills');
+const btnAddInstitute = document.getElementById('btn-add-institute');
 const subInstituteNewName = document.getElementById('sub-institute-new-name');
 const subInstituteNewWebsite = document.getElementById('sub-institute-new-website');
 const subInstituteNewFields = document.getElementById('sub-institute-new-fields');
+
+// Multi-institute state
+let selectedInstitutes = [];
+let newInstituteData = {}; // { name: website } for proposed new institutes
 
 // Auth elements
 const subAuthForm = document.getElementById('submission-auth-form');
@@ -50,6 +56,9 @@ export function initForm() {
       subInstituteNewWebsite.value = '';
     }
   });
+
+  // Multi-institute: add button
+  btnAddInstitute.addEventListener('click', handleAddInstitute);
 
   // Auth buttons
   btnSubCreate.addEventListener('click', handleCreateAccount);
@@ -195,6 +204,51 @@ function addLinkRow(container) {
   container.appendChild(row);
 }
 
+function getSelectedSubfields() {
+  return [...subSubfieldContainer.querySelectorAll('input[name="subfield"]:checked')].map(cb => cb.value);
+}
+
+function handleAddInstitute() {
+  const value = subInstitute.value;
+  if (value === '__new__') {
+    const newName = subInstituteNewName.value.trim();
+    const newWebsite = subInstituteNewWebsite.value.trim();
+    if (!newName) return;
+    if (selectedInstitutes.includes(newName)) return;
+    selectedInstitutes.push(newName);
+    newInstituteData[newName] = newWebsite;
+    subInstituteNewName.value = '';
+    subInstituteNewWebsite.value = '';
+    subInstituteNewFields.classList.add('hidden');
+  } else if (value && !selectedInstitutes.includes(value)) {
+    selectedInstitutes.push(value);
+  } else {
+    return;
+  }
+  subInstitute.selectedIndex = 0;
+  renderInstitutePills();
+}
+
+function renderInstitutePills() {
+  subInstitutePills.innerHTML = selectedInstitutes.map(name =>
+    `<span class="institute-pill">${escapeHTML(name)} <button type="button" class="institute-pill-remove" data-name="${escapeHTML(name)}">&times;</button></span>`
+  ).join('');
+  subInstitutePills.querySelectorAll('.institute-pill-remove').forEach(btn => {
+    btn.addEventListener('click', () => {
+      const name = btn.dataset.name;
+      selectedInstitutes = selectedInstitutes.filter(n => n !== name);
+      delete newInstituteData[name];
+      renderInstitutePills();
+    });
+  });
+}
+
+function escapeHTML(str) {
+  const div = document.createElement('div');
+  div.textContent = str || '';
+  return div.innerHTML;
+}
+
 async function handleSubmit(e) {
   e.preventDefault();
   hideMessage(formMessage);
@@ -210,22 +264,20 @@ async function handleSubmit(e) {
   const summary = form.elements.summary.value.trim();
   const photoURL = form.elements.photoURL.value.trim();
   const submitterNote = form.elements.submitterNote.value.trim();
-  const subfield = subSubfield.value;
-  const instituteValue = subInstitute.value;
-  const instituteNewName = subInstituteNewName.value.trim();
+  const subfields = getSelectedSubfields();
 
   if (!name || !keywordsRaw || !summary) {
     showMessage(formMessage, 'Please fill in all required fields.', 'error');
     return;
   }
 
-  if (!subfield) {
-    showMessage(formMessage, 'Please select a subfield.', 'error');
+  if (subfields.length === 0) {
+    showMessage(formMessage, 'Please select at least one subfield.', 'error');
     return;
   }
 
-  if (!instituteValue || (instituteValue === '__new__' && !instituteNewName)) {
-    showMessage(formMessage, 'Please select or propose an institute.', 'error');
+  if (selectedInstitutes.length === 0) {
+    showMessage(formMessage, 'Please add at least one institute using the + button.', 'error');
     return;
   }
 
@@ -246,13 +298,12 @@ async function handleSubmit(e) {
 
   try {
     const isAdmin = getIsAdmin();
-    const instituteWebsite = subInstituteNewWebsite.value.trim();
 
-    // If proposing a new institute, create it first (auto-approve if admin)
-    let instituteName = instituteValue;
-    if (instituteValue === '__new__') {
-      await createInstitute(instituteNewName, user.uid, { website: instituteWebsite, autoApprove: isAdmin });
-      instituteName = instituteNewName;
+    // Create any new institutes
+    for (const instName of selectedInstitutes) {
+      if (newInstituteData[instName] !== undefined) {
+        await createInstitute(instName, user.uid, { website: newInstituteData[instName], autoApprove: isAdmin });
+      }
     }
 
     if (isAdmin) {
@@ -263,8 +314,10 @@ async function handleSubmit(e) {
         summary,
         links,
         photoURL,
-        subfield,
-        institute: instituteName,
+        subfields,
+        subfield: subfields[0],
+        institutes: selectedInstitutes,
+        institute: selectedInstitutes[0] || '',
         creatorUid: user.uid
       });
       showMessage(formMessage, 'PI added successfully!', 'success');
@@ -276,8 +329,10 @@ async function handleSubmit(e) {
         summary,
         links,
         photoURL,
-        subfield,
-        institute: instituteName,
+        subfields,
+        subfield: subfields[0],
+        institutes: selectedInstitutes,
+        institute: selectedInstitutes[0] || '',
         submitterEmail: user.email,
         submitterNote,
         creatorUid: user.uid
@@ -289,6 +344,9 @@ async function handleSubmit(e) {
     subInstituteNewFields.classList.add('hidden');
     subInstituteNewName.value = '';
     subInstituteNewWebsite.value = '';
+    selectedInstitutes = [];
+    newInstituteData = {};
+    renderInstitutePills();
     // Reset links to single row
     linksContainer.innerHTML = '';
     addLinkRow(linksContainer);

@@ -61,6 +61,13 @@ export async function approveSubmission(submissionId, adminUid, overrideData = n
   const data = subSnap.data();
   const src = overrideData || data;
 
+  // Normalize array helper
+  const toArr = v => Array.isArray(v) ? v : (v ? [v] : []);
+
+  // Resolve subfields/institutes from override or original data
+  const subfields = toArr(src.subfields || src.subfield || data.subfields || data.subfield || ['computational']);
+  const institutes = toArr(src.institutes || src.institute || data.institutes || data.institute);
+
   // Create group from submission (use overrideData if provided, always copy creatorUid)
   await createGroup({
     name: src.name,
@@ -68,8 +75,12 @@ export async function approveSubmission(submissionId, adminUid, overrideData = n
     summary: src.summary || '',
     links: src.links || [],
     photoURL: src.photoURL || '',
-    subfield: src.subfield || data.subfield || 'computational',
-    institute: src.institute || data.institute || '',
+    // New array fields
+    subfields,
+    institutes,
+    // Backward compat single-value fields
+    subfield: subfields[0] || 'computational',
+    institute: institutes[0] || '',
     ...(data.creatorUid ? { creatorUid: data.creatorUid } : {})
   });
 
