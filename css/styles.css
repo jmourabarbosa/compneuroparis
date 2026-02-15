@@ -853,6 +853,38 @@ img {
   color: var(--color-danger);
 }
 
+.form-message.info {
+  background: #1a2a3a;
+  color: #6cb4ee;
+}
+
+.verify-banner {
+  display: flex;
+  align-items: center;
+  gap: 0.75rem;
+  margin-top: 0.5rem;
+  padding: 0.6rem 1rem;
+  border-radius: var(--radius-sm);
+  background: #332b00;
+  color: #f5c842;
+  font-size: 0.85rem;
+}
+
+.verify-banner .btn-resend-verify {
+  white-space: nowrap;
+  background: transparent;
+  border: 1px solid #f5c842;
+  color: #f5c842;
+  cursor: pointer;
+  padding: 0.25rem 0.6rem;
+  border-radius: var(--radius-sm);
+  font-size: 0.8rem;
+}
+
+.verify-banner .btn-resend-verify:hover {
+  background: rgba(245, 200, 66, 0.15);
+}
+
 /* ========== FOOTER ========== */
 .site-footer {
   border-top: 1px solid var(--color-border);

@@ -1,6 +1,7 @@
 import {
   signInWithEmailAndPassword, signOut, onAuthStateChanged,
-  createUserWithEmailAndPassword, sendPasswordResetEmail
+  createUserWithEmailAndPassword, sendPasswordResetEmail,
+  sendEmailVerification
 } from 'https://www.gstatic.com/firebasejs/11.4.0/firebase-auth.js';
 import { auth } from './firebase-config.js';
 import { isAdmin, addAdmin } from './db.js';
@@ -25,7 +26,18 @@ export async function login(email, password) {
 
 export async function createAccount(email, password) {
   const cred = await createUserWithEmailAndPassword(auth, email, password);
+  await sendEmailVerification(cred.user);
   return cred.user;
+}
+
+export async function resendVerification() {
+  if (auth.currentUser && !auth.currentUser.emailVerified) {
+    await sendEmailVerification(auth.currentUser);
+  }
+}
+
+export function isEmailVerified() {
+  return auth.currentUser?.emailVerified ?? false;
 }
 
 export async function resetPassword(email) {

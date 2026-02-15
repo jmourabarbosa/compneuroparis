@@ -1,5 +1,5 @@
 import { fetchGroups, fetchApprovedInstitutes, createClaim, fetchMyClaimForTarget, deleteGroup, deleteInstitute } from './db.js';
-import { getCurrentUser, getIsAdmin, createAccount, login } from './auth.js';
+import { getCurrentUser, getIsAdmin, createAccount, login, isEmailVerified, resendVerification } from './auth.js';
 
 let allGroups = [];
 let allInstitutes = [];
@@ -375,6 +375,8 @@ async function handleClaimAuth(isCreate) {
   try {
     if (isCreate) {
       await createAccount(email, password);
+      // Show verification notice
+      showClaimMsg(claimSubmitMessage, 'Account created! A verification email has been sent. Please verify before submitting your claim.', 'info');
     } else {
       await login(email, password);
     }
@@ -393,6 +395,10 @@ async function handleClaimSubmit() {
   const user = getCurrentUser();
   if (!user) {
     showClaimMsg(claimSubmitMessage, 'Please log in or create an account first.', 'error');
+    return;
+  }
+  if (!isEmailVerified()) {
+    showClaimMsg(claimSubmitMessage, 'Please verify your email before claiming. Check your inbox for a confirmation link.', 'error');
     return;
   }
 

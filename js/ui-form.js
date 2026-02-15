@@ -1,5 +1,5 @@
 import { createSubmission, createGroup, fetchApprovedInstitutes, createInstitute } from './db.js';
-import { getCurrentUser, getIsAdmin, createAccount, login, logout, resetPassword } from './auth.js';
+import { getCurrentUser, getIsAdmin, createAccount, login, logout, resetPassword, isEmailVerified, resendVerification } from './auth.js';
 import { loadGroups, loadPublicInstitutes } from './ui-groups.js';
 
 const form = document.getElementById('submission-form');
@@ -155,6 +155,7 @@ export function updateSubmissionAuthUI(user) {
     subAuthForm.classList.add('hidden');
     subAuthStatus.classList.remove('hidden');
     subAuthUserEmail.textContent = user.email;
+    showVerificationBanner(subAuthStatus, user);
   } else {
     subAuthForm.classList.remove('hidden');
     subAuthStatus.classList.add('hidden');
@@ -167,12 +168,42 @@ export function updateSubmissionAuthUI(user) {
     instSubAuthForm.classList.add('hidden');
     instSubAuthStatus.classList.remove('hidden');
     instSubAuthUserEmail.textContent = user.email;
+    showVerificationBanner(instSubAuthStatus, user);
   } else {
     instSubAuthForm.classList.remove('hidden');
     instSubAuthStatus.classList.add('hidden');
     instSubAuthUserEmail.textContent = '';
   }
   instSubAuthMessage.classList.add('hidden');
+}
+
+function showVerificationBanner(container, user) {
+  // Remove any existing banner
+  const existing = container.querySelector('.verify-banner');
+  if (existing) existing.remove();
+
+  if (user && !user.emailVerified) {
+    const banner = document.createElement('div');
+    banner.className = 'verify-banner';
+    banner.innerHTML = `
+      <span>Please verify your email. Check your inbox for a confirmation link.</span>
+      <button type="button" class="btn btn-sm btn-resend-verify">Resend email</button>
+    `;
+    banner.querySelector('.btn-resend-verify').addEventListener('click', async (e) => {
+      const btn = e.target;
+      btn.disabled = true;
+      btn.textContent = 'Sending...';
+      try {
+        await resendVerification();
+        btn.textContent = 'Sent!';
+        setTimeout(() => { btn.textContent = 'Resend email'; btn.disabled = false; }, 3000);
+      } catch (err) {
+        btn.textContent = 'Error';
+        setTimeout(() => { btn.textContent = 'Resend email'; btn.disabled = false; }, 3000);
+      }
+    });
+    container.appendChild(banner);
+  }
 }
 
 async function handleInstSubAuth(isCreate) {
@@ -192,8 +223,12 @@ async function handleInstSubAuth(isCreate) {
   btnInstSubCreate.disabled = true;
   btnInstSubLogin.disabled = true;
   try {
-    if (isCreate) await createAccount(email, password);
-    else await login(email, password);
+    if (isCreate) {
+      await createAccount(email, password);
+      showInstAuthMsg('Account created! A verification email has been sent. Please verify before submitting.', 'success');
+    } else {
+      await login(email, password);
+    }
   } catch (err) {
     showInstAuthMsg(err.message || 'Authentication failed.', 'error');
   } finally {
@@ -215,6 +250,10 @@ async function handleInstituteSubmit(e) {
   const user = getCurrentUser();
   if (!user) {
     showMessage(instFormMessage, 'Please create an account or log in before submitting.', 'error');
+    return;
+  }
+  if (!isEmailVerified()) {
+    showMessage(instFormMessage, 'Please verify your email before submitting. Check your inbox for a confirmation link.', 'error');
     return;
   }
 
@@ -275,7 +314,7 @@ async function handleCreateAccount() {
   btnSubLogin.disabled = true;
   try {
     await createAccount(email, password);
-    // onAuthChange will update the UI
+    showAuthMsg('Account created! A verification email has been sent. Please check your inbox and verify before submitting.', 'success');
   } catch (err) {
     showAuthMsg(err.message || 'Error creating account.', 'error');
   } finally {
@@ -382,6 +421,10 @@ async function handleSubmit(e) {
   const user = getCurrentUser();
   if (!user) {
     showMessage(formMessage, 'Please create an account or log in before submitting.', 'error');
+    return;
+  }
+  if (!isEmailVerified()) {
+    showMessage(formMessage, 'Please verify your email before submitting. Check your inbox for a confirmation link.', 'error');
     return;
   }
 
