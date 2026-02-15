@@ -1,0 +1,27 @@
+rules_version = '2';
+service cloud.firestore {
+  match /databases/{database}/documents {
+
+    function isAdmin() {
+      return request.auth != null
+        && exists(/databases/$(database)/documents/admins/$(request.auth.uid));
+    }
+
+    // Groups: public read, admin write
+    match /groups/{groupId} {
+      allow read: if true;
+      allow create, update, delete: if isAdmin();
+    }
+
+    // Submissions: public create, admin read/write
+    match /submissions/{subId} {
+      allow create: if true;
+      allow read, update, delete: if isAdmin();
+    }
+
+    // Admins: admin only
+    match /admins/{uid} {
+      allow read, write: if isAdmin();
+    }
+  }
+}

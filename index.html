@@ -1,0 +1,269 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Computational Neuroscience in Paris</title>
+  <meta name="description" content="A directory of computational neuroscience research groups in the Paris area.">
+  <meta property="og:title" content="Computational Neuroscience in Paris">
+  <meta property="og:description" content="Discover computational neuroscience research groups in Paris.">
+  <meta property="og:type" content="website">
+  <meta property="og:url" content="https://jmourabarbosa.github.io/compneuroparis/">
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
+  <link rel="stylesheet" href="css/styles.css">
+</head>
+<body>
+
+  <!-- ========== HEADER ========== -->
+  <header class="site-header">
+    <div class="header-inner">
+      <div class="header-title">
+        <h1>Computational Neuroscience in Paris</h1>
+        <p class="subtitle">Research groups in the Paris area</p>
+      </div>
+      <div class="header-actions">
+        <button id="btn-admin-login" class="btn btn-outline" aria-label="Admin Login">Admin Login</button>
+        <div id="admin-bar" class="admin-bar hidden">
+          <span id="admin-email" class="admin-email"></span>
+          <button id="btn-admin-panel" class="btn btn-primary btn-sm">Admin Panel</button>
+          <button id="btn-logout" class="btn btn-outline btn-sm">Logout</button>
+        </div>
+      </div>
+    </div>
+  </header>
+
+  <!-- ========== SEARCH / FILTER ========== -->
+  <section class="search-section" aria-label="Search and filter groups">
+    <div class="search-inner">
+      <div class="search-bar">
+        <svg class="search-icon" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><circle cx="11" cy="11" r="8"/><line x1="21" y1="21" x2="16.65" y2="16.65"/></svg>
+        <input type="text" id="search-input" placeholder="Search groups by name, keyword, or summary..." aria-label="Search groups">
+      </div>
+      <div id="keyword-filters" class="keyword-filters" aria-label="Filter by keyword"></div>
+    </div>
+  </section>
+
+  <!-- ========== GROUPS GRID ========== -->
+  <main class="groups-section" aria-label="Research groups">
+    <div id="groups-loading" class="loading-state">
+      <div class="spinner" aria-label="Loading"></div>
+      <p>Loading groups...</p>
+    </div>
+    <div id="groups-empty" class="empty-state hidden">
+      <p>No groups found. Try adjusting your search or filters.</p>
+    </div>
+    <div id="groups-grid" class="groups-grid"></div>
+  </main>
+
+  <!-- ========== ADD YOUR GROUP ========== -->
+  <section class="submit-section" id="submit-section" aria-label="Submit your group">
+    <div class="submit-inner">
+      <h2>Add Your Group</h2>
+      <p class="submit-description">Know a computational neuroscience group in Paris? Submit it for review.</p>
+      <form id="submission-form" class="submission-form" novalidate>
+        <div class="form-group">
+          <label for="sub-name">Group / Lab Name <span class="required">*</span></label>
+          <input type="text" id="sub-name" name="name" required>
+        </div>
+        <div class="form-group">
+          <label for="sub-keywords">Keywords <span class="hint">(comma-separated)</span> <span class="required">*</span></label>
+          <input type="text" id="sub-keywords" name="keywords" placeholder="e.g. neural coding, machine learning, vision" required>
+        </div>
+        <div class="form-group">
+          <label for="sub-summary">Summary <span class="required">*</span></label>
+          <textarea id="sub-summary" name="summary" rows="4" required></textarea>
+        </div>
+
+        <div class="form-group">
+          <label>Links</label>
+          <div id="links-container">
+            <div class="link-row">
+              <input type="text" name="link-label" placeholder="Label (e.g. Website)">
+              <input type="url" name="link-url" placeholder="https://...">
+            </div>
+          </div>
+          <button type="button" id="btn-add-link" class="btn btn-text btn-sm">+ Add another link</button>
+        </div>
+
+        <div class="form-group">
+          <label for="sub-photo-url">Photo URL <span class="hint">(optional, link to an image)</span></label>
+          <input type="url" id="sub-photo-url" name="photoURL" placeholder="https://example.com/photo.jpg">
+        </div>
+
+        <div class="form-row">
+          <div class="form-group">
+            <label for="sub-email">Your Email <span class="hint">(optional, not displayed)</span></label>
+            <input type="email" id="sub-email" name="submitterEmail">
+          </div>
+          <div class="form-group">
+            <label for="sub-note">Note for Admins <span class="hint">(optional)</span></label>
+            <input type="text" id="sub-note" name="submitterNote" placeholder="Any context for the admins">
+          </div>
+        </div>
+
+        <div id="form-message" class="form-message hidden" role="alert"></div>
+        <button type="submit" id="btn-submit" class="btn btn-primary">Submit for Review</button>
+      </form>
+    </div>
+  </section>
+
+  <!-- ========== FOOTER ========== -->
+  <footer class="site-footer">
+    <div class="footer-inner">
+      <p>&copy; 2026 Computational Neuroscience in Paris</p>
+      <a href="https://github.com/jmourabarbosa/compneuroparis" target="_blank" rel="noopener noreferrer" aria-label="View source on GitHub">
+        <svg width="20" height="20" viewBox="0 0 24 24" fill="currentColor" aria-hidden="true"><path d="M12 0C5.37 0 0 5.37 0 12c0 5.31 3.435 9.795 8.205 11.385.6.105.825-.255.825-.57 0-.285-.015-1.23-.015-2.235-3.015.555-3.795-.735-4.035-1.41-.135-.345-.72-1.41-1.23-1.695-.42-.225-1.02-.78-.015-.795.945-.015 1.62.87 1.845 1.23 1.08 1.815 2.805 1.305 3.495.99.105-.78.42-1.305.765-1.605-2.67-.3-5.46-1.335-5.46-5.925 0-1.305.465-2.385 1.23-3.225-.12-.3-.54-1.53.12-3.18 0 0 1.005-.315 3.3 1.23.96-.27 1.98-.405 3-.405s2.04.135 3 .405c2.295-1.56 3.3-1.23 3.3-1.23.66 1.65.24 2.88.12 3.18.765.84 1.23 1.905 1.23 3.225 0 4.605-2.805 5.625-5.475 5.925.435.375.81 1.095.81 2.22 0 1.605-.015 2.895-.015 3.3 0 .315.225.69.825.57A12.02 12.02 0 0024 12c0-6.63-5.37-12-12-12z"/></svg>
+      </a>
+    </div>
+  </footer>
+
+  <!-- ========== LOGIN MODAL ========== -->
+  <div id="modal-login" class="modal-overlay hidden" role="dialog" aria-modal="true" aria-label="Admin Login">
+    <div class="modal">
+      <div class="modal-header">
+        <h3>Admin Login</h3>
+        <button class="modal-close" data-close-modal="modal-login" aria-label="Close">&times;</button>
+      </div>
+      <div class="modal-body">
+        <form id="login-form" novalidate>
+          <div class="form-group">
+            <label for="login-email">Email</label>
+            <input type="email" id="login-email" required>
+          </div>
+          <div class="form-group">
+            <label for="login-password">Password</label>
+            <input type="password" id="login-password" required>
+          </div>
+          <div id="login-message" class="form-message hidden" role="alert"></div>
+          <button type="submit" class="btn btn-primary btn-full">Login</button>
+        </form>
+      </div>
+    </div>
+  </div>
+
+  <!-- ========== ADMIN PANEL MODAL ========== -->
+  <div id="modal-admin" class="modal-overlay hidden" role="dialog" aria-modal="true" aria-label="Admin Panel">
+    <div class="modal modal-lg">
+      <div class="modal-header">
+        <h3>Admin Panel</h3>
+        <button class="modal-close" data-close-modal="modal-admin" aria-label="Close">&times;</button>
+      </div>
+      <div class="modal-body">
+        <div class="tabs" role="tablist">
+          <button class="tab active" data-tab="tab-pending" role="tab" aria-selected="true">Pending</button>
+          <button class="tab" data-tab="tab-manage" role="tab" aria-selected="false">Manage Groups</button>
+          <button class="tab" data-tab="tab-admins" role="tab" aria-selected="false">Admins</button>
+        </div>
+
+        <!-- Pending Submissions Tab -->
+        <div id="tab-pending" class="tab-panel active" role="tabpanel">
+          <div id="pending-loading" class="loading-state">
+            <div class="spinner"></div>
+          </div>
+          <div id="pending-empty" class="empty-state hidden">
+            <p>No pending submissions.</p>
+          </div>
+          <div id="pending-list" class="admin-list"></div>
+        </div>
+
+        <!-- Manage Groups Tab -->
+        <div id="tab-manage" class="tab-panel" role="tabpanel">
+          <div id="manage-loading" class="loading-state">
+            <div class="spinner"></div>
+          </div>
+          <div id="manage-empty" class="empty-state hidden">
+            <p>No groups yet.</p>
+          </div>
+          <div id="manage-list" class="admin-list"></div>
+        </div>
+
+        <!-- Admins Tab -->
+        <div id="tab-admins" class="tab-panel" role="tabpanel">
+          <div id="admins-list" class="admin-list"></div>
+          <div class="add-admin-form">
+            <h4>Add New Admin</h4>
+            <div class="form-row">
+              <div class="form-group">
+                <input type="email" id="new-admin-email" placeholder="Email address">
+              </div>
+              <div class="form-group">
+                <input type="password" id="new-admin-password" placeholder="Temporary password">
+              </div>
+            </div>
+            <div id="admin-add-message" class="form-message hidden" role="alert"></div>
+            <button id="btn-add-admin" class="btn btn-primary btn-sm">Add Admin</button>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- ========== EDIT GROUP MODAL ========== -->
+  <div id="modal-edit" class="modal-overlay hidden" role="dialog" aria-modal="true" aria-label="Edit Group">
+    <div class="modal">
+      <div class="modal-header">
+        <h3>Edit Group</h3>
+        <button class="modal-close" data-close-modal="modal-edit" aria-label="Close">&times;</button>
+      </div>
+      <div class="modal-body">
+        <form id="edit-form" novalidate>
+          <input type="hidden" id="edit-id">
+          <div class="form-group">
+            <label for="edit-name">Group / Lab Name <span class="required">*</span></label>
+            <input type="text" id="edit-name" required>
+          </div>
+          <div class="form-group">
+            <label for="edit-keywords">Keywords <span class="hint">(comma-separated)</span></label>
+            <input type="text" id="edit-keywords">
+          </div>
+          <div class="form-group">
+            <label for="edit-summary">Summary</label>
+            <textarea id="edit-summary" rows="4"></textarea>
+          </div>
+          <div class="form-group">
+            <label>Links</label>
+            <div id="edit-links-container">
+              <div class="link-row">
+                <input type="text" name="link-label" placeholder="Label">
+                <input type="url" name="link-url" placeholder="https://...">
+              </div>
+            </div>
+            <button type="button" id="btn-edit-add-link" class="btn btn-text btn-sm">+ Add another link</button>
+          </div>
+          <div class="form-group">
+            <label for="edit-photo-url">Photo URL</label>
+            <input type="url" id="edit-photo-url" placeholder="https://example.com/photo.jpg">
+            <div id="edit-photo-current" class="photo-preview hidden">
+              <img id="edit-photo-img" alt="Current photo">
+            </div>
+          </div>
+          <div id="edit-message" class="form-message hidden" role="alert"></div>
+          <button type="submit" class="btn btn-primary btn-full">Save Changes</button>
+        </form>
+      </div>
+    </div>
+  </div>
+
+  <!-- ========== SUBMISSION DETAIL MODAL (for admin review) ========== -->
+  <div id="modal-submission" class="modal-overlay hidden" role="dialog" aria-modal="true" aria-label="Review Submission">
+    <div class="modal">
+      <div class="modal-header">
+        <h3>Review Submission</h3>
+        <button class="modal-close" data-close-modal="modal-submission" aria-label="Close">&times;</button>
+      </div>
+      <div class="modal-body">
+        <div id="submission-detail"></div>
+        <div class="submission-actions">
+          <button id="btn-approve" class="btn btn-success">Approve</button>
+          <button id="btn-reject" class="btn btn-danger">Reject</button>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- ========== SCRIPTS ========== -->
+  <script type="module" src="js/app.js"></script>
+</body>
+</html>
