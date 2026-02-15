@@ -57,6 +57,7 @@ function buildKeywordFilters() {
     btn.addEventListener('click', () => toggleKeyword(kw, btn));
     keywordFilters.appendChild(btn);
   });
+  keywordFilters.classList.toggle('hidden', searchText.length === 0 && !activeKeyword);
 }
 
 function toggleKeyword(kw, btn) {
@@ -79,6 +80,7 @@ function toggleKeyword(kw, btn) {
 
 export function filterGroups() {
   searchText = searchInput.value.trim().toLowerCase();
+  keywordFilters.classList.toggle('hidden', searchText.length === 0 && !activeKeyword);
   renderGroups();
 }
 
