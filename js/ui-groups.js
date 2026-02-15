@@ -5,7 +5,20 @@ let allGroups = [];
 let activeKeyword = null;
 let searchText = '';
 
-const groupsGrid = document.getElementById('groups-grid');
+const SUBFIELDS = ['computational', 'systems', 'human'];
+
+// Section refs
+const sections = {};
+SUBFIELDS.forEach(sf => {
+  const section = document.querySelector(`.subfield-section[data-subfield="${sf}"]`);
+  sections[sf] = {
+    el: section,
+    grid: section.querySelector('.groups-grid'),
+    count: section.querySelector('.subfield-count'),
+    header: section.querySelector('.subfield-header')
+  };
+});
+
 const groupsLoading = document.getElementById('groups-loading');
 const groupsEmpty = document.getElementById('groups-empty');
 const searchInput = document.getElementById('search-input');
@@ -14,7 +27,7 @@ const keywordFilters = document.getElementById('keyword-filters');
 export async function loadGroups() {
   groupsLoading.classList.remove('hidden');
   groupsEmpty.classList.add('hidden');
-  groupsGrid.innerHTML = '';
+  SUBFIELDS.forEach(sf => { sections[sf].grid.innerHTML = ''; });
 
   try {
     allGroups = await fetchGroups();
@@ -88,18 +101,35 @@ function renderGroups() {
     return true;
   });
 
-  groupsGrid.innerHTML = '';
-
-  if (filtered.length === 0) {
-    groupsEmpty.classList.remove('hidden');
-    return;
-  }
-
-  groupsEmpty.classList.add('hidden');
-
+  // Partition by subfield (default to "computational" if missing)
+  const bySubfield = { computational: [], systems: [], human: [] };
   filtered.forEach(g => {
-    groupsGrid.appendChild(createCard(g));
+    const sf = bySubfield[g.subfield] ? g.subfield : 'computational';
+    bySubfield[sf].push(g);
   });
+
+  let totalVisible = 0;
+
+  SUBFIELDS.forEach(sf => {
+    const { grid, count, el } = sections[sf];
+    grid.innerHTML = '';
+    const groups = bySubfield[sf];
+    count.textContent = groups.length;
+
+    if (groups.length === 0) {
+      el.classList.add('section-hidden');
+    } else {
+      el.classList.remove('section-hidden');
+      groups.forEach(g => grid.appendChild(createCard(g)));
+      totalVisible += groups.length;
+    }
+  });
+
+  if (totalVisible === 0) {
+    groupsEmpty.classList.remove('hidden');
+  } else {
+    groupsEmpty.classList.add('hidden');
+  }
 }
 
 function createCard(group) {
@@ -116,10 +146,15 @@ function createCard(group) {
     .map(l => `<a href="${escapeHTML(l.url)}" class="card-link" target="_blank" rel="noopener noreferrer">${escapeHTML(l.label)}</a>`)
     .join('');
 
+  const instituteHTML = group.institute
+    ? `<div class="card-institute">${escapeHTML(group.institute)}</div>`
+    : '';
+
   card.innerHTML = `
     <img class="card-photo" src="${escapeHTML(photoSrc)}" alt="${escapeHTML(group.name)}" loading="lazy">
     <div class="card-body">
       <h3 class="card-name">${escapeHTML(group.name)}</h3>
+      ${instituteHTML}
       <div class="card-keywords">${keywordHTML}</div>
       <p class="card-summary">${escapeHTML(group.summary || '')}</p>
       <div class="card-links">${linksHTML}</div>
@@ -150,4 +185,14 @@ function escapeHTML(str) {
 
 export function initSearch() {
   searchInput.addEventListener('input', filterGroups);
+}
+
+export function initSections() {
+  SUBFIELDS.forEach(sf => {
+    sections[sf].header.addEventListener('click', () => {
+      const section = sections[sf].el;
+      const isCollapsed = section.classList.toggle('collapsed');
+      sections[sf].header.setAttribute('aria-expanded', !isCollapsed);
+    });
+  });
 }

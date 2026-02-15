@@ -1,10 +1,13 @@
 import {
   fetchPendingSubmissions, approveSubmission, rejectSubmission,
   fetchGroups, updateGroup, deleteGroup,
-  fetchAdmins, removeAdmin
+  fetchAdmins, removeAdmin,
+  fetchApprovedInstitutes, fetchPendingInstitutes,
+  approveInstitute, rejectInstitute
 } from './db.js';
 import { getCurrentUser, createAdminUser } from './auth.js';
 import { loadGroups } from './ui-groups.js';
+import { loadInstituteOptions } from './ui-form.js';
 
 // DOM refs
 const pendingList = document.getElementById('pending-list');
@@ -26,6 +29,9 @@ const reviewPhotoURL = document.getElementById('review-photo-url');
 const reviewMeta = document.getElementById('review-meta');
 const btnApprove = document.getElementById('btn-approve');
 const btnReject = document.getElementById('btn-reject');
+const reviewSubfield = document.getElementById('review-subfield');
+const reviewInstituteDisplay = document.getElementById('review-institute-display');
+const reviewInstituteWarning = document.getElementById('review-institute-warning');
 
 // Edit modal
 const modalEdit = document.getElementById('modal-edit');
@@ -40,6 +46,8 @@ const editPhotoURL = document.getElementById('edit-photo-url');
 const editPhotoCurrentDiv = document.getElementById('edit-photo-current');
 const editPhotoImg = document.getElementById('edit-photo-img');
 const editMessage = document.getElementById('edit-message');
+const editSubfield = document.getElementById('edit-subfield');
+const editInstituteDisplay = document.getElementById('edit-institute-display');
 
 // Add admin
 const newAdminEmail = document.getElementById('new-admin-email');
@@ -47,7 +55,16 @@ const newAdminPassword = document.getElementById('new-admin-password');
 const btnAddAdmin = document.getElementById('btn-add-admin');
 const adminAddMessage = document.getElementById('admin-add-message');
 
+// Institutes tab
+const institutesPendingList = document.getElementById('institutes-pending-list');
+const institutesPendingEmpty = document.getElementById('institutes-pending-empty');
+const institutesApprovedList = document.getElementById('institutes-approved-list');
+const institutesApprovedEmpty = document.getElementById('institutes-approved-empty');
+
 let currentSubmission = null;
+
+// Cache for institute status lookups
+let approvedInstituteNames = new Set();
 
 // ========== TABS ==========
 
@@ -107,14 +124,39 @@ export async function loadPending() {
   }
 }
 
-function showSubmissionDetail(sub) {
+async function showSubmissionDetail(sub) {
   currentSubmission = sub;
+
+  // Refresh approved institutes cache
+  try {
+    const approved = await fetchApprovedInstitutes();
+    approvedInstituteNames = new Set(approved.map(i => i.name));
+  } catch (err) {
+    console.error('Error fetching approved institutes:', err);
+  }
 
   // Populate editable fields
   reviewName.value = sub.name || '';
   reviewKeywords.value = (sub.keywords || []).join(', ');
   reviewSummary.value = sub.summary || '';
   reviewPhotoURL.value = sub.photoURL || '';
+
+  // Subfield
+  reviewSubfield.value = sub.subfield || 'computational';
+
+  // Institute display + warning
+  const instName = sub.institute || '';
+  reviewInstituteDisplay.textContent = instName || '(none)';
+  const isPending = instName && !approvedInstituteNames.has(instName);
+  if (isPending) {
+    reviewInstituteWarning.classList.remove('hidden');
+    btnApprove.disabled = true;
+    btnApprove.title = 'Institute must be approved first';
+  } else {
+    reviewInstituteWarning.classList.add('hidden');
+    btnApprove.disabled = false;
+    btnApprove.title = '';
+  }
 
   // Populate links
   reviewLinksContainer.innerHTML = '';
@@ -150,6 +192,7 @@ function getReviewFormData() {
   const keywords = reviewKeywords.value.split(',').map(k => k.trim()).filter(Boolean);
   const summary = reviewSummary.value.trim();
   const photoURL = reviewPhotoURL.value.trim();
+  const subfield = reviewSubfield.value;
 
   const linkRows = reviewLinksContainer.querySelectorAll('.link-row');
   const links = [];
@@ -159,7 +202,10 @@ function getReviewFormData() {
     if (l && u) links.push({ label: l, url: u });
   });
 
-  return { name, keywords, summary, links, photoURL };
+  // Institute comes from original submission (read-only in review)
+  const institute = currentSubmission?.institute || '';
+
+  return { name, keywords, summary, links, photoURL, subfield, institute };
 }
 
 export function initSubmissionActions() {
@@ -219,9 +265,10 @@ export async function loadManageGroups() {
     groups.forEach(g => {
       const item = document.createElement('div');
       item.className = 'admin-item';
+      const subfieldLabel = g.subfield ? ` [${g.subfield}]` : '';
       item.innerHTML = `
         <div class="admin-item-info">
-          <div class="admin-item-name">${escapeHTML(g.name)}</div>
+          <div class="admin-item-name">${escapeHTML(g.name)}${escapeHTML(subfieldLabel)}</div>
           <div class="admin-item-meta">${(g.keywords || []).join(', ')}</div>
         </div>
         <div class="admin-item-actions">
@@ -245,6 +292,12 @@ function showEditModal(group) {
   editName.value = group.name || '';
   editKeywords.value = (group.keywords || []).join(', ');
   editSummary.value = group.summary || '';
+
+  // Subfield
+  editSubfield.value = group.subfield || 'computational';
+
+  // Institute (read-only)
+  editInstituteDisplay.textContent = group.institute || '(none)';
 
   // Populate links
   editLinksContainer.innerHTML = '';
@@ -298,6 +351,7 @@ export function initEditForm() {
 
     const keywords = editKeywords.value.split(',').map(k => k.trim()).filter(Boolean);
     const summary = editSummary.value.trim();
+    const subfield = editSubfield.value;
 
     const linkRows = editLinksContainer.querySelectorAll('.link-row');
     const links = [];
@@ -308,7 +362,7 @@ export function initEditForm() {
     });
 
     const photoURL = editPhotoURL.value.trim();
-    const updateData = { name, keywords, summary, links, photoURL };
+    const updateData = { name, keywords, summary, links, photoURL, subfield };
 
     const submitBtn = editForm.querySelector('button[type="submit"]');
     submitBtn.disabled = true;
@@ -412,6 +466,91 @@ export function initAddAdmin() {
       btnAddAdmin.disabled = false;
     }
   });
+}
+
+// ========== INSTITUTES TAB ==========
+
+export async function loadPendingInstitutes() {
+  institutesPendingList.innerHTML = '';
+  institutesPendingEmpty.classList.add('hidden');
+
+  try {
+    const pending = await fetchPendingInstitutes();
+
+    if (pending.length === 0) {
+      institutesPendingEmpty.classList.remove('hidden');
+      return;
+    }
+
+    pending.forEach(inst => {
+      const item = document.createElement('div');
+      item.className = 'admin-item';
+      item.innerHTML = `
+        <div class="admin-item-info">
+          <div class="admin-item-name">${escapeHTML(inst.name)}</div>
+          <div class="admin-item-meta">Proposed by: ${escapeHTML(inst.proposedBy || 'unknown')}</div>
+        </div>
+        <div class="admin-item-actions">
+          <button class="btn btn-success btn-sm btn-approve-inst" aria-label="Approve ${escapeHTML(inst.name)}">Approve</button>
+          <button class="btn btn-danger btn-sm btn-reject-inst" aria-label="Reject ${escapeHTML(inst.name)}">Reject</button>
+        </div>
+      `;
+
+      item.querySelector('.btn-approve-inst').addEventListener('click', async () => {
+        try {
+          await approveInstitute(inst.id);
+          await loadPendingInstitutes();
+          await loadApprovedInstitutes();
+          await loadInstituteOptions();
+        } catch (err) {
+          console.error('Approve institute error:', err);
+          alert('Error approving institute.');
+        }
+      });
+
+      item.querySelector('.btn-reject-inst').addEventListener('click', async () => {
+        if (!confirm(`Reject and delete institute "${inst.name}"?`)) return;
+        try {
+          await rejectInstitute(inst.id);
+          await loadPendingInstitutes();
+        } catch (err) {
+          console.error('Reject institute error:', err);
+          alert('Error rejecting institute.');
+        }
+      });
+
+      institutesPendingList.appendChild(item);
+    });
+  } catch (err) {
+    console.error('Error loading pending institutes:', err);
+  }
+}
+
+export async function loadApprovedInstitutes() {
+  institutesApprovedList.innerHTML = '';
+  institutesApprovedEmpty.classList.add('hidden');
+
+  try {
+    const approved = await fetchApprovedInstitutes();
+
+    if (approved.length === 0) {
+      institutesApprovedEmpty.classList.remove('hidden');
+      return;
+    }
+
+    approved.forEach(inst => {
+      const item = document.createElement('div');
+      item.className = 'admin-item';
+      item.innerHTML = `
+        <div class="admin-item-info">
+          <div class="admin-item-name">${escapeHTML(inst.name)}</div>
+        </div>
+      `;
+      institutesApprovedList.appendChild(item);
+    });
+  } catch (err) {
+    console.error('Error loading approved institutes:', err);
+  }
 }
 
 // ========== HELPERS ==========

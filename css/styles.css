@@ -283,6 +283,139 @@ img {
   gap: 1.5rem;
 }
 
+/* ========== SUBFIELD SECTIONS ========== */
+.subfield-section {
+  margin-bottom: 1rem;
+}
+
+.subfield-section:last-child {
+  margin-bottom: 0;
+}
+
+.subfield-section.section-hidden {
+  display: none;
+}
+
+.subfield-header {
+  display: flex;
+  align-items: center;
+  gap: 0.75rem;
+  width: 100%;
+  background: none;
+  border: none;
+  border-bottom: 2px solid var(--color-border);
+  padding: 0.75rem 0.5rem;
+  cursor: pointer;
+  font-family: var(--font);
+  transition: background 0.2s;
+  border-radius: var(--radius-sm) var(--radius-sm) 0 0;
+}
+
+.subfield-header:hover {
+  background: var(--color-primary-light);
+}
+
+.subfield-header h2 {
+  font-size: 1.2rem;
+  font-weight: 600;
+  color: var(--color-text);
+  margin: 0;
+}
+
+.subfield-count {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  min-width: 1.5rem;
+  height: 1.5rem;
+  padding: 0 0.4rem;
+  border-radius: 999px;
+  background: var(--color-primary-light);
+  color: var(--color-primary-dark);
+  font-size: 0.75rem;
+  font-weight: 600;
+}
+
+.subfield-arrow {
+  margin-left: auto;
+  color: var(--color-text-secondary);
+  transition: transform 0.2s;
+}
+
+.subfield-section.collapsed .subfield-arrow {
+  transform: rotate(-90deg);
+}
+
+.subfield-section.collapsed .subfield-content {
+  display: none;
+}
+
+.subfield-content {
+  padding-top: 1.5rem;
+}
+
+/* ========== INSTITUTE PICKER ========== */
+.institute-picker {
+  display: flex;
+  flex-direction: column;
+  gap: 0.5rem;
+}
+
+.institute-new-input.hidden {
+  display: none;
+}
+
+.institute-display {
+  padding: 0.65rem 0.85rem;
+  background: var(--color-bg);
+  border: 1.5px solid var(--color-border);
+  border-radius: var(--radius-sm);
+  font-size: 0.9rem;
+  color: var(--color-text-secondary);
+  min-height: 2.4rem;
+}
+
+.institute-warning {
+  padding: 0.75rem 1rem;
+  border-radius: var(--radius-sm);
+  font-size: 0.85rem;
+  background: #FEF3C7;
+  color: #92400E;
+  border: 1px solid #F59E0B;
+  margin-bottom: 1rem;
+}
+
+.institutes-approved-section {
+  margin-top: 1.5rem;
+  padding-top: 1.25rem;
+  border-top: 1px solid var(--color-border);
+}
+
+.institutes-approved-section h4 {
+  font-size: 0.95rem;
+  margin-bottom: 0.75rem;
+}
+
+/* ========== FORM SELECT ========== */
+.form-group select {
+  width: 100%;
+  padding: 0.65rem 0.85rem;
+  border: 1.5px solid var(--color-border);
+  border-radius: var(--radius-sm);
+  font-family: var(--font);
+  font-size: 0.9rem;
+  transition: border-color 0.2s;
+  background: var(--color-surface);
+  color: var(--color-text);
+  cursor: pointer;
+}
+
+.form-group select:focus {
+  outline: none;
+  border-color: var(--color-primary);
+  box-shadow: 0 0 0 3px rgba(13, 115, 119, 0.1);
+}
+
 /* ========== GROUP CARD ========== */
 .group-card {
   background: var(--color-surface);
@@ -336,6 +469,13 @@ img {
   font-weight: 500;
   background: var(--color-primary-light);
   color: var(--color-primary-dark);
+}
+
+.card-institute {
+  font-size: 0.8rem;
+  color: var(--color-text-secondary);
+  margin-bottom: 0.5rem;
+  font-style: italic;
 }
 
 .card-summary {

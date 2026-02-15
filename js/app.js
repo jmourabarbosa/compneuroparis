@@ -1,10 +1,11 @@
-import { loadGroups, initSearch } from './ui-groups.js';
+import { loadGroups, initSearch, initSections } from './ui-groups.js';
 import { initForm, updateSubmissionAuthUI } from './ui-form.js';
 import { onAuthChange, login, logout, resetPassword, authReady } from './auth.js';
 import {
   initTabs, loadPending, loadManageGroups, loadAdmins,
   initSubmissionActions, initEditForm, initAddAdmin,
-  showEditModalForCreator
+  showEditModalForCreator,
+  loadPendingInstitutes, loadApprovedInstitutes
 } from './ui-admin.js';
 
 // ========== DOM REFS ==========
@@ -106,6 +107,8 @@ btnAdminPanel.addEventListener('click', () => {
   loadPending();
   loadManageGroups();
   loadAdmins();
+  loadPendingInstitutes();
+  loadApprovedInstitutes();
 });
 
 document.getElementById('btn-login-forgot').addEventListener('click', async () => {
@@ -170,6 +173,7 @@ document.addEventListener('creator-edit-group', (e) => {
 // ========== INIT ==========
 // Modules are deferred, so DOM is ready when this runs
 initSearch();
+initSections();
 initForm();
 initTabs();
 initSubmissionActions();

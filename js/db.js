@@ -68,6 +68,8 @@ export async function approveSubmission(submissionId, adminUid, overrideData = n
     summary: src.summary || '',
     links: src.links || [],
     photoURL: src.photoURL || '',
+    subfield: src.subfield || data.subfield || 'computational',
+    institute: src.institute || data.institute || '',
     ...(data.creatorUid ? { creatorUid: data.creatorUid } : {})
   });
 
@@ -91,6 +93,48 @@ export async function rejectSubmission(submissionId, adminUid) {
     reviewedBy: adminUid,
     reviewedAt: serverTimestamp()
   });
+}
+
+// ========== INSTITUTES ==========
+
+export async function fetchApprovedInstitutes() {
+  const q = query(
+    collection(db, 'institutes'),
+    where('status', '==', 'approved'),
+    orderBy('name')
+  );
+  const snapshot = await getDocs(q);
+  return snapshot.docs.map(d => ({ id: d.id, ...d.data() }));
+}
+
+export async function fetchPendingInstitutes() {
+  const q = query(
+    collection(db, 'institutes'),
+    where('status', '==', 'pending'),
+    orderBy('name')
+  );
+  const snapshot = await getDocs(q);
+  return snapshot.docs.map(d => ({ id: d.id, ...d.data() }));
+}
+
+export async function createInstitute(name, proposedByUid) {
+  const docRef = await addDoc(collection(db, 'institutes'), {
+    name,
+    status: 'pending',
+    proposedBy: proposedByUid,
+    createdAt: serverTimestamp()
+  });
+  return docRef.id;
+}
+
+export async function approveInstitute(id) {
+  await updateDoc(doc(db, 'institutes', id), {
+    status: 'approved'
+  });
+}
+
+export async function rejectInstitute(id) {
+  await deleteDoc(doc(db, 'institutes', id));
 }
 
 // ========== ADMINS ==========

@@ -23,6 +23,13 @@ service cloud.firestore {
       allow read, update, delete: if isAdmin();
     }
 
+    // Institutes: public read, authenticated create, admin update/delete
+    match /institutes/{instId} {
+      allow read: if true;
+      allow create: if request.auth != null;
+      allow update, delete: if isAdmin();
+    }
+
     // Admins: users can check their own admin status, admins can read all and write
     match /admins/{uid} {
       allow read: if isAdmin() || (request.auth != null && request.auth.uid == uid);

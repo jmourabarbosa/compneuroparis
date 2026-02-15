@@ -3,10 +3,10 @@
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>Computational Neuroscience in Paris</title>
-  <meta name="description" content="A directory of computational neuroscience research groups in the Paris area.">
-  <meta property="og:title" content="Computational Neuroscience in Paris">
-  <meta property="og:description" content="Discover computational neuroscience research groups in Paris.">
+  <title>Neuroscience in Paris</title>
+  <meta name="description" content="A directory of neuroscience research groups in the Paris area.">
+  <meta property="og:title" content="Neuroscience in Paris">
+  <meta property="og:description" content="Discover neuroscience research groups in Paris.">
   <meta property="og:type" content="website">
   <meta property="og:url" content="https://jmourabarbosa.github.io/compneuroparis/">
   <link rel="icon" href="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'><text y='.9em' font-size='90'>🧠</text></svg>">
@@ -21,7 +21,7 @@
   <header class="site-header">
     <div class="header-inner">
       <div class="header-title">
-        <h1>Computational Neuroscience in Paris</h1>
+        <h1>Neuroscience in Paris</h1>
         <p class="subtitle">Research groups in the Paris area</p>
       </div>
       <div class="header-actions">
@@ -50,7 +50,7 @@
     </div>
   </section>
 
-  <!-- ========== GROUPS GRID ========== -->
+  <!-- ========== GROUPS SECTIONS ========== -->
   <main class="groups-section" aria-label="Research groups">
     <div id="groups-loading" class="loading-state">
       <div class="spinner" aria-label="Loading"></div>
@@ -59,7 +59,39 @@
     <div id="groups-empty" class="empty-state hidden">
       <p>No groups found. Try adjusting your search or filters.</p>
     </div>
-    <div id="groups-grid" class="groups-grid"></div>
+
+    <div class="subfield-section" data-subfield="computational">
+      <button class="subfield-header" aria-expanded="true">
+        <h2>Computational</h2>
+        <span class="subfield-count">0</span>
+        <svg class="subfield-arrow" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><polyline points="6 9 12 15 18 9"/></svg>
+      </button>
+      <div class="subfield-content">
+        <div class="groups-grid"></div>
+      </div>
+    </div>
+
+    <div class="subfield-section" data-subfield="systems">
+      <button class="subfield-header" aria-expanded="true">
+        <h2>Systems</h2>
+        <span class="subfield-count">0</span>
+        <svg class="subfield-arrow" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><polyline points="6 9 12 15 18 9"/></svg>
+      </button>
+      <div class="subfield-content">
+        <div class="groups-grid"></div>
+      </div>
+    </div>
+
+    <div class="subfield-section" data-subfield="human">
+      <button class="subfield-header" aria-expanded="true">
+        <h2>Human</h2>
+        <span class="subfield-count">0</span>
+        <svg class="subfield-arrow" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><polyline points="6 9 12 15 18 9"/></svg>
+      </button>
+      <div class="subfield-content">
+        <div class="groups-grid"></div>
+      </div>
+    </div>
   </main>
 
   <!-- ========== ADD YOUR GROUP ========== -->
@@ -68,7 +100,7 @@
       <button id="btn-show-form" class="btn btn-primary btn-add-group">Add New Research Group</button>
       <div id="submission-form-wrapper" class="hidden">
         <h2>Add Your Group</h2>
-        <p class="submit-description">Know a computational neuroscience group in Paris? Create an account and submit it for review.</p>
+        <p class="submit-description">Know a neuroscience group in Paris? Create an account and submit it for review.</p>
 
         <!-- Submission Auth Section -->
         <div id="submission-auth" class="submission-auth">
@@ -100,6 +132,27 @@
         <div class="form-group">
           <label for="sub-name">Group / Lab Name <span class="required">*</span></label>
           <input type="text" id="sub-name" name="name" required>
+        </div>
+        <div class="form-row">
+          <div class="form-group">
+            <label for="sub-subfield">Subfield <span class="required">*</span></label>
+            <select id="sub-subfield" name="subfield" required>
+              <option value="" disabled selected>Select subfield...</option>
+              <option value="computational">Computational</option>
+              <option value="systems">Systems</option>
+              <option value="human">Human</option>
+            </select>
+          </div>
+          <div class="form-group">
+            <label for="sub-institute">Institute <span class="required">*</span></label>
+            <div class="institute-picker">
+              <select id="sub-institute">
+                <option value="" disabled selected>Select institute...</option>
+                <option value="__new__">Propose new...</option>
+              </select>
+              <input type="text" id="sub-institute-new-name" class="institute-new-input hidden" placeholder="New institute name">
+            </div>
+          </div>
         </div>
         <div class="form-group">
           <label for="sub-keywords">Keywords <span class="hint">(comma-separated)</span> <span class="required">*</span></label>
@@ -141,7 +194,7 @@
   <!-- ========== FOOTER ========== -->
   <footer class="site-footer">
     <div class="footer-inner">
-      <p>&copy; 2026 Computational Neuroscience in Paris</p>
+      <p>&copy; 2026 Neuroscience in Paris</p>
       <a href="https://github.com/jmourabarbosa/compneuroparis" target="_blank" rel="noopener noreferrer" aria-label="View source on GitHub">
         <svg width="20" height="20" viewBox="0 0 24 24" fill="currentColor" aria-hidden="true"><path d="M12 0C5.37 0 0 5.37 0 12c0 5.31 3.435 9.795 8.205 11.385.6.105.825-.255.825-.57 0-.285-.015-1.23-.015-2.235-3.015.555-3.795-.735-4.035-1.41-.135-.345-.72-1.41-1.23-1.695-.42-.225-1.02-.78-.015-.795.945-.015 1.62.87 1.845 1.23 1.08 1.815 2.805 1.305 3.495.99.105-.78.42-1.305.765-1.605-2.67-.3-5.46-1.335-5.46-5.925 0-1.305.465-2.385 1.23-3.225-.12-.3-.54-1.53.12-3.18 0 0 1.005-.315 3.3 1.23.96-.27 1.98-.405 3-.405s2.04.135 3 .405c2.295-1.56 3.3-1.23 3.3-1.23.66 1.65.24 2.88.12 3.18.765.84 1.23 1.905 1.23 3.225 0 4.605-2.805 5.625-5.475 5.925.435.375.81 1.095.81 2.22 0 1.605-.015 2.895-.015 3.3 0 .315.225.69.825.57A12.02 12.02 0 0024 12c0-6.63-5.37-12-12-12z"/></svg>
       </a>
@@ -185,6 +238,7 @@
           <button class="tab active" data-tab="tab-pending" role="tab" aria-selected="true">Pending</button>
           <button class="tab" data-tab="tab-manage" role="tab" aria-selected="false">Manage Groups</button>
           <button class="tab" data-tab="tab-admins" role="tab" aria-selected="false">Admins</button>
+          <button class="tab" data-tab="tab-institutes" role="tab" aria-selected="false">Institutes</button>
         </div>
 
         <!-- Pending Submissions Tab -->
@@ -226,6 +280,22 @@
             <button id="btn-add-admin" class="btn btn-primary btn-sm">Add Admin</button>
           </div>
         </div>
+
+        <!-- Institutes Tab -->
+        <div id="tab-institutes" class="tab-panel" role="tabpanel">
+          <h4>Pending Institutes</h4>
+          <div id="institutes-pending-empty" class="empty-state hidden">
+            <p>No pending institutes.</p>
+          </div>
+          <div id="institutes-pending-list" class="admin-list"></div>
+          <div class="institutes-approved-section">
+            <h4>Approved Institutes</h4>
+            <div id="institutes-approved-empty" class="empty-state hidden">
+              <p>No approved institutes yet.</p>
+            </div>
+            <div id="institutes-approved-list" class="admin-list"></div>
+          </div>
+        </div>
       </div>
     </div>
   </div>
@@ -243,6 +313,20 @@
           <div class="form-group">
             <label for="edit-name">Group / Lab Name <span class="required">*</span></label>
             <input type="text" id="edit-name" required>
+          </div>
+          <div class="form-row">
+            <div class="form-group">
+              <label for="edit-subfield">Subfield</label>
+              <select id="edit-subfield">
+                <option value="computational">Computational</option>
+                <option value="systems">Systems</option>
+                <option value="human">Human</option>
+              </select>
+            </div>
+            <div class="form-group">
+              <label>Institute</label>
+              <div id="edit-institute-display" class="institute-display"></div>
+            </div>
           </div>
           <div class="form-group">
             <label for="edit-keywords">Keywords <span class="hint">(comma-separated)</span></label>
@@ -287,6 +371,23 @@
         <div class="form-group">
           <label for="review-name">Group / Lab Name</label>
           <input type="text" id="review-name">
+        </div>
+        <div class="form-row">
+          <div class="form-group">
+            <label for="review-subfield">Subfield</label>
+            <select id="review-subfield">
+              <option value="computational">Computational</option>
+              <option value="systems">Systems</option>
+              <option value="human">Human</option>
+            </select>
+          </div>
+          <div class="form-group">
+            <label>Institute</label>
+            <div id="review-institute-display" class="institute-display"></div>
+          </div>
+        </div>
+        <div id="review-institute-warning" class="institute-warning hidden">
+          Institute is pending approval. You cannot approve this group until the institute is approved.
         </div>
         <div class="form-group">
           <label for="review-keywords">Keywords <span class="hint">(comma-separated)</span></label>

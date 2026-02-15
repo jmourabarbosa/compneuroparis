@@ -1,4 +1,4 @@
-import { createSubmission } from './db.js';
+import { createSubmission, fetchApprovedInstitutes, createInstitute } from './db.js';
 import { getCurrentUser, createAccount, login, logout, resetPassword } from './auth.js';
 
 const form = document.getElementById('submission-form');
@@ -7,6 +7,11 @@ const btnShowForm = document.getElementById('btn-show-form');
 const formMessage = document.getElementById('form-message');
 const linksContainer = document.getElementById('links-container');
 const btnAddLink = document.getElementById('btn-add-link');
+
+// Subfield & institute
+const subSubfield = document.getElementById('sub-subfield');
+const subInstitute = document.getElementById('sub-institute');
+const subInstituteNewName = document.getElementById('sub-institute-new-name');
 
 // Auth elements
 const subAuthForm = document.getElementById('submission-auth-form');
@@ -31,6 +36,17 @@ export function initForm() {
 
   form.addEventListener('submit', handleSubmit);
 
+  // Institute picker: show/hide new name input
+  subInstitute.addEventListener('change', () => {
+    if (subInstitute.value === '__new__') {
+      subInstituteNewName.classList.remove('hidden');
+      subInstituteNewName.focus();
+    } else {
+      subInstituteNewName.classList.add('hidden');
+      subInstituteNewName.value = '';
+    }
+  });
+
   // Auth buttons
   btnSubCreate.addEventListener('click', handleCreateAccount);
   btnSubLogin.addEventListener('click', handleLogin);
@@ -49,6 +65,44 @@ export function initForm() {
       showAuthMsg(err.message || 'Error sending reset email.', 'error');
     }
   });
+
+  // Load institute options on init
+  loadInstituteOptions();
+}
+
+export async function loadInstituteOptions() {
+  try {
+    const institutes = await fetchApprovedInstitutes();
+    // Preserve selected value if possible
+    const prev = subInstitute.value;
+    // Clear all but first (placeholder) and last (propose new)
+    subInstitute.innerHTML = '';
+    const placeholder = document.createElement('option');
+    placeholder.value = '';
+    placeholder.disabled = true;
+    placeholder.selected = true;
+    placeholder.textContent = 'Select institute...';
+    subInstitute.appendChild(placeholder);
+
+    institutes.forEach(inst => {
+      const opt = document.createElement('option');
+      opt.value = inst.name;
+      opt.textContent = inst.name;
+      subInstitute.appendChild(opt);
+    });
+
+    const newOpt = document.createElement('option');
+    newOpt.value = '__new__';
+    newOpt.textContent = 'Propose new...';
+    subInstitute.appendChild(newOpt);
+
+    // Restore previous selection if still available
+    if (prev && prev !== '__new__') {
+      subInstitute.value = prev;
+    }
+  } catch (err) {
+    console.error('Error loading institutes:', err);
+  }
 }
 
 export function updateSubmissionAuthUI(user) {
@@ -152,9 +206,22 @@ async function handleSubmit(e) {
   const summary = form.elements.summary.value.trim();
   const photoURL = form.elements.photoURL.value.trim();
   const submitterNote = form.elements.submitterNote.value.trim();
+  const subfield = subSubfield.value;
+  const instituteValue = subInstitute.value;
+  const instituteNewName = subInstituteNewName.value.trim();
 
   if (!name || !keywordsRaw || !summary) {
     showMessage(formMessage, 'Please fill in all required fields.', 'error');
+    return;
+  }
+
+  if (!subfield) {
+    showMessage(formMessage, 'Please select a subfield.', 'error');
+    return;
+  }
+
+  if (!instituteValue || (instituteValue === '__new__' && !instituteNewName)) {
+    showMessage(formMessage, 'Please select or propose an institute.', 'error');
     return;
   }
 
@@ -174,12 +241,21 @@ async function handleSubmit(e) {
   submitBtn.textContent = 'Submitting...';
 
   try {
+    // If proposing a new institute, create it first
+    let instituteName = instituteValue;
+    if (instituteValue === '__new__') {
+      await createInstitute(instituteNewName, user.uid);
+      instituteName = instituteNewName;
+    }
+
     await createSubmission({
       name,
       keywords,
       summary,
       links,
       photoURL,
+      subfield,
+      institute: instituteName,
       submitterEmail: user.email,
       submitterNote,
       creatorUid: user.uid
@@ -187,9 +263,13 @@ async function handleSubmit(e) {
 
     showMessage(formMessage, 'Thank you! Your submission is pending review.', 'success');
     form.reset();
+    subInstituteNewName.classList.add('hidden');
+    subInstituteNewName.value = '';
     // Reset links to single row
     linksContainer.innerHTML = '';
     addLinkRow(linksContainer);
+    // Refresh institute options in case a new one was proposed
+    loadInstituteOptions();
   } catch (err) {
     console.error('Submission error:', err);
     showMessage(formMessage, 'Something went wrong. Please try again.', 'error');
