@@ -72,9 +72,8 @@ img {
 .site-header {
   background: url('../assets/banner.png') center/cover no-repeat;
   color: var(--color-text);
-  padding: 2.5rem 0;
-  position: sticky;
-  top: 0;
+  padding: 6rem 0;
+  position: relative;
   z-index: 100;
   box-shadow: var(--shadow-md);
 }
