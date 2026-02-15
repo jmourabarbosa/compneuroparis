@@ -169,14 +169,17 @@ function renderGroups() {
     const groups = bySubfield[sf];
     count.textContent = groups.length;
 
-    // Always show sections
-    el.classList.remove('section-hidden');
-
-    if (groups.length === 0) {
-      grid.innerHTML = '<p class="empty-state" style="padding:1rem">No PIs in this category.</p>';
+    if (isSearching && groups.length === 0) {
+      // Hide empty sections when searching
+      el.classList.add('section-hidden');
     } else {
-      groups.forEach(g => grid.appendChild(createCard(g)));
-      totalVisible += groups.length;
+      el.classList.remove('section-hidden');
+      if (groups.length === 0) {
+        grid.innerHTML = '<p class="empty-state" style="padding:1rem">No PIs in this category.</p>';
+      } else {
+        groups.forEach(g => grid.appendChild(createCard(g)));
+        totalVisible += groups.length;
+      }
     }
 
     // Auto-expand sections with results when searching
@@ -186,11 +189,8 @@ function renderGroups() {
     }
   });
 
-  if (totalVisible === 0) {
-    groupsEmpty.classList.remove('hidden');
-  } else {
-    groupsEmpty.classList.add('hidden');
-  }
+  // Hide "No PIs found" message when searching (sections handle their own visibility)
+  groupsEmpty.classList.add('hidden');
 }
 
 function createCard(group) {
@@ -488,8 +488,9 @@ export async function loadPublicInstitutes() {
 }
 
 function renderInstitutes() {
-  institutesSection.classList.remove('section-hidden');
   institutesPublicList.innerHTML = '';
+
+  const isSearching = !!searchText;
 
   const filtered = allInstitutes.filter(inst => {
     if (!searchText) return true;
@@ -503,6 +504,14 @@ function renderInstitutes() {
 
   institutesPublicCount.textContent = filtered.length;
 
+  if (isSearching && filtered.length === 0) {
+    // Hide institutes section when searching with no matches
+    institutesSection.classList.add('section-hidden');
+    return;
+  }
+
+  institutesSection.classList.remove('section-hidden');
+
   if (filtered.length === 0) {
     institutesPublicList.innerHTML = '<p class="empty-state" style="padding:1rem">No institutes yet.</p>';
     return;
@@ -513,7 +522,7 @@ function renderInstitutes() {
   });
 
   // Auto-expand institutes section when searching with results
-  if (searchText && filtered.length > 0) {
+  if (isSearching && filtered.length > 0) {
     institutesSection.classList.remove('collapsed');
     institutesSection.querySelector('.subfield-header').setAttribute('aria-expanded', 'true');
   }
@@ -531,11 +540,16 @@ function createInstituteCard(inst) {
   const summaryText = inst.summary || '';
   const truncated = summaryText.length > 120 ? summaryText.slice(0, 120) + '...' : summaryText;
 
+  const websiteHTML = inst.website
+    ? `<div class="card-links"><a href="${escapeHTML(inst.website)}" class="card-link" target="_blank" rel="noopener noreferrer">Website</a></div>`
+    : '';
+
   card.innerHTML = `
     <div class="card-body">
       <h3 class="card-name">${escapeHTML(inst.name)}</h3>
       ${keywordHTML ? `<div class="card-keywords">${keywordHTML}</div>` : ''}
       ${truncated ? `<p class="card-summary">${escapeHTML(truncated)}</p>` : ''}
+      ${websiteHTML}
     </div>
   `;
 
