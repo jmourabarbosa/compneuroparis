@@ -1,9 +1,10 @@
 import { loadGroups, initSearch } from './ui-groups.js';
-import { initForm } from './ui-form.js';
+import { initForm, updateSubmissionAuthUI } from './ui-form.js';
 import { onAuthChange, login, logout, authReady } from './auth.js';
 import {
   initTabs, loadPending, loadManageGroups, loadAdmins,
-  initSubmissionActions, initEditForm, initAddAdmin
+  initSubmissionActions, initEditForm, initAddAdmin,
+  showEditModalForCreator
 } from './ui-admin.js';
 
 // ========== DOM REFS ==========
@@ -16,6 +17,11 @@ const modalLogin = document.getElementById('modal-login');
 const loginForm = document.getElementById('login-form');
 const loginMessage = document.getElementById('login-message');
 const modalAdmin = document.getElementById('modal-admin');
+
+// Creator bar
+const creatorBar = document.getElementById('creator-bar');
+const creatorEmail = document.getElementById('creator-email');
+const btnCreatorLogout = document.getElementById('btn-creator-logout');
 
 // ========== MODAL HELPERS ==========
 function openModal(modal) {
@@ -87,6 +93,14 @@ btnLogout.addEventListener('click', async () => {
   }
 });
 
+btnCreatorLogout.addEventListener('click', async () => {
+  try {
+    await logout();
+  } catch (err) {
+    console.error('Logout error:', err);
+  }
+});
+
 btnAdminPanel.addEventListener('click', () => {
   openModal(modalAdmin);
   loadPending();
@@ -100,19 +114,43 @@ function showLoginMsg(text, type) {
   loginMessage.classList.remove('hidden');
 }
 
-// ========== AUTH STATE ==========
+// ========== AUTH STATE (3 states: admin, creator, anon) ==========
 onAuthChange((user, isAdmin) => {
+  // Update submission auth UI
+  updateSubmissionAuthUI(user);
+
   if (user && isAdmin) {
+    // Admin state
     btnAdminLogin.classList.add('hidden');
     adminBar.classList.remove('hidden');
+    creatorBar.classList.add('hidden');
     adminEmail.textContent = user.email;
+  } else if (user) {
+    // Creator state (logged in but not admin)
+    btnAdminLogin.classList.add('hidden');
+    adminBar.classList.add('hidden');
+    creatorBar.classList.remove('hidden');
+    creatorEmail.textContent = user.email;
+    // Close admin modals if open
+    closeModal(modalAdmin);
   } else {
+    // Anonymous state
     btnAdminLogin.classList.remove('hidden');
     adminBar.classList.add('hidden');
+    creatorBar.classList.add('hidden');
     adminEmail.textContent = '';
+    creatorEmail.textContent = '';
     // Close admin modals if open
     closeModal(modalAdmin);
   }
+
+  // Refresh groups to update edit buttons
+  loadGroups();
+});
+
+// ========== CREATOR EDIT EVENT ==========
+document.addEventListener('creator-edit-group', (e) => {
+  showEditModalForCreator(e.detail);
 });
 
 // ========== INIT ==========

@@ -20,11 +20,11 @@ export function getIsAdmin() {
 
 export async function login(email, password) {
   const cred = await signInWithEmailAndPassword(auth, email, password);
-  const admin = await isAdmin(cred.user.uid);
-  if (!admin) {
-    await signOut(auth);
-    throw new Error('You are not registered as an admin.');
-  }
+  return cred.user;
+}
+
+export async function createAccount(email, password) {
+  const cred = await createUserWithEmailAndPassword(auth, email, password);
   return cred.user;
 }
 

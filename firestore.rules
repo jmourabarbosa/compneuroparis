@@ -7,10 +7,14 @@ service cloud.firestore {
         && exists(/databases/$(database)/documents/admins/$(request.auth.uid));
     }
 
-    // Groups: public read, admin write
+    // Groups: public read, admin full write, creators can update own groups
     match /groups/{groupId} {
       allow read: if true;
-      allow create, update, delete: if isAdmin();
+      allow create, delete: if isAdmin();
+      allow update: if isAdmin()
+        || (request.auth != null
+            && resource.data.creatorUid == request.auth.uid
+            && request.resource.data.creatorUid == resource.data.creatorUid);
     }
 
     // Submissions: public create, admin read/write

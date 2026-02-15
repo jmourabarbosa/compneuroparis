@@ -1,4 +1,5 @@
 import { fetchGroups } from './db.js';
+import { getCurrentUser, getIsAdmin } from './auth.js';
 
 let allGroups = [];
 let activeKeyword = null;
@@ -124,6 +125,19 @@ function createCard(group) {
       <div class="card-links">${linksHTML}</div>
     </div>
   `;
+
+  // Show Edit button for creators on their own cards (not for admins — they use admin panel)
+  const user = getCurrentUser();
+  const isAdmin = getIsAdmin();
+  if (user && !isAdmin && group.creatorUid && group.creatorUid === user.uid) {
+    const editBtn = document.createElement('button');
+    editBtn.className = 'card-edit-btn';
+    editBtn.textContent = 'Edit';
+    editBtn.addEventListener('click', () => {
+      document.dispatchEvent(new CustomEvent('creator-edit-group', { detail: group }));
+    });
+    card.querySelector('.card-body').appendChild(editBtn);
+  }
 
   return card;
 }

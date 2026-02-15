@@ -53,20 +53,22 @@ export async function fetchPendingSubmissions() {
   return snapshot.docs.map(d => ({ id: d.id, ...d.data() }));
 }
 
-export async function approveSubmission(submissionId, adminUid) {
+export async function approveSubmission(submissionId, adminUid, overrideData = null) {
   const subDoc = doc(db, 'submissions', submissionId);
   const subSnap = await getDoc(subDoc);
   if (!subSnap.exists()) throw new Error('Submission not found');
 
   const data = subSnap.data();
+  const src = overrideData || data;
 
-  // Create group from submission
+  // Create group from submission (use overrideData if provided, always copy creatorUid)
   await createGroup({
-    name: data.name,
-    keywords: data.keywords || [],
-    summary: data.summary || '',
-    links: data.links || [],
-    photoURL: data.photoURL || ''
+    name: src.name,
+    keywords: src.keywords || [],
+    summary: src.summary || '',
+    links: src.links || [],
+    photoURL: src.photoURL || '',
+    ...(data.creatorUid ? { creatorUid: data.creatorUid } : {})
   });
 
   // Mark submission as approved
@@ -75,6 +77,12 @@ export async function approveSubmission(submissionId, adminUid) {
     reviewedBy: adminUid,
     reviewedAt: serverTimestamp()
   });
+}
+
+export async function fetchGroupsByCreator(uid) {
+  const q = query(collection(db, 'groups'), where('creatorUid', '==', uid));
+  const snapshot = await getDocs(q);
+  return snapshot.docs.map(d => ({ id: d.id, ...d.data() }));
 }
 
 export async function rejectSubmission(submissionId, adminUid) {

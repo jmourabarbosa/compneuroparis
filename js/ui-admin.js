@@ -15,9 +15,15 @@ const manageLoading = document.getElementById('manage-loading');
 const manageEmpty = document.getElementById('manage-empty');
 const adminsList = document.getElementById('admins-list');
 
-// Submission detail modal
+// Submission review modal (now editable)
 const modalSubmission = document.getElementById('modal-submission');
-const submissionDetail = document.getElementById('submission-detail');
+const reviewName = document.getElementById('review-name');
+const reviewKeywords = document.getElementById('review-keywords');
+const reviewSummary = document.getElementById('review-summary');
+const reviewLinksContainer = document.getElementById('review-links-container');
+const btnReviewAddLink = document.getElementById('btn-review-add-link');
+const reviewPhotoURL = document.getElementById('review-photo-url');
+const reviewMeta = document.getElementById('review-meta');
 const btnApprove = document.getElementById('btn-approve');
 const btnReject = document.getElementById('btn-reject');
 
@@ -104,30 +110,68 @@ export async function loadPending() {
 function showSubmissionDetail(sub) {
   currentSubmission = sub;
 
-  const linksHTML = (sub.links || [])
-    .map(l => `<a href="${escapeHTML(l.url)}" target="_blank">${escapeHTML(l.label)}</a>`)
-    .join(', ');
+  // Populate editable fields
+  reviewName.value = sub.name || '';
+  reviewKeywords.value = (sub.keywords || []).join(', ');
+  reviewSummary.value = sub.summary || '';
+  reviewPhotoURL.value = sub.photoURL || '';
 
-  submissionDetail.innerHTML = `
-    <div class="submission-detail-field"><strong>Name</strong> ${escapeHTML(sub.name)}</div>
-    <div class="submission-detail-field"><strong>Keywords</strong> ${(sub.keywords || []).map(k => escapeHTML(k)).join(', ')}</div>
-    <div class="submission-detail-field"><strong>Summary</strong> ${escapeHTML(sub.summary || '')}</div>
-    <div class="submission-detail-field"><strong>Links</strong> ${linksHTML || 'None'}</div>
-    ${sub.photoURL ? `<div class="submission-detail-field"><strong>Photo</strong> <img src="${escapeHTML(sub.photoURL)}" style="max-width:200px;border-radius:8px;margin-top:4px;"></div>` : ''}
-    ${sub.submitterEmail ? `<div class="submission-detail-field"><strong>Submitter Email</strong> ${escapeHTML(sub.submitterEmail)}</div>` : ''}
-    ${sub.submitterNote ? `<div class="submission-detail-field"><strong>Note</strong> ${escapeHTML(sub.submitterNote)}</div>` : ''}
-  `;
+  // Populate links
+  reviewLinksContainer.innerHTML = '';
+  const links = sub.links || [];
+  if (links.length === 0) {
+    addReviewLinkRow();
+  } else {
+    links.forEach(l => addReviewLinkRow(l.label, l.url));
+  }
+
+  // Read-only metadata
+  const metaParts = [];
+  if (sub.submitterEmail) metaParts.push(`<p><strong>Submitter:</strong> ${escapeHTML(sub.submitterEmail)}</p>`);
+  if (sub.submitterNote) metaParts.push(`<p><strong>Note:</strong> ${escapeHTML(sub.submitterNote)}</p>`);
+  if (sub.creatorUid) metaParts.push(`<p><strong>Creator UID:</strong> ${escapeHTML(sub.creatorUid)}</p>`);
+  reviewMeta.innerHTML = metaParts.join('');
 
   modalSubmission.classList.remove('hidden');
 }
 
+function addReviewLinkRow(label = '', url = '') {
+  const row = document.createElement('div');
+  row.className = 'link-row';
+  row.innerHTML = `
+    <input type="text" name="link-label" placeholder="Label" value="${escapeHTML(label)}">
+    <input type="url" name="link-url" placeholder="https://..." value="${escapeHTML(url)}">
+  `;
+  reviewLinksContainer.appendChild(row);
+}
+
+function getReviewFormData() {
+  const name = reviewName.value.trim();
+  const keywords = reviewKeywords.value.split(',').map(k => k.trim()).filter(Boolean);
+  const summary = reviewSummary.value.trim();
+  const photoURL = reviewPhotoURL.value.trim();
+
+  const linkRows = reviewLinksContainer.querySelectorAll('.link-row');
+  const links = [];
+  linkRows.forEach(row => {
+    const l = row.querySelector('[name="link-label"]').value.trim();
+    const u = row.querySelector('[name="link-url"]').value.trim();
+    if (l && u) links.push({ label: l, url: u });
+  });
+
+  return { name, keywords, summary, links, photoURL };
+}
+
 export function initSubmissionActions() {
+  btnReviewAddLink.addEventListener('click', () => addReviewLinkRow());
+
   btnApprove.addEventListener('click', async () => {
     if (!currentSubmission) return;
     btnApprove.disabled = true;
     try {
       const user = getCurrentUser();
-      await approveSubmission(currentSubmission.id, user.uid);
+      const overrideData = getReviewFormData();
+      await approveSubmission(currentSubmission.id, user.uid, overrideData);
       modalSubmission.classList.add('hidden');
       await loadPending();
       await loadGroups();
@@ -222,6 +266,10 @@ function showEditModal(group) {
 
   editMessage.classList.add('hidden');
   modalEdit.classList.remove('hidden');
+}
+
+export function showEditModalForCreator(group) {
+  showEditModal(group);
 }
 
 function addEditLinkRow(label = '', url = '') {

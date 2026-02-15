@@ -25,11 +25,15 @@
         <p class="subtitle">Research groups in the Paris area</p>
       </div>
       <div class="header-actions">
-        <button id="btn-admin-login" class="btn btn-outline" aria-label="Admin Login">Admin Login</button>
+        <button id="btn-admin-login" class="btn btn-outline" aria-label="Login">Login</button>
         <div id="admin-bar" class="admin-bar hidden">
           <span id="admin-email" class="admin-email"></span>
           <button id="btn-admin-panel" class="btn btn-primary btn-sm">Admin Panel</button>
           <button id="btn-logout" class="btn btn-outline btn-sm">Logout</button>
+        </div>
+        <div id="creator-bar" class="admin-bar hidden">
+          <span id="creator-email" class="admin-email"></span>
+          <button id="btn-creator-logout" class="btn btn-outline btn-sm">Logout</button>
         </div>
       </div>
     </div>
@@ -64,7 +68,33 @@
       <button id="btn-show-form" class="btn btn-primary btn-add-group">Add New Research Group</button>
       <div id="submission-form-wrapper" class="hidden">
         <h2>Add Your Group</h2>
-        <p class="submit-description">Know a computational neuroscience group in Paris? Submit it for review.</p>
+        <p class="submit-description">Know a computational neuroscience group in Paris? Create an account and submit it for review.</p>
+
+        <!-- Submission Auth Section -->
+        <div id="submission-auth" class="submission-auth">
+          <div id="submission-auth-form">
+            <div class="form-row">
+              <div class="form-group">
+                <label for="sub-auth-email">Email <span class="required">*</span></label>
+                <input type="email" id="sub-auth-email" placeholder="you@example.com" required>
+              </div>
+              <div class="form-group">
+                <label for="sub-auth-password">Password <span class="required">*</span></label>
+                <input type="password" id="sub-auth-password" placeholder="Min 6 characters" required>
+              </div>
+            </div>
+            <div id="sub-auth-message" class="form-message hidden" role="alert"></div>
+            <div class="auth-toggle">
+              <button type="button" id="btn-sub-create" class="btn btn-primary btn-sm">Create Account</button>
+              <button type="button" id="btn-sub-login" class="btn btn-outline-dark btn-sm">I have an account</button>
+            </div>
+          </div>
+          <div id="submission-auth-status" class="hidden">
+            <p>Submitting as <strong id="sub-auth-user-email"></strong></p>
+            <button type="button" id="btn-sub-logout" class="btn btn-text btn-sm">Sign out</button>
+          </div>
+        </div>
+
       <form id="submission-form" class="submission-form" novalidate>
         <div class="form-group">
           <label for="sub-name">Group / Lab Name <span class="required">*</span></label>
@@ -95,15 +125,9 @@
           <input type="url" id="sub-photo-url" name="photoURL" placeholder="https://example.com/photo.jpg">
         </div>
 
-        <div class="form-row">
-          <div class="form-group">
-            <label for="sub-email">Your Email <span class="hint">(optional, not displayed)</span></label>
-            <input type="email" id="sub-email" name="submitterEmail">
-          </div>
-          <div class="form-group">
-            <label for="sub-note">Note for Admins <span class="hint">(optional)</span></label>
-            <input type="text" id="sub-note" name="submitterNote" placeholder="Any context for the admins">
-          </div>
+        <div class="form-group">
+          <label for="sub-note">Note for Admins <span class="hint">(optional)</span></label>
+          <input type="text" id="sub-note" name="submitterNote" placeholder="Any context for the admins">
         </div>
 
         <div id="form-message" class="form-message hidden" role="alert"></div>
@@ -124,10 +148,10 @@
   </footer>
 
   <!-- ========== LOGIN MODAL ========== -->
-  <div id="modal-login" class="modal-overlay hidden" role="dialog" aria-modal="true" aria-label="Admin Login">
+  <div id="modal-login" class="modal-overlay hidden" role="dialog" aria-modal="true" aria-label="Login">
     <div class="modal">
       <div class="modal-header">
-        <h3>Admin Login</h3>
+        <h3>Login</h3>
         <button class="modal-close" data-close-modal="modal-login" aria-label="Close">&times;</button>
       </div>
       <div class="modal-body">
@@ -258,7 +282,28 @@
         <button class="modal-close" data-close-modal="modal-submission" aria-label="Close">&times;</button>
       </div>
       <div class="modal-body">
-        <div id="submission-detail"></div>
+        <div class="form-group">
+          <label for="review-name">Group / Lab Name</label>
+          <input type="text" id="review-name">
+        </div>
+        <div class="form-group">
+          <label for="review-keywords">Keywords <span class="hint">(comma-separated)</span></label>
+          <input type="text" id="review-keywords">
+        </div>
+        <div class="form-group">
+          <label for="review-summary">Summary</label>
+          <textarea id="review-summary" rows="4"></textarea>
+        </div>
+        <div class="form-group">
+          <label>Links</label>
+          <div id="review-links-container"></div>
+          <button type="button" id="btn-review-add-link" class="btn btn-text btn-sm">+ Add another link</button>
+        </div>
+        <div class="form-group">
+          <label for="review-photo-url">Photo URL</label>
+          <input type="url" id="review-photo-url" placeholder="https://example.com/photo.jpg">
+        </div>
+        <div id="review-meta" class="review-meta"></div>
         <div class="submission-actions">
           <button id="btn-approve" class="btn btn-success">Approve</button>
           <button id="btn-reject" class="btn btn-danger">Reject</button>
