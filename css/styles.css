@@ -70,9 +70,9 @@ img {
 
 /* ========== HEADER ========== */
 .site-header {
-  background: white url('../assets/banner.png') center/contain no-repeat;
+  background: white url('../assets/banner.png') center/cover no-repeat;
   color: var(--color-text);
-  padding: 14rem 0;
+  padding: 12rem 0;
   position: relative;
   z-index: 100;
 }
@@ -101,6 +101,15 @@ img {
   padding: 0 1.5rem;
   display: flex;
   justify-content: flex-end;
+}
+
+.header-title {
+  display: inline-block;
+  background: rgba(255, 255, 255, 0.75);
+  backdrop-filter: blur(6px);
+  -webkit-backdrop-filter: blur(6px);
+  padding: 1rem 2rem;
+  border-radius: var(--radius-lg);
 }
 
 .header-title h1 {

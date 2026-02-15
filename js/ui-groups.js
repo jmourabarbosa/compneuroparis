@@ -182,10 +182,13 @@ function renderGroups() {
       }
     }
 
-    // Auto-expand sections with results when searching
+    // Auto-expand sections with results when searching, collapse when not
     if (isSearching && groups.length > 0) {
       el.classList.remove('collapsed');
       sections[sf].header.setAttribute('aria-expanded', 'true');
+    } else if (!isSearching) {
+      el.classList.add('collapsed');
+      sections[sf].header.setAttribute('aria-expanded', 'false');
     }
   });
 
@@ -521,10 +524,14 @@ function renderInstitutes() {
     institutesPublicList.appendChild(createInstituteCard(inst));
   });
 
-  // Auto-expand institutes section when searching with results
+  // Auto-expand institutes section when searching with results, collapse when not
+  const instHeader = institutesSection.querySelector('.subfield-header');
   if (isSearching && filtered.length > 0) {
     institutesSection.classList.remove('collapsed');
-    institutesSection.querySelector('.subfield-header').setAttribute('aria-expanded', 'true');
+    instHeader.setAttribute('aria-expanded', 'true');
+  } else if (!isSearching) {
+    institutesSection.classList.add('collapsed');
+    instHeader.setAttribute('aria-expanded', 'false');
   }
 }
 
