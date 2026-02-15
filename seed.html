@@ -1,0 +1,267 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<title>Seed PIs</title>
+<style>
+  body { font-family: system-ui; max-width: 800px; margin: 40px auto; padding: 0 20px; background: #111; color: #eee; }
+  button { padding: 10px 24px; font-size: 16px; cursor: pointer; border: none; border-radius: 6px; }
+  #loginBtn { background: #4285f4; color: white; }
+  #seedBtn { background: #34a853; color: white; font-size: 18px; padding: 14px 32px; }
+  #seedBtn:disabled { background: #555; cursor: not-allowed; }
+  #log { background: #1a1a1a; padding: 16px; border-radius: 8px; max-height: 500px; overflow-y: auto; font-family: monospace; font-size: 13px; white-space: pre-wrap; margin-top: 16px; }
+  .success { color: #34a853; }
+  .error { color: #ea4335; }
+  .info { color: #4285f4; }
+  input { padding: 8px 12px; font-size: 14px; border-radius: 4px; border: 1px solid #444; background: #222; color: #eee; width: 240px; }
+  #authSection { margin-bottom: 24px; }
+</style>
+</head>
+<body>
+<h1>Seed Paris Neuroscience PIs</h1>
+
+<div id="authSection">
+  <p id="authStatus">Not logged in</p>
+  <div id="loginForm">
+    <input type="email" id="email" placeholder="Admin email">
+    <input type="password" id="password" placeholder="Password">
+    <button id="loginBtn" onclick="doLogin()">Login</button>
+    <button onclick="doReset()" style="background:#666;color:#fff;margin-left:8px;">Reset Password</button>
+  </div>
+</div>
+
+<button id="seedBtn" disabled onclick="runSeed()">Seed All PIs</button>
+<div id="log"></div>
+
+<script type="module">
+import { initializeApp } from 'https://www.gstatic.com/firebasejs/11.4.0/firebase-app.js';
+import { getAuth, signInWithEmailAndPassword, onAuthStateChanged, sendPasswordResetEmail } from 'https://www.gstatic.com/firebasejs/11.4.0/firebase-auth.js';
+import { getFirestore, collection, addDoc, serverTimestamp, query, where, getDocs } from 'https://www.gstatic.com/firebasejs/11.4.0/firebase-firestore.js';
+
+const firebaseConfig = {
+  apiKey: "AIzaSyCEUSVBEAPYfsoG00GKPqw_lHJQKelgVbk",
+  authDomain: "compneuroparis.firebaseapp.com",
+  projectId: "compneuroparis",
+  storageBucket: "compneuroparis.firebasestorage.app",
+  messagingSenderId: "768335946036",
+  appId: "1:768335946036:web:61184dde3b4b66c58bc561"
+};
+
+const app = initializeApp(firebaseConfig);
+const auth = getAuth(app);
+const db = getFirestore(app);
+
+const logEl = document.getElementById('log');
+function log(msg, cls = '') {
+  const span = document.createElement('span');
+  span.className = cls;
+  span.textContent = msg + '\n';
+  logEl.appendChild(span);
+  logEl.scrollTop = logEl.scrollHeight;
+}
+
+let currentUser = null;
+
+onAuthStateChanged(auth, user => {
+  currentUser = user;
+  if (user) {
+    document.getElementById('authStatus').textContent = `Logged in as ${user.email}`;
+    document.getElementById('loginForm').style.display = 'none';
+    document.getElementById('seedBtn').disabled = false;
+  }
+});
+
+window.doLogin = async () => {
+  const email = document.getElementById('email').value;
+  const pw = document.getElementById('password').value;
+  try {
+    await signInWithEmailAndPassword(auth, email, pw);
+    log('Logged in!', 'success');
+  } catch (e) {
+    log('Login error: ' + e.message, 'error');
+  }
+};
+
+window.doReset = async () => {
+  const email = document.getElementById('email').value;
+  if (!email) { log('Enter email first', 'error'); return; }
+  try {
+    await sendPasswordResetEmail(auth, email);
+    log('Password reset email sent to ' + email, 'success');
+  } catch (e) {
+    log('Reset error: ' + e.message, 'error');
+  }
+};
+
+// ---------- PI DATA ----------
+const institutes = [
+  { name: "ENS - Ecole Normale Superieure", website: "https://cognition.ens.fr/en" },
+  { name: "Paris Brain Institute (ICM)", website: "https://parisbraininstitute.org" },
+  { name: "Institut Pasteur", website: "https://research.pasteur.fr/en/department/neuroscience/" },
+  { name: "ESPCI Paris", website: "https://www.bio.espci.fr" },
+  { name: "College de France", website: "https://www.college-de-france.fr" },
+  { name: "CEA NeuroSpin", website: "https://joliot.cea.fr/drf/joliot/en/Pages/research_entities/NeuroSpin.aspx" },
+  { name: "NeuroPSI (Paris-Saclay)", website: "https://neuropsi.cnrs.fr/en/homepage/" },
+  { name: "INCC - Universite Paris Cite", website: "https://incc-paris.fr" },
+  { name: "ISIR - Sorbonne Universite", website: "https://www.isir.upmc.fr" },
+  { name: "Institut de la Vision", website: "https://www.institut-vision.org/en/" },
+  { name: "Institut de l'Audition", website: "https://www.institut-audition.fr/en" },
+  { name: "IPNP - Universite Paris Cite", website: "https://ipnp.paris5.inserm.fr" },
+  { name: "SPPIN - Universite Paris Cite", website: "https://www.sppin.fr" },
+  { name: "IBENS - ENS", website: "https://www.bio.ens.psl.eu" },
+  { name: "INRIA Paris", website: "https://www.inria.fr/en/centre-inria-de-paris" },
+];
+
+const pis = [
+  // ===== ENS - LNC2 / GNT =====
+  { name:"Boris Gutkin", keywords:["neural dynamics","neuromodulation","addiction","motivated behavior","machine learning"], summary:"Co-founder and director of the Group for Neural Theory at ENS. Models brain circuit dynamics, neuromodulation, and motivated behavior combining tools from statistical physics and dynamical systems.", website:"https://gnt.dec.ens.fr/en/member/636/boris-gutkin", photoURL:"https://lnc2.dec.ens.fr/sites/cognition.ens.fr/files/styles/300x300/public/pictures/2017-10/Boris_Gutkin.jpg", subfields:["computational"], institutes:["ENS - Ecole Normale Superieure"] },
+  { name:"Sophie Deneve", keywords:["neural coding","Bayesian inference","predictive coding","spiking networks","excitation-inhibition balance"], summary:"Develops theories of neural coding and computation, showing that biological neural networks implement efficient Bayesian inference.", website:"https://gnt.dec.ens.fr/en/member/628/sophie-deneve", photoURL:"https://gnt.dec.ens.fr/sites/cognition.ens.fr/files/styles/300x300/public/pictures/2017-10/sophie_crop.jpg", subfields:["computational"], institutes:["ENS - Ecole Normale Superieure"] },
+  { name:"Srdjan Ostojic", keywords:["recurrent neural networks","low-rank networks","neural dynamics","population coding","machine learning"], summary:"Studies how collective dynamics in recurrent neural networks implement computations underlying behavior. Developed low-rank RNN framework linking connectivity to dynamics.", website:"https://lnc2.dec.ens.fr/en/member/655/srdjan-ostojic", photoURL:"https://lnc2.dec.ens.fr/sites/cognition.ens.fr/files/styles/300x300/public/pictures/2017-10/srdjan.jpg", subfields:["computational"], institutes:["ENS - Ecole Normale Superieure"] },
+  { name:"Alex Cayco Gajic", keywords:["cerebellum","motor learning","dimensionality reduction","neural population dynamics","cortico-cerebellar interactions"], summary:"Studies how the cerebellum interacts with neocortex and basal ganglia for motor coordination and cognition. Develops computational approaches and dimensionality reduction methods for neural data.", website:"https://sites.google.com/view/caycogajic/home", photoURL:"https://caycogajiclab.github.io/img/portraits/alex.jpg", subfields:["computational"], institutes:["ENS - Ecole Normale Superieure"] },
+  { name:"Etienne Koechlin", keywords:["prefrontal cortex","cognitive control","decision-making","executive function","hierarchical control"], summary:"Studies how the human frontal cortex supports decision-making and cognitive control. Discovered hierarchical organization of the prefrontal cortex and its role in adaptive behavior.", website:"https://lnc2.dec.ens.fr/en/member/642/etienne-koechlin", photoURL:"", subfields:["computational","human"], institutes:["ENS - Ecole Normale Superieure"] },
+  { name:"Valentin Wyart", keywords:["confidence","decision-making under uncertainty","Bayesian inference","belief updating","EEG"], summary:"Studies human decision-making under uncertainty. Discovered how confidence controls perceptual evidence accumulation. ERC Starting Grant winner.", website:"https://sites.google.com/site/valentinwyart/", photoURL:"https://lnc2.dec.ens.fr/sites/cognition.ens.fr/files/styles/300x300/public/pictures/2025-03/Valentin.jpg", subfields:["computational","human"], institutes:["ENS - Ecole Normale Superieure"] },
+  { name:"Catherine Tallon-Baudry", keywords:["consciousness","interoception","visceral signals","gut-brain coupling","neural oscillations"], summary:"Studies how visceral (gut-brain) signals contribute to subjective experience and first-person perspective. ERC Advanced Grant recipient. CNRS Silver Medal 2021.", website:"https://sites.google.com/view/tallon-baudry-lab/home", photoURL:"https://lnc2.dec.ens.fr/sites/cognition.ens.fr/files/styles/300x300/public/pictures/2017-10/CTB2016.png", subfields:["human"], institutes:["ENS - Ecole Normale Superieure"] },
+  { name:"Stefano Palminteri", keywords:["reinforcement learning","reward","punishment","value-based decision-making","computational psychiatry"], summary:"Leads the Human Reinforcement Learning team. Investigates how humans learn from rewards and punishments, with a focus on context-dependent outcome encoding.", website:"https://sites.google.com/site/stefanopalminteri/home", photoURL:"https://lnc2.dec.ens.fr/sites/cognition.ens.fr/files/styles/300x300/public/pictures/2019-08/stefano.jpg", subfields:["computational","human"], institutes:["ENS - Ecole Normale Superieure"] },
+  { name:"Julie Grezes", keywords:["social cognition","emotion","body language","action perception","social neuroscience"], summary:"Leads the Social Cognition team studying the neural basis of social perception, emotional processing, and how the brain processes body language and social signals.", website:"https://sites.google.com/view/juliegrezes/home", photoURL:"https://lnc2.dec.ens.fr/sites/cognition.ens.fr/files/styles/300x300/public/pictures/2017-10/JG.png", subfields:["human"], institutes:["ENS - Ecole Normale Superieure"] },
+  { name:"Coralie Chevallier", keywords:["social cognition","autism","behavioral science","public policy","social decision-making"], summary:"Research on social cognition, its development and its disruption in autism, applying behavioral science to public policy questions.", website:"https://sites.google.com/site/coraliechevallier/", photoURL:"https://lnc2.dec.ens.fr/sites/cognition.ens.fr/files/styles/300x300/public/pictures/2017-10/CC.png", subfields:["human"], institutes:["ENS - Ecole Normale Superieure"] },
+  // ===== ENS - LSCP =====
+  { name:"Emmanuel Dupoux", keywords:["speech processing","cognitive modeling","machine learning","language models","zero-resource learning"], summary:"Develops machine-learning approaches to model cognitive processes, especially language and speech acquisition. Co-leads the CoML team at INRIA/ENS.", website:"http://www.lscp.net/persons/dupoux/", photoURL:"https://lscp.dec.ens.fr/sites/cognition.ens.fr/files/styles/300x300/public/pictures/2021-10/emmanuel_dupoux.png", subfields:["computational","human"], institutes:["ENS - Ecole Normale Superieure"] },
+  { name:"Sid Kouider", keywords:["consciousness","attention","subliminal processing","infant cognition","neural correlates"], summary:"Studies consciousness and its neural correlates, including subliminal perception and the emergence of consciousness in infants. ERC Consolidator Grant recipient.", website:"https://sidkouider.com/", photoURL:"https://lscp.dec.ens.fr/sites/cognition.ens.fr/files/styles/300x300/public/pictures/2017-10/sid_kouider.jpg", subfields:["human"], institutes:["ENS - Ecole Normale Superieure"] },
+  { name:"Franck Ramus", keywords:["dyslexia","language disorders","cognitive development","genetics of cognition","neurodevelopmental disorders"], summary:"Investigates the cognitive and genetic bases of language disorders and developmental disabilities, including dyslexia and autism.", website:"http://www.lscp.net/persons/ramus/en/", photoURL:"https://lscp.dec.ens.fr/sites/cognition.ens.fr/files/styles/300x300/public/pictures/2017-12/ramus_m%C3%A9decine_4_1.png", subfields:["human"], institutes:["ENS - Ecole Normale Superieure"] },
+  // ===== ENS - LSP =====
+  { name:"Shihab Shamma", keywords:["auditory neuroscience","speech perception","music cognition","neural coding","cortical processing"], summary:"Studies auditory processing of speech and music. ERC Advanced Grant recipient for projects on adaptive auditory cognition and neuroplasticity.", website:"https://lsp.dec.ens.fr/en/member/667/shihab-shamma", photoURL:"https://faculty.eng.umd.edu/sites/faculty.eng.umd.edu/files/profile_images/sas.jpg", subfields:["systems","computational"], institutes:["ENS - Ecole Normale Superieure"] },
+  { name:"Daniel Pressnitzer", keywords:["auditory perception","psychoacoustics","auditory scene analysis","temporal processing"], summary:"Studies auditory perception, scene analysis, and how the brain parses complex sound environments.", website:"http://audition.ens.fr/dp/", photoURL:"https://lsp.dec.ens.fr/sites/cognition.ens.fr/files/styles/300x300/public/pictures/2017-09/DPRESSNITZER.jpg", subfields:["human","computational"], institutes:["ENS - Ecole Normale Superieure"] },
+  { name:"Pascal Mamassian", keywords:["visual perception","perceptual confidence","Bayesian perception","sensory decision-making"], summary:"Director of LSP. Investigates visual perception and perceptual decision-making using Bayesian and psychophysical approaches.", website:"http://mamassian.free.fr/free/Home.html", photoURL:"https://lsp.dec.ens.fr/sites/cognition.ens.fr/files/styles/300x300/public/pictures/2017-10/PM.jpg", subfields:["human","computational"], institutes:["ENS - Ecole Normale Superieure"] },
+  // ===== ICM =====
+  { name:"Mathias Pessiglione", keywords:["motivation","effort","reward","neuroeconomics","computational neuroscience"], summary:"Co-heads the MBB (Motivation, Brain and Behaviour) team. Builds neuro-computational models of how the brain motivates behavior.", website:"https://sites.google.com/site/motivationbrainbehavior/", photoURL:"https://parisbraininstitute.org/sites/default/files/styles/max_325x325/public/2025-08/mathias-pessiglione.jpg", subfields:["computational","human"], institutes:["Paris Brain Institute (ICM)"] },
+  { name:"Jean Daunizeau", keywords:["Bayesian inference","variational methods","computational psychiatry","decision-making","VBA toolbox"], summary:"Co-heads MBB team. Develops Bayesian and variational approaches for computational neuroscience. Created the Hierarchical Gaussian Filter.", website:"https://sites.google.com/site/jeandaunizeauswebsite/", photoURL:"https://parisbraininstitute.org/sites/default/files/styles/max_325x325/public/2024-07/13-30_Jean%20Daunizeau.jpg", subfields:["computational"], institutes:["Paris Brain Institute (ICM)"] },
+  { name:"Lionel Naccache", keywords:["consciousness","subliminal perception","unconscious processing","neuropsychology","cognitive functions"], summary:"World specialist on consciousness, awarded by the French Academy of Sciences. Explores neural bases of consciousness and cognitive functions.", website:"https://parisbraininstitute.org/collaborators/naccache-lionel", photoURL:"https://parisbraininstitute.org/sites/default/files/styles/max_325x325/public/2024-07/13_30_Lionel_Naccache.jpg", subfields:["human"], institutes:["Paris Brain Institute (ICM)"] },
+  { name:"Paolo Bartolomeo", keywords:["spatial cognition","hemispatial neglect","attention","visual awareness","brain lesion studies"], summary:"Co-leads PICNIC Lab exploring the neural bases of spatial cognition and attention, particularly hemispatial neglect.", website:"https://www.paolobartolomeo.eu/", photoURL:"https://parisbraininstitute.org/sites/default/files/styles/max_325x325/public/2025-08/paolo-bartolomeo.jpg", subfields:["human"], institutes:["Paris Brain Institute (ICM)"] },
+  { name:"Julia Sliwa", keywords:["social neuroscience","primate cognition","fMRI","neurophysiology","theory of mind"], summary:"ERC Starting Grant recipient. Studies neural mechanisms enabling transformation of social percepts into social concepts using fMRI and neurophysiology in primates.", website:"https://sites.google.com/view/sliwa-group/people", photoURL:"https://parisbraininstitute.org/sites/default/files/styles/max_325x325/public/2025-01/julia-sliwa.png", subfields:["systems","human"], institutes:["Paris Brain Institute (ICM)"] },
+  { name:"Nikolas Karalis", keywords:["brain dynamics","internal states","neuromodulation","neural oscillations","electrophysiology"], summary:"ERC Starting Grant 2024. Studies the fundamental link between brain activity and neurotransmitter balance, exploring brain dynamics of internal states.", website:"https://www.neuronaldynamics.eu/", photoURL:"https://parisbraininstitute.org/sites/default/files/styles/max_325x325/public/2024-07/11_Nikolas%20Karalis.jpg", subfields:["systems","computational"], institutes:["Paris Brain Institute (ICM)"] },
+  { name:"Alberto Bacci", keywords:["cortical microcircuits","GABAergic interneurons","inhibition","synaptic plasticity","autapses"], summary:"Leads CircuitLab studying cellular physiology of cortical microcircuits. Investigates how interneurons carry out inhibition.", website:"https://baccilab.org/", photoURL:"https://parisbraininstitute.org/sites/default/files/styles/max_325x325/public/2024-10/boj_frm_abacci_426_crop_ctrst.jpg", subfields:["systems"], institutes:["Paris Brain Institute (ICM)"] },
+  { name:"Nelson Rebola", keywords:["visual cortex","synaptic physiology","two-photon imaging","circuit diversity","sensory coding"], summary:"Studies how variability in synaptic function across neuronal types shapes sensory coding.", website:"https://therebolalab.org/", photoURL:"https://parisbraininstitute.org/sites/default/files/styles/max_325x325/public/2024-07/13_30_NelsonRebola-2.gif", subfields:["systems"], institutes:["Paris Brain Institute (ICM)"] },
+  { name:"Fabrizio De Vico Fallani", keywords:["brain networks","network neuroscience","brain-computer interfaces","graph theory","complex systems"], summary:"Leads the NERV team. Designs technologies for non-invasive brain-computer interfaces using complex network theory. ERC Consolidator Grant recipient.", website:"https://sites.google.com/site/devicofallanifabrizio/", photoURL:"https://parisbraininstitute.org/sites/default/files/styles/max_325x325/public/2025-10/fabrizio-de-vico-fallani_0.jpeg", subfields:["computational"], institutes:["Paris Brain Institute (ICM)","INRIA Paris"] },
+  { name:"Olivier Colliot", keywords:["machine learning","neuroimaging","neurodegenerative diseases","deep learning","medical image analysis"], summary:"Co-directs the ARAMIS Lab. Develops advanced computational and AI approaches for studying brain diseases from multimodal neuroimaging data. PRAIRIE AI chair holder.", website:"https://oliviercolliot.github.io/", photoURL:"https://parisbraininstitute.org/sites/default/files/styles/max_325x325/public/2024-07/13-30_Olivier%20Coliot.jpg", subfields:["computational"], institutes:["Paris Brain Institute (ICM)","INRIA Paris"] },
+  { name:"Ninon Burgos", keywords:["medical image computing","deep learning","neuroimaging","anomaly detection","computer-aided diagnosis"], summary:"CNRS Research Director co-heading ARAMIS Lab. Focuses on medical image analysis using machine learning for brain disease diagnosis.", website:"https://ninonburgos.com/", photoURL:"https://parisbraininstitute.org/sites/default/files/styles/max_325x325/public/2025-01/burgos_ninon.jpg", subfields:["computational"], institutes:["Paris Brain Institute (ICM)","INRIA Paris"] },
+  { name:"Claire Wyart", keywords:["spinal cord","sensorimotor integration","zebrafish","cerebrospinal fluid","optogenetics"], summary:"Combines genetics, biophysics, and physiology to understand sensory integration in the spinal cord. Discovered cerebrospinal fluid-contacting neurons as mechanoreceptors. ERC grantee.", website:"https://wyartlab.org/", photoURL:"https://parisbraininstitute.org/sites/default/files/styles/max_325x325/public/2024-07/13-30_Claire_Wyart.JPG", subfields:["systems"], institutes:["Paris Brain Institute (ICM)"] },
+  { name:"Thomas Andrillon", keywords:["sleep","local sleep","consciousness","attention","EEG"], summary:"ERC Starting Grant recipient for Sleeping Awake project. Studies how local sleep intrusions in the awake brain explain attention lapses.", website:"https://thomas-andrillon.wixsite.com/research", photoURL:"https://parisbraininstitute.org/sites/default/files/styles/max_325x325/public/2024-07/andrillon-thomas-163x195.jpg", subfields:["human","computational"], institutes:["Paris Brain Institute (ICM)"] },
+  { name:"Delphine Oudiette", keywords:["sleep","dreams","lucid dreaming","creativity","memory consolidation"], summary:"Studies how sleep and dreams impact cognitive functioning. Demonstrated real-time dialogue with lucid dreamers during REM sleep. ERC-funded CREADOZE project.", website:"https://parisbraininstitute.org/paris-brain-institute-research-teams/dreamteam-sleep-dreams-and-cognition", photoURL:"https://parisbraininstitute.org/sites/default/files/styles/max_325x325/public/2024-07/oudiette-delphine-163x195.jpg", subfields:["human"], institutes:["Paris Brain Institute (ICM)"] },
+  { name:"Liane Schmidt", keywords:["motivation","interoception","beliefs","self-regulation","placebo"], summary:"Founded the Control-Interoception-Attention team. Studies how beliefs and self-suggestions influence motivation and decision-making.", website:"https://sites.google.com/view/icm-cia-team/team-members", photoURL:"https://parisbraininstitute.org/sites/default/files/styles/max_325x325/public/2024-07/25_26_LianeSchmidt.jpg", subfields:["human","computational"], institutes:["Paris Brain Institute (ICM)"] },
+  { name:"Jacobo Sitt", keywords:["consciousness","disorders of consciousness","neuroimaging","complexity measures","EEG"], summary:"Co-leads PICNIC Lab. Develops computational tools for diagnosing disorders of consciousness.", website:"https://parisbraininstitute.org/collaborators/jacobo-sitt", photoURL:"https://parisbraininstitute.org/sites/default/files/styles/max_325x325/public/2024-07/sitt-jacobo.jpg", subfields:["computational","human"], institutes:["Paris Brain Institute (ICM)"] },
+  { name:"Nicolas Renier", keywords:["brain plasticity","tissue clearing","whole-brain mapping","3D imaging","iDISCO"], summary:"Develops and applies tissue clearing and 3D imaging techniques to study brain plasticity at whole-brain scale.", website:"https://www.renier-lab.com/", photoURL:"https://parisbraininstitute.org/sites/default/files/styles/max_325x325/public/2024-07/13-30_RENIER%20Nicolas.JPG", subfields:["systems"], institutes:["Paris Brain Institute (ICM)"] },
+  { name:"Dafni Hadjieconomou", keywords:["gut-brain axis","enteric nervous system","Drosophila","interoception"], summary:"Studies gut-brain communication and the physiology of the enteric nervous system using Drosophila.", website:"https://parisbraininstitute.org/collaborators/dafni-hadjieconomou", photoURL:"https://parisbraininstitute.org/sites/default/files/styles/max_325x325/public/2024-07/07_10_Dafni_2023-10-16-SELECTION%20HD-BY%20SIMON%20CASSANAS-002.jpg", subfields:["systems"], institutes:["Paris Brain Institute (ICM)"] },
+  { name:"Stanley Durrleman", keywords:["statistical learning","disease progression modeling","neurodegeneration","differential geometry","neuroinformatics"], summary:"INRIA Senior Research Scientist. Invented disease course mapping for personalised models of neurodegenerative disease progression. ERC Starting Grant recipient.", website:"https://who.rocq.inria.fr/Stanley.Durrleman/", photoURL:"", subfields:["computational"], institutes:["Paris Brain Institute (ICM)","INRIA Paris"] },
+  { name:"Marie-Constance Corsi", keywords:["brain-computer interfaces","EEG","neurophysiology","BCI training","network neuroscience"], summary:"INRIA research scientist in the NERV Lab. Develops tools to address BCI inefficiency. 2025 Early Career Award from the International BCI Society.", website:"https://marieconstance-corsi.netlify.app/", photoURL:"", subfields:["computational"], institutes:["Paris Brain Institute (ICM)","INRIA Paris"] },
+  { name:"Brian Lau", keywords:["basal ganglia","deep brain stimulation","motor control","electrophysiology","neurofeedback"], summary:"Co-leader of the NEURXP team. Studies basal ganglia in movement and cognitive control with clinical DBS investigations.", website:"https://parisbraininstitute.org/collaborators/lau-brian", photoURL:"", subfields:["systems","computational"], institutes:["Paris Brain Institute (ICM)"] },
+  // ===== Institut Pasteur =====
+  { name:"Pierre-Marie Lledo", keywords:["olfaction","adult neurogenesis","sensory perception","neural circuits","plasticity"], summary:"Chair of the Neuroscience Department at Institut Pasteur. Leads Perception and Action team studying sensory perception, particularly olfactory processing.", website:"https://research.pasteur.fr/en/team/perception-and-action/", photoURL:"", subfields:["systems"], institutes:["Institut Pasteur"] },
+  { name:"Thomas Bourgeron", keywords:["autism","synapse genetics","SHANK3","cognitive functions","circadian rhythms"], summary:"Discovered the first synaptic mutations in autism (NLGN3, NLGN4X, SHANK3). Leads Human Genetics and Cognitive Functions Unit.", website:"https://research.pasteur.fr/en/team/human-genetics-and-cognitive-functions/", photoURL:"", subfields:["human"], institutes:["Institut Pasteur"] },
+  { name:"Roberto Toro", keywords:["neuroanatomy","brain morphology","computational anatomy","brain evolution","morphometry"], summary:"Heads Applied and Theoretical Neuroanatomy unit. Develops mathematical models of brain development and computational neuroanatomy tools.", website:"https://neuroanatomy.github.io/people.html", photoURL:"", subfields:["computational"], institutes:["Institut Pasteur"] },
+  { name:"Jean-Baptiste Masson", keywords:["Bayesian computation","decision-making","stochastic processes","Drosophila larva","embodied neuroAI"], summary:"Leads Decision and Bayesian Computation team. Theoretical physicist studying biological intelligence through Bayesian inference in Drosophila larva brain. PRAIRIE Chair.", website:"https://research.pasteur.fr/en/member/jean-baptiste-masson/", photoURL:"https://www.prairie-psai.fr/app/uploads/2019/11/Jean-Baptiste-Masson-1.jpg", subfields:["computational"], institutes:["Institut Pasteur"] },
+  { name:"Florent Haiss", keywords:["barrel cortex","decision-making","somatosensory","two-photon imaging","optogenetics"], summary:"Leads Neural Circuit Dynamics and Decision Making unit. Uses advanced imaging and optogenetics to study cortical activity during decisions.", website:"https://research.pasteur.fr/en/team/neural-circuit-dynamics-and-decision-making/", photoURL:"", subfields:["systems"], institutes:["Institut Pasteur"] },
+  { name:"Aleksandra Deczkowska", keywords:["neuroimmunology","microglia","choroid plexus","brain-immune communication","aging"], summary:"Heads Brain Immune Communication Lab. Studies how immune cells shape brain development, activity, and aging. ERC Starting Grant 2022.", website:"https://research.pasteur.fr/en/team/brain-immune-communication/", photoURL:"", subfields:["systems"], institutes:["Institut Pasteur"] },
+  { name:"Brice Bathellier", keywords:["auditory cortex","multisensory perception","neural dynamics","population coding","computational principles"], summary:"Studies computational principles for processing auditory and multisensory information. CNRS Research Director at the Institut de l'Audition.", website:"https://sites.google.com/bathellier-lab.org/bathellier-lab/", photoURL:"", subfields:["systems","computational"], institutes:["Institut de l'Audition"] },
+  { name:"Anne-Lise Giraud", keywords:["speech processing","neural oscillations","auditory cortex","hearing","neural coding"], summary:"Director of the Hearing Institute. Studies neural computations enabling speech perception and production.", website:"https://research.pasteur.fr/en/team/neural-coding-and-engineering-of-human-speech-functions/", photoURL:"", subfields:["human","computational"], institutes:["Institut de l'Audition"] },
+  // ===== ESPCI =====
+  { name:"Karim Benchenane", keywords:["memory","sleep","hippocampus","brain oscillations","optogenetics"], summary:"CNRS Research Director leading MOBS team. Demonstrated causal role of place cells in navigation by creating memories during sleep via optogenetics.", website:"https://benchenanelab.com/", photoURL:"", subfields:["systems"], institutes:["ESPCI Paris"] },
+  { name:"Gisella Vetere", keywords:["memory engrams","neural circuits","optogenetics","whole-brain imaging","memory consolidation"], summary:"Leads C4 team studying memory formation and consolidation. Implanted artificial odor memories using cutting-edge techniques.", website:"https://veterelab.weebly.com/", photoURL:"", subfields:["systems"], institutes:["ESPCI Paris"] },
+  { name:"Philippe Faure", keywords:["dopamine","nicotine","addiction","reward","decision-making"], summary:"Studies decision-making mechanisms and nicotine addiction. Discovered how nicotine drives opposite responses in distinct VTA dopamine neuron populations.", website:"https://faurelab.cnrs.fr/", photoURL:"", subfields:["systems"], institutes:["ESPCI Paris"] },
+  { name:"Mickael Tanter", keywords:["functional ultrasound imaging","brain imaging","ultrafast ultrasound","neurovascular coupling"], summary:"Co-invented functional ultrasound brain imaging (fUS). ERC Advanced Grant. 300+ publications, 50 patents. French Academy of Sciences.", website:"https://www.physicsformedicine.espci.fr/", photoURL:"", subfields:["systems","computational"], institutes:["ESPCI Paris"] },
+  // ===== College de France / NeuroSpin =====
+  { name:"Stanislas Dehaene", keywords:["consciousness","number cognition","reading","global neuronal workspace","brain imaging"], summary:"Pioneer of number sense and visual word form area research. Co-developed Global Neuronal Workspace theory of consciousness. Brain Prize 2014.", website:"https://www.college-de-france.fr/en/chair/stanislas-dehaene-experimental-cognitive-psychology-statutory-chair", photoURL:"https://www.edge.org/sites/default/files/styles/member-photo/public/member-pictures/picture-47-1517505912.jpg", subfields:["human","computational"], institutes:["College de France","CEA NeuroSpin"] },
+  { name:"Ghislaine Dehaene-Lambertz", keywords:["infant brain development","language acquisition","fMRI","neural architecture","neonatal cognition"], summary:"Pediatrician and cognitive scientist. Pioneer in brain imaging of infants. Studies neural architecture enabling language acquisition.", website:"https://www.unicog.org/", photoURL:"https://cdn-ilakmbb.nitrocdn.com/jIYMIjeZjxbibSovbmtXtpmbltiBOKUt/assets/images/optimized/rev-d2b9beb/cerveau-enfant.org/wp-content/uploads/2024/05/Ghislaine-Dehaene-Lambertz-300x300.jpg", subfields:["human"], institutes:["CEA NeuroSpin"] },
+  { name:"Florent Meyniel", keywords:["uncertainty","Bayesian inference","confidence","sequence learning","fMRI"], summary:"Research Director at NeuroSpin leading the Computational Brain team. Studies how the brain estimates uncertainty. ERC Starting Grant recipient.", website:"https://florentmeyniel.weebly.com/", photoURL:"", subfields:["computational","human"], institutes:["CEA NeuroSpin"] },
+  { name:"Virginie van Wassenhove", keywords:["temporal cognition","multisensory integration","neural oscillations","MEG","time perception"], summary:"INSERM Team Leader at NeuroSpin. Studies temporal cognition and whether neural oscillations define moments for time perception.", website:"https://brainthemind.com/", photoURL:"", subfields:["computational","human"], institutes:["CEA NeuroSpin"] },
+  { name:"Bertrand Thirion", keywords:["machine learning","neuroimaging","statistical modeling","brain mapping","scikit-learn"], summary:"INRIA Senior Researcher leading Parietal team at NeuroSpin. Major contributor to nilearn and scikit-learn.", website:"https://pages.saclay.inria.fr/bertrand.thirion/", photoURL:"", subfields:["computational"], institutes:["CEA NeuroSpin","INRIA Paris"] },
+  { name:"Sophie Herbst", keywords:["temporal predictions","Bayesian modeling","auditory processing","EEG","MEG"], summary:"Researcher at NeuroSpin studying how temporal predictions form from sensory statistics using Bayesian models.", website:"https://brainthemind.com/sophie-herbst/", photoURL:"", subfields:["computational","human"], institutes:["CEA NeuroSpin"] },
+  // ===== NeuroPSI =====
+  { name:"Daniel Shulz", keywords:["barrel cortex","whisker somatosensory system","sensory processing","tactile encoding"], summary:"Heads Sensorimotor Integration and Plasticity lab and the Department of Integrative and Computational Neuroscience at NeuroPSI.", website:"https://neuropsi.cnrs.fr/en/daniel-shulz-translated/", photoURL:"", subfields:["systems"], institutes:["NeuroPSI (Paris-Saclay)"] },
+  { name:"Tihana Jovanic", keywords:["Drosophila larva","sensorimotor decisions","neural circuits","action sequences","behavior"], summary:"Group Leader of Neural Circuits and Behavior at NeuroPSI. Uses Drosophila genetic tools to study neural circuits for sensorimotor decisions.", website:"https://neuropsi.cnrs.fr/en/departments/cnn/group-leader-tihana-jovanic/", photoURL:"", subfields:["systems","computational"], institutes:["NeuroPSI (Paris-Saclay)"] },
+  // ===== Universite Paris Cite =====
+  { name:"Laura Dugue", keywords:["brain oscillations","perception","attention","traveling waves","TMS"], summary:"Full Professor of Cognitive and Computational Neuroscience at INCC. Studies brain oscillations in perception. ERC Starting Grant recipient.", website:"https://www.duguelab.com/", photoURL:"", subfields:["computational","human"], institutes:["INCC - Universite Paris Cite"] },
+  { name:"Claire Sergent", keywords:["consciousness","conscious perception","global workspace","EEG","computational modelling"], summary:"Professor of Cognitive Neuroscience. ERC Consolidator Grant for CONSCIOUSBRAIN project on mechanisms of conscious processing.", website:"https://sergent-consciousness-lab.u-paris.fr/", photoURL:"", subfields:["human","computational"], institutes:["INCC - Universite Paris Cite"] },
+  { name:"Belen Pardi", keywords:["sensory perception","neocortical circuits","learning","top-down signaling","zona incerta"], summary:"Identifies key neuronal circuits for sensory perception and memory. Discovered zona incerta as major top-down input to neocortex.", website:"https://sites.google.com/view/pardi-lab/presentation", photoURL:"", subfields:["systems"], institutes:["IPNP - Universite Paris Cite"] },
+  { name:"David Hansel", keywords:["neural network theory","cortical dynamics","balanced networks","working memory","irregular activity"], summary:"Computational neuroscientist at SPPIN/INCC. Pioneering work on balanced networks producing strong selectivity from weak inputs.", website:"https://incc-paris.fr/people/david-hansel/", photoURL:"", subfields:["computational"], institutes:["SPPIN - Universite Paris Cite"] },
+  { name:"Michael Graupner", keywords:["synaptic plasticity","calcium-based models","cerebellar motor control","neural network dynamics"], summary:"CNRS Research Scientist at SPPIN. Leads research on computational synaptic plasticity (Graupner-Brunel model).", website:"https://www.sppin.fr/members/michael-graupner/", photoURL:"", subfields:["computational"], institutes:["SPPIN - Universite Paris Cite"] },
+  { name:"Desdemona Fricker", keywords:["head direction system","spatial orientation","presubiculum","hippocampus","electrophysiology"], summary:"CNRS Research Director at SPPIN. Studies neural basis of spatial orientation in the presubicular microcircuit.", website:"https://www.sppin.fr/members/desdemona-fricker/", photoURL:"", subfields:["systems"], institutes:["SPPIN - Universite Paris Cite"] },
+  { name:"Fani Koukouli", keywords:["cholinergic modulation","nicotinic receptors","cortical inhibitory circuits","neurodegeneration","prefrontal cortex"], summary:"Group Leader at IPNP studying cholinergic modulation of cortical circuits in neurodegeneration. ATIP-Avenir grantee.", website:"https://ipnp.paris5.inserm.fr/research/teams-and-projects", photoURL:"", subfields:["systems"], institutes:["IPNP - Universite Paris Cite"] },
+  // ===== Sorbonne / Institut de la Vision =====
+  { name:"Mehdi Khamassi", keywords:["reinforcement learning","decision-making","robotics","basal ganglia","social learning"], summary:"CNRS Research Director at ISIR. Studies decision-making and reinforcement learning in humans and robots.", website:"https://pages2.isir.upmc.fr/mkhamassi/", photoURL:"https://www.isir.upmc.fr/wp-content/uploads/2021/06/pict20210624_162208_0-copie-1-300x300.jpg", subfields:["computational"], institutes:["ISIR - Sorbonne Universite"] },
+  { name:"Romain Brette", keywords:["spiking neural networks","action potentials","neural coding","Brian simulator","sensory systems"], summary:"Research Director studying computational neuroscience of sensory systems. Co-created the Brian spiking neural network simulator.", website:"https://romainbrette.fr/", photoURL:"", subfields:["computational"], institutes:["Institut de la Vision"] },
+  { name:"Ulisse Ferrari", keywords:["retinal encoding","neural correlations","population coding","statistical physics","optogenetics"], summary:"Studies collective behavior of neurons and how neuronal networks encode information in the retina.", website:"https://www.institut-vision.org/en/", photoURL:"", subfields:["computational"], institutes:["Institut de la Vision"] },
+  // ===== IBENS / ENS new =====
+  { name:"Jonas Ranft", keywords:["statistical physics","neural circuits","synaptic structure","oscillations","dynamical systems"], summary:"CNRS Research Fellow at IBENS. Uses statistical physics and dynamical systems to study neural network dynamics.", website:"https://qbio.ens.psl.eu/en/people/jonas-ranft", photoURL:"", subfields:["computational"], institutes:["IBENS - ENS"] },
+  { name:"Vincent Villette", keywords:["voltage imaging","two-photon microscopy","inhibitory circuits","hippocampus","optical methods"], summary:"CNRS Research Fellow at IBENS. Develops advanced optical methods for measuring electrical activity. CNRS Bronze Medal 2021.", website:"https://www.bio.ens.psl.eu/depbio/", photoURL:"", subfields:["systems"], institutes:["IBENS - ENS"] },
+  { name:"Lucie Berkovitch", keywords:["consciousness","psychedelics","schizophrenia","computational psychiatry","psilocybin"], summary:"Junior Professor at ENS/PSL. Psychiatrist studying consciousness alterations under psychedelics. PI of France's first psilocybin trial.", website:"https://cognition.ens.fr", photoURL:"", subfields:["computational","human"], institutes:["ENS - Ecole Normale Superieure"] },
+  { name:"Jean-Remi King", keywords:["AI and the brain","language models","neural decoding","MEG","deep learning"], summary:"CNRS researcher and Meta AI scientist. Studies similarities between AI systems and the brain, focusing on language processing and neural decoding.", website:"https://kingjr.github.io/", photoURL:"https://kingjr.github.io/images/profile.png", subfields:["computational","human"], institutes:["ENS - Ecole Normale Superieure"] },
+];
+
+// ---------- SEED FUNCTIONS ----------
+
+async function seedInstitutes() {
+  log('--- Seeding Institutes ---', 'info');
+  for (const inst of institutes) {
+    // Check if already exists
+    const q = query(collection(db, 'institutes'), where('name', '==', inst.name), where('status', '==', 'approved'));
+    const snap = await getDocs(q);
+    if (snap.size > 0) {
+      log(`  Skip (exists): ${inst.name}`);
+      continue;
+    }
+    await addDoc(collection(db, 'institutes'), {
+      name: inst.name,
+      website: inst.website,
+      status: 'approved',
+      proposedBy: currentUser.uid,
+      createdAt: serverTimestamp()
+    });
+    log(`  Created: ${inst.name}`, 'success');
+  }
+}
+
+async function seedPIs() {
+  log('--- Seeding PIs ---', 'info');
+  let created = 0, skipped = 0;
+  for (const pi of pis) {
+    // Check if PI already exists by name
+    const q = query(collection(db, 'groups'), where('name', '==', pi.name));
+    const snap = await getDocs(q);
+    if (snap.size > 0) {
+      log(`  Skip (exists): ${pi.name}`);
+      skipped++;
+      continue;
+    }
+    await addDoc(collection(db, 'groups'), {
+      name: pi.name,
+      keywords: pi.keywords,
+      summary: pi.summary,
+      links: [{ label: 'Website', url: pi.website }],
+      photoURL: pi.photoURL || '',
+      subfields: pi.subfields,
+      institutes: pi.institutes,
+      subfield: pi.subfields[0],
+      institute: pi.institutes[0],
+      creatorUid: currentUser.uid,
+      createdAt: serverTimestamp(),
+      updatedAt: serverTimestamp()
+    });
+    log(`  Created: ${pi.name}`, 'success');
+    created++;
+  }
+  log(`\nDone! Created ${created}, skipped ${skipped} (already existed).`, 'info');
+}
+
+window.runSeed = async () => {
+  document.getElementById('seedBtn').disabled = true;
+  try {
+    await seedInstitutes();
+    await seedPIs();
+  } catch (e) {
+    log('ERROR: ' + e.message, 'error');
+  }
+  document.getElementById('seedBtn').disabled = false;
+};
+</script>
+</body>
+</html>
