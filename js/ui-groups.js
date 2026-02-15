@@ -1,4 +1,4 @@
-import { fetchGroups, fetchApprovedInstitutes, createClaim, fetchMyClaimForTarget } from './db.js';
+import { fetchGroups, fetchApprovedInstitutes, createClaim, fetchMyClaimForTarget, deleteGroup, deleteInstitute } from './db.js';
 import { getCurrentUser, getIsAdmin, createAccount, login } from './auth.js';
 
 let allGroups = [];
@@ -47,6 +47,7 @@ const piDetailClaimed = document.getElementById('pi-detail-claimed');
 const btnClaimPi = document.getElementById('btn-claim-pi');
 const piDetailEditSection = document.getElementById('pi-detail-edit-section');
 const btnPiDetailEdit = document.getElementById('btn-pi-detail-edit');
+const btnPiDetailDelete = document.getElementById('btn-pi-detail-delete');
 
 let currentDetailGroup = null;
 
@@ -64,6 +65,7 @@ const instDetailClaimPending = document.getElementById('inst-detail-claim-pendin
 const instDetailClaimed = document.getElementById('inst-detail-claimed');
 const btnClaimInst = document.getElementById('btn-claim-inst');
 const btnInstDetailEdit = document.getElementById('btn-inst-detail-edit');
+const btnInstDetailDelete = document.getElementById('btn-inst-detail-delete');
 const btnInstViewPis = document.getElementById('btn-inst-view-pis');
 
 let currentDetailInstitute = null;
@@ -280,6 +282,8 @@ async function openPiDetail(group) {
   if (user && (isAdmin || isCreator || isClaimer)) {
     piDetailEditSection.classList.remove('hidden');
   }
+  // Show delete button only for admins
+  btnPiDetailDelete.classList.toggle('hidden', !isAdmin);
 
   // Show "managed by PI" badge if already claimed
   if (group.claimedBy) {
@@ -442,6 +446,18 @@ export function initPiDetail() {
     if (!currentDetailGroup) return;
     modalPiDetail.classList.add('hidden');
     document.dispatchEvent(new CustomEvent('creator-edit-group', { detail: currentDetailGroup }));
+  });
+  btnPiDetailDelete.addEventListener('click', async () => {
+    if (!currentDetailGroup) return;
+    if (!confirm(`Delete "${currentDetailGroup.name}"? This cannot be undone.`)) return;
+    try {
+      await deleteGroup(currentDetailGroup.id);
+      modalPiDetail.classList.add('hidden');
+      await loadGroups();
+    } catch (err) {
+      console.error('Delete PI error:', err);
+      alert('Error deleting PI.');
+    }
   });
 
   // Claim modal buttons
@@ -618,6 +634,8 @@ async function openInstituteDetail(inst) {
   if (user && (isAdmin || isClaimer)) {
     instDetailEditSection.classList.remove('hidden');
   }
+  // Show delete button only for admins
+  btnInstDetailDelete.classList.toggle('hidden', !isAdmin);
 
   // Show "managed by member" badge if already claimed
   if (inst.claimedBy) {
@@ -658,6 +676,18 @@ export function initInstituteDetail() {
     if (!currentDetailInstitute) return;
     modalInstDetail.classList.add('hidden');
     document.dispatchEvent(new CustomEvent('creator-edit-institute', { detail: currentDetailInstitute }));
+  });
+  btnInstDetailDelete.addEventListener('click', async () => {
+    if (!currentDetailInstitute) return;
+    if (!confirm(`Delete "${currentDetailInstitute.name}"? This cannot be undone.`)) return;
+    try {
+      await deleteInstitute(currentDetailInstitute.id);
+      modalInstDetail.classList.add('hidden');
+      await loadPublicInstitutes();
+    } catch (err) {
+      console.error('Delete institute error:', err);
+      alert('Error deleting institute.');
+    }
   });
 
   btnInstViewPis.addEventListener('click', () => {
