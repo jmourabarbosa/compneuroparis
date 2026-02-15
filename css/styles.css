@@ -1160,6 +1160,12 @@ img {
   margin-bottom: 0.75rem;
 }
 
+.pi-detail-edit-section {
+  margin-top: 1.25rem;
+  padding-top: 1.25rem;
+  border-top: 1px solid var(--color-border);
+}
+
 .pi-detail-claim-section {
   margin-top: 1.25rem;
   padding-top: 1.25rem;

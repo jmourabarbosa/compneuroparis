@@ -41,6 +41,8 @@ const piDetailClaimSection = document.getElementById('pi-detail-claim-section');
 const piDetailClaimPending = document.getElementById('pi-detail-claim-pending');
 const piDetailClaimed = document.getElementById('pi-detail-claimed');
 const btnClaimPi = document.getElementById('btn-claim-pi');
+const piDetailEditSection = document.getElementById('pi-detail-edit-section');
+const btnPiDetailEdit = document.getElementById('btn-pi-detail-edit');
 
 let currentDetailGroup = null;
 
@@ -164,14 +166,8 @@ function createCard(group) {
   const sf = group.subfield || 'computational';
   card.dataset.subfield = sf;
 
-  const photoSrc = group.photoURL || 'assets/placeholder-lab.svg';
-
   const keywordHTML = (group.keywords || [])
     .map(k => `<span class="keyword-pill">${escapeHTML(k)}</span>`)
-    .join('');
-
-  const linksHTML = (group.links || [])
-    .map(l => `<a href="${escapeHTML(l.url)}" class="card-link" target="_blank" rel="noopener noreferrer">${escapeHTML(l.label)}</a>`)
     .join('');
 
   const instituteHTML = group.institute
@@ -179,13 +175,11 @@ function createCard(group) {
     : '';
 
   card.innerHTML = `
-    <img class="card-photo" src="${escapeHTML(photoSrc)}" alt="${escapeHTML(group.name)}" loading="lazy">
     <div class="card-body">
       <h3 class="card-name">${escapeHTML(group.name)}</h3>
       ${instituteHTML}
       <div class="card-keywords">${keywordHTML}</div>
       <p class="card-summary">${escapeHTML(group.summary || '')}</p>
-      <div class="card-links">${linksHTML}</div>
     </div>
   `;
 
@@ -194,27 +188,6 @@ function createCard(group) {
     if (e.target.closest('a') || e.target.closest('button')) return;
     openPiDetail(group);
   });
-
-  // Show Edit button for creators or claimedBy users (not for admins — they use admin panel)
-  const user = getCurrentUser();
-  const isAdmin = getIsAdmin();
-  if (user && !isAdmin && group.creatorUid && group.creatorUid === user.uid) {
-    const editBtn = document.createElement('button');
-    editBtn.className = 'card-edit-btn';
-    editBtn.textContent = 'Edit';
-    editBtn.addEventListener('click', () => {
-      document.dispatchEvent(new CustomEvent('creator-edit-group', { detail: group }));
-    });
-    card.querySelector('.card-body').appendChild(editBtn);
-  } else if (user && !isAdmin && group.claimedBy && group.claimedBy === user.uid) {
-    const editBtn = document.createElement('button');
-    editBtn.className = 'card-edit-btn';
-    editBtn.textContent = 'Edit';
-    editBtn.addEventListener('click', () => {
-      document.dispatchEvent(new CustomEvent('creator-edit-group', { detail: group }));
-    });
-    card.querySelector('.card-body').appendChild(editBtn);
-  }
 
   return card;
 }
@@ -243,32 +216,39 @@ async function openPiDetail(group) {
     .map(l => `<a href="${escapeHTML(l.url)}" class="card-link" target="_blank" rel="noopener noreferrer">${escapeHTML(l.label)}</a>`)
     .join('');
 
-  // Reset claim sections
+  // Reset sections
+  piDetailEditSection.classList.add('hidden');
   piDetailClaimSection.classList.add('hidden');
   piDetailClaimPending.classList.add('hidden');
   piDetailClaimed.classList.add('hidden');
   btnClaimPi.disabled = false;
   btnClaimPi.textContent = 'Claim this page';
 
+  const user = getCurrentUser();
+  const isAdmin = getIsAdmin();
+  const isCreator = user && group.creatorUid && group.creatorUid === user.uid;
+  const isClaimer = user && group.claimedBy && group.claimedBy === user.uid;
+
+  // Show edit button for admins, creators, or claimedBy users
+  if (user && (isAdmin || isCreator || isClaimer)) {
+    piDetailEditSection.classList.remove('hidden');
+  }
+
   // Claim logic
   if (group.claimedBy) {
     piDetailClaimed.classList.remove('hidden');
-  } else {
-    const user = getCurrentUser();
-    const isAdmin = getIsAdmin();
-    if (user && !isAdmin && !(group.creatorUid && group.creatorUid === user.uid)) {
-      // Check for existing pending claim
-      try {
-        const existingClaim = await fetchMyClaimForPi(user.uid, group.id);
-        if (existingClaim) {
-          piDetailClaimPending.classList.remove('hidden');
-        } else {
-          piDetailClaimSection.classList.remove('hidden');
-        }
-      } catch (err) {
-        console.error('Error checking claim:', err);
+  } else if (user && !isAdmin && !isCreator) {
+    // Check for existing pending claim
+    try {
+      const existingClaim = await fetchMyClaimForPi(user.uid, group.id);
+      if (existingClaim) {
+        piDetailClaimPending.classList.remove('hidden');
+      } else {
         piDetailClaimSection.classList.remove('hidden');
       }
+    } catch (err) {
+      console.error('Error checking claim:', err);
+      piDetailClaimSection.classList.remove('hidden');
     }
   }
 
@@ -303,6 +283,11 @@ async function handleClaimClick() {
 
 export function initPiDetail() {
   btnClaimPi.addEventListener('click', handleClaimClick);
+  btnPiDetailEdit.addEventListener('click', () => {
+    if (!currentDetailGroup) return;
+    modalPiDetail.classList.add('hidden');
+    document.dispatchEvent(new CustomEvent('creator-edit-group', { detail: currentDetailGroup }));
+  });
 }
 
 function escapeHTML(str) {
