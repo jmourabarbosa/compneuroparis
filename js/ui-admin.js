@@ -3,7 +3,7 @@ import {
   fetchGroups, updateGroup, deleteGroup,
   fetchAdmins, removeAdmin,
   fetchApprovedInstitutes, fetchPendingInstitutes,
-  approveInstitute, rejectInstitute,
+  approveInstitute, rejectInstitute, updateInstitute, deleteInstitute,
   fetchPendingClaims, approveClaim, rejectClaim
 } from './db.js';
 import { getCurrentUser, createAdminUser } from './auth.js';
@@ -49,6 +49,21 @@ const editPhotoImg = document.getElementById('edit-photo-img');
 const editMessage = document.getElementById('edit-message');
 const editSubfield = document.getElementById('edit-subfield');
 const editInstituteDisplay = document.getElementById('edit-institute-display');
+
+// Institute edit modal
+const modalEditInstitute = document.getElementById('modal-edit-institute');
+const editInstForm = document.getElementById('edit-institute-form');
+const editInstId = document.getElementById('edit-inst-id');
+const editInstName = document.getElementById('edit-inst-name');
+const editInstWebsite = document.getElementById('edit-inst-website');
+const editInstKeywords = document.getElementById('edit-inst-keywords');
+const editInstSummary = document.getElementById('edit-inst-summary');
+const editInstLinksContainer = document.getElementById('edit-inst-links-container');
+const btnEditInstAddLink = document.getElementById('btn-edit-inst-add-link');
+const editInstLogoURL = document.getElementById('edit-inst-logo-url');
+const editInstLogoCurrentDiv = document.getElementById('edit-inst-logo-current');
+const editInstLogoImg = document.getElementById('edit-inst-logo-img');
+const editInstMessage = document.getElementById('edit-inst-message');
 
 // Add admin
 const newAdminEmail = document.getElementById('new-admin-email');
@@ -417,12 +432,15 @@ export async function loadPendingClaims() {
     claims.forEach(claim => {
       const item = document.createElement('div');
       item.className = 'admin-item';
+      const claimType = claim.type || 'pi';
+      const typeBadge = `<span class="admin-item-type-badge admin-item-type-badge--${claimType}">[${claimType === 'institute' ? 'Institute' : 'PI'}]</span>`;
+      const targetName = claim.targetName || claim.piName;
       const justificationHTML = claim.justification
         ? `<div class="admin-item-meta"><strong>Justification:</strong> ${escapeHTML(claim.justification)}</div>`
         : '';
       item.innerHTML = `
         <div class="admin-item-info">
-          <div class="admin-item-name">${escapeHTML(claim.piName)}</div>
+          <div class="admin-item-name">${typeBadge} ${escapeHTML(targetName)}</div>
           <div class="admin-item-meta">Claimed by: ${escapeHTML(claim.claimantEmail)}</div>
           ${justificationHTML}
         </div>
@@ -439,6 +457,7 @@ export async function loadPendingClaims() {
           await approveClaim(claim.id);
           await loadPendingClaims();
           await loadGroups();
+          await loadPublicInstitutes();
         } catch (err) {
           console.error('Approve claim error:', err);
           alert('Error approving claim.');
@@ -615,16 +634,128 @@ export async function loadApprovedInstitutes() {
     approved.forEach(inst => {
       const item = document.createElement('div');
       item.className = 'admin-item';
+      const claimedLabel = inst.claimedBy ? ' (claimed)' : '';
       item.innerHTML = `
         <div class="admin-item-info">
-          <div class="admin-item-name">${escapeHTML(inst.name)}</div>
+          <div class="admin-item-name">${escapeHTML(inst.name)}${claimedLabel}</div>
+        </div>
+        <div class="admin-item-actions">
+          <button class="btn btn-primary btn-sm btn-edit-inst" aria-label="Edit ${escapeHTML(inst.name)}">Edit</button>
+          <button class="btn btn-danger btn-sm btn-delete-inst" aria-label="Delete ${escapeHTML(inst.name)}">Delete</button>
         </div>
       `;
+
+      item.querySelector('.btn-edit-inst').addEventListener('click', () => showEditInstituteModal(inst));
+      item.querySelector('.btn-delete-inst').addEventListener('click', async () => {
+        if (!confirm(`Delete "${inst.name}"? This cannot be undone.`)) return;
+        try {
+          await deleteInstitute(inst.id);
+          await loadApprovedInstitutes();
+          await loadPublicInstitutes();
+          await loadInstituteOptions();
+        } catch (err) {
+          console.error('Delete institute error:', err);
+          alert('Error deleting institute.');
+        }
+      });
+
       institutesApprovedList.appendChild(item);
     });
   } catch (err) {
     console.error('Error loading approved institutes:', err);
   }
+}
+
+// ========== INSTITUTE EDIT ==========
+
+function showEditInstituteModal(inst) {
+  editInstId.value = inst.id;
+  editInstName.value = inst.name || '';
+  editInstWebsite.value = inst.website || '';
+  editInstKeywords.value = (inst.keywords || []).join(', ');
+  editInstSummary.value = inst.summary || '';
+
+  // Populate links
+  editInstLinksContainer.innerHTML = '';
+  const links = inst.links || [];
+  if (links.length === 0) {
+    addEditInstLinkRow();
+  } else {
+    links.forEach(l => addEditInstLinkRow(l.label, l.url));
+  }
+
+  // Logo
+  editInstLogoURL.value = inst.logoURL || '';
+  if (inst.logoURL) {
+    editInstLogoImg.src = inst.logoURL;
+    editInstLogoCurrentDiv.classList.remove('hidden');
+  } else {
+    editInstLogoCurrentDiv.classList.add('hidden');
+  }
+
+  editInstMessage.classList.add('hidden');
+  modalEditInstitute.classList.remove('hidden');
+}
+
+export function showEditInstituteModalForCreator(inst) {
+  showEditInstituteModal(inst);
+}
+
+function addEditInstLinkRow(label = '', url = '') {
+  const row = document.createElement('div');
+  row.className = 'link-row';
+  row.innerHTML = `
+    <input type="text" name="link-label" placeholder="Label" value="${escapeHTML(label)}">
+    <input type="url" name="link-url" placeholder="https://..." value="${escapeHTML(url)}">
+  `;
+  editInstLinksContainer.appendChild(row);
+}
+
+export function initEditInstituteForm() {
+  btnEditInstAddLink.addEventListener('click', () => addEditInstLinkRow());
+
+  editInstForm.addEventListener('submit', async (e) => {
+    e.preventDefault();
+    editInstMessage.classList.add('hidden');
+
+    const id = editInstId.value;
+    const name = editInstName.value.trim();
+    if (!name) {
+      showMsg(editInstMessage, 'Name is required.', 'error');
+      return;
+    }
+
+    const website = editInstWebsite.value.trim();
+    const keywords = editInstKeywords.value.split(',').map(k => k.trim()).filter(Boolean);
+    const summary = editInstSummary.value.trim();
+
+    const linkRows = editInstLinksContainer.querySelectorAll('.link-row');
+    const links = [];
+    linkRows.forEach(row => {
+      const l = row.querySelector('[name="link-label"]').value.trim();
+      const u = row.querySelector('[name="link-url"]').value.trim();
+      if (l && u) links.push({ label: l, url: u });
+    });
+
+    const logoURL = editInstLogoURL.value.trim();
+    const updateData = { name, website, keywords, summary, links, logoURL };
+
+    const submitBtn = editInstForm.querySelector('button[type="submit"]');
+    submitBtn.disabled = true;
+
+    try {
+      await updateInstitute(id, updateData);
+      modalEditInstitute.classList.add('hidden');
+      await loadApprovedInstitutes();
+      await loadPublicInstitutes();
+      await loadInstituteOptions();
+    } catch (err) {
+      console.error('Edit institute error:', err);
+      showMsg(editInstMessage, 'Error saving changes.', 'error');
+    } finally {
+      submitBtn.disabled = false;
+    }
+  });
 }
 
 // ========== HELPERS ==========

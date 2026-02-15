@@ -1,4 +1,4 @@
-import { fetchGroups, fetchApprovedInstitutes, createClaim, fetchMyClaimForPi } from './db.js';
+import { fetchGroups, fetchApprovedInstitutes, createClaim, fetchMyClaimForTarget } from './db.js';
 import { getCurrentUser, getIsAdmin, createAccount, login } from './auth.js';
 
 let allGroups = [];
@@ -45,6 +45,27 @@ const piDetailEditSection = document.getElementById('pi-detail-edit-section');
 const btnPiDetailEdit = document.getElementById('btn-pi-detail-edit');
 
 let currentDetailGroup = null;
+
+// Institute Detail modal refs
+const modalInstDetail = document.getElementById('modal-institute-detail');
+const instDetailTitle = document.getElementById('inst-detail-title');
+const instDetailLogo = document.getElementById('inst-detail-logo');
+const instDetailWebsite = document.getElementById('inst-detail-website');
+const instDetailKeywords = document.getElementById('inst-detail-keywords');
+const instDetailSummary = document.getElementById('inst-detail-summary');
+const instDetailLinks = document.getElementById('inst-detail-links');
+const instDetailEditSection = document.getElementById('inst-detail-edit-section');
+const instDetailClaimSection = document.getElementById('inst-detail-claim-section');
+const instDetailClaimPending = document.getElementById('inst-detail-claim-pending');
+const instDetailClaimed = document.getElementById('inst-detail-claimed');
+const btnClaimInst = document.getElementById('btn-claim-inst');
+const btnInstDetailEdit = document.getElementById('btn-inst-detail-edit');
+const btnInstViewPis = document.getElementById('btn-inst-view-pis');
+
+let currentDetailInstitute = null;
+
+// Generic claim target: { id, name, type }
+let currentClaimTarget = null;
 
 export async function loadGroups() {
   groupsLoading.classList.remove('hidden');
@@ -251,7 +272,7 @@ async function openPiDetail(group) {
   // After modal is open, check for existing pending claim (logged-in users only)
   if (user && !isClaimer) {
     try {
-      const existingClaim = await fetchMyClaimForPi(user.uid, group.id);
+      const existingClaim = await fetchMyClaimForTarget(user.uid, group.id);
       if (existingClaim) {
         piDetailClaimSection.classList.add('hidden');
         piDetailClaimPending.classList.remove('hidden');
@@ -276,7 +297,7 @@ const claimSubmitMessage = document.getElementById('claim-submit-message');
 const btnClaimSubmit = document.getElementById('btn-claim-submit');
 
 function openClaimModal() {
-  if (!currentDetailGroup) return;
+  if (!currentClaimTarget) return;
   const user = getCurrentUser();
 
   // Reset form state
@@ -346,6 +367,8 @@ async function handleClaimSubmit() {
     return;
   }
 
+  if (!currentClaimTarget) return;
+
   const justification = claimJustification.value.trim();
   if (!justification) {
     showClaimMsg(claimSubmitMessage, 'Please explain why you can claim this page.', 'error');
@@ -357,16 +380,23 @@ async function handleClaimSubmit() {
 
   try {
     await createClaim({
-      piId: currentDetailGroup.id,
-      piName: currentDetailGroup.name,
+      targetId: currentClaimTarget.id,
+      targetName: currentClaimTarget.name,
+      type: currentClaimTarget.type,
       claimantUid: user.uid,
       claimantEmail: user.email,
       justification
     });
-    // Close claim modal, update PI detail to show pending
+    // Close claim modal, update detail to show pending
     modalClaim.classList.add('hidden');
-    piDetailClaimSection.classList.add('hidden');
-    piDetailClaimPending.classList.remove('hidden');
+
+    if (currentClaimTarget.type === 'institute') {
+      instDetailClaimSection.classList.add('hidden');
+      instDetailClaimPending.classList.remove('hidden');
+    } else {
+      piDetailClaimSection.classList.add('hidden');
+      piDetailClaimPending.classList.remove('hidden');
+    }
   } catch (err) {
     console.error('Claim submit error:', err);
     showClaimMsg(claimSubmitMessage, 'Error submitting claim. Please try again.', 'error');
@@ -377,7 +407,11 @@ async function handleClaimSubmit() {
 }
 
 export function initPiDetail() {
-  btnClaimPi.addEventListener('click', openClaimModal);
+  btnClaimPi.addEventListener('click', () => {
+    if (!currentDetailGroup) return;
+    currentClaimTarget = { id: currentDetailGroup.id, name: currentDetailGroup.name, type: 'pi' };
+    openClaimModal();
+  });
   btnPiDetailEdit.addEventListener('click', () => {
     if (!currentDetailGroup) return;
     modalPiDetail.classList.add('hidden');
@@ -444,23 +478,127 @@ export async function loadPublicInstitutes() {
 
     institutesSection.classList.remove('section-hidden');
     institutes.forEach(inst => {
-      const card = document.createElement('div');
-      card.className = 'institute-card';
-      card.dataset.institute = inst.name;
-      if (activeInstitute === inst.name) card.classList.add('active');
-      const websiteHTML = inst.website
-        ? `<a href="${escapeHTML(inst.website)}" class="card-link" target="_blank" rel="noopener noreferrer" onclick="event.stopPropagation()">Website</a>`
-        : '';
-      card.innerHTML = `
-        <div class="institute-card-name">${escapeHTML(inst.name)}</div>
-        <div class="institute-card-links">${websiteHTML}</div>
-      `;
-      card.addEventListener('click', () => setInstituteFilter(inst.name));
-      institutesPublicList.appendChild(card);
+      institutesPublicList.appendChild(createInstituteCard(inst));
     });
   } catch (err) {
     console.error('Error loading public institutes:', err);
   }
+}
+
+function createInstituteCard(inst) {
+  const card = document.createElement('article');
+  card.className = 'group-card institute-card-rich';
+  card.dataset.institute = inst.name;
+
+  const keywordHTML = (inst.keywords || [])
+    .map(k => `<span class="keyword-pill keyword-pill-institute">${escapeHTML(k)}</span>`)
+    .join('');
+
+  const summaryText = inst.summary || '';
+  const truncated = summaryText.length > 120 ? summaryText.slice(0, 120) + '...' : summaryText;
+
+  card.innerHTML = `
+    <div class="card-body">
+      <h3 class="card-name">${escapeHTML(inst.name)}</h3>
+      ${keywordHTML ? `<div class="card-keywords">${keywordHTML}</div>` : ''}
+      ${truncated ? `<p class="card-summary">${escapeHTML(truncated)}</p>` : ''}
+    </div>
+  `;
+
+  card.addEventListener('click', (e) => {
+    if (e.target.closest('a') || e.target.closest('button')) return;
+    openInstituteDetail(inst);
+  });
+
+  return card;
+}
+
+async function openInstituteDetail(inst) {
+  currentDetailInstitute = inst;
+
+  instDetailTitle.textContent = inst.name || 'Institute Details';
+  instDetailLogo.src = inst.logoURL || 'assets/placeholder-lab.svg';
+  instDetailLogo.alt = inst.name || '';
+
+  if (inst.website) {
+    instDetailWebsite.innerHTML = `<a href="${escapeHTML(inst.website)}" class="card-link" target="_blank" rel="noopener noreferrer">${escapeHTML(inst.website)}</a>`;
+    instDetailWebsite.classList.remove('hidden');
+  } else {
+    instDetailWebsite.innerHTML = '';
+    instDetailWebsite.classList.add('hidden');
+  }
+
+  instDetailKeywords.innerHTML = (inst.keywords || [])
+    .map(k => `<span class="keyword-pill keyword-pill-institute">${escapeHTML(k)}</span>`)
+    .join('');
+
+  instDetailSummary.textContent = inst.summary || '';
+
+  instDetailLinks.innerHTML = (inst.links || [])
+    .map(l => `<a href="${escapeHTML(l.url)}" class="card-link" target="_blank" rel="noopener noreferrer">${escapeHTML(l.label)}</a>`)
+    .join('');
+
+  // Reset sections
+  instDetailEditSection.classList.add('hidden');
+  instDetailClaimSection.classList.add('hidden');
+  instDetailClaimPending.classList.add('hidden');
+  instDetailClaimed.classList.add('hidden');
+
+  const user = getCurrentUser();
+  const isAdmin = getIsAdmin();
+  const isClaimer = user && inst.claimedBy && inst.claimedBy === user.uid;
+
+  // Show edit button for admins or claimedBy users
+  if (user && (isAdmin || isClaimer)) {
+    instDetailEditSection.classList.remove('hidden');
+  }
+
+  // Show "managed by member" badge if already claimed
+  if (inst.claimedBy) {
+    instDetailClaimed.classList.remove('hidden');
+  }
+
+  // Show claim button (except for current claimer)
+  if (user && isClaimer) {
+    // Already the claimer — no button needed
+  } else {
+    instDetailClaimSection.classList.remove('hidden');
+  }
+
+  modalInstDetail.classList.remove('hidden');
+
+  // Check for existing pending claim
+  if (user && !isClaimer) {
+    try {
+      const existingClaim = await fetchMyClaimForTarget(user.uid, inst.id);
+      if (existingClaim) {
+        instDetailClaimSection.classList.add('hidden');
+        instDetailClaimPending.classList.remove('hidden');
+      }
+    } catch (err) {
+      console.error('Error checking institute claim:', err);
+    }
+  }
+}
+
+export function initInstituteDetail() {
+  btnClaimInst.addEventListener('click', () => {
+    if (!currentDetailInstitute) return;
+    currentClaimTarget = { id: currentDetailInstitute.id, name: currentDetailInstitute.name, type: 'institute' };
+    openClaimModal();
+  });
+
+  btnInstDetailEdit.addEventListener('click', () => {
+    if (!currentDetailInstitute) return;
+    modalInstDetail.classList.add('hidden');
+    document.dispatchEvent(new CustomEvent('creator-edit-institute', { detail: currentDetailInstitute }));
+  });
+
+  btnInstViewPis.addEventListener('click', () => {
+    if (!currentDetailInstitute) return;
+    modalInstDetail.classList.add('hidden');
+    setInstituteFilter(currentDetailInstitute.name);
+  });
 }
 
 export function initSections() {

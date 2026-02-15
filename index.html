@@ -466,6 +466,95 @@
     </div>
   </div>
 
+  <!-- ========== INSTITUTE DETAIL MODAL ========== -->
+  <div id="modal-institute-detail" class="modal-overlay hidden" role="dialog" aria-modal="true" aria-label="Institute Details">
+    <div class="modal modal-lg">
+      <div class="modal-header">
+        <h3 id="inst-detail-title">Institute Details</h3>
+        <button class="modal-close" data-close-modal="modal-institute-detail" aria-label="Close">&times;</button>
+      </div>
+      <div class="modal-body">
+        <div class="inst-detail-content">
+          <div class="inst-detail-logo-wrap">
+            <img id="inst-detail-logo" class="inst-detail-logo" src="" alt="">
+          </div>
+          <div class="inst-detail-info">
+            <div id="inst-detail-website" class="inst-detail-website"></div>
+            <div id="inst-detail-keywords" class="card-keywords" style="margin-top:0.75rem"></div>
+            <p id="inst-detail-summary" class="inst-detail-summary"></p>
+            <div id="inst-detail-links" class="card-links"></div>
+          </div>
+        </div>
+        <div id="inst-detail-view-pis" class="inst-detail-view-pis">
+          <button id="btn-inst-view-pis" class="btn btn-primary btn-sm">View PIs from this institute</button>
+        </div>
+        <div id="inst-detail-edit-section" class="pi-detail-edit-section hidden">
+          <button id="btn-inst-detail-edit" class="btn btn-primary btn-sm">Edit</button>
+        </div>
+        <div id="inst-detail-claim-section" class="pi-detail-claim-section hidden">
+          <p class="pi-detail-claim-hint">Do you manage this institute? Claim this page to manage its information.</p>
+          <button id="btn-claim-inst" class="btn btn-accent">Claim this page</button>
+        </div>
+        <div id="inst-detail-claim-pending" class="pi-detail-claim-pending hidden">
+          Your claim for this page is pending admin review.
+        </div>
+        <div id="inst-detail-claimed" class="pi-detail-claimed hidden">
+          This page is managed by a member.
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- ========== INSTITUTE EDIT MODAL ========== -->
+  <div id="modal-edit-institute" class="modal-overlay hidden" role="dialog" aria-modal="true" aria-label="Edit Institute">
+    <div class="modal">
+      <div class="modal-header">
+        <h3>Edit Institute</h3>
+        <button class="modal-close" data-close-modal="modal-edit-institute" aria-label="Close">&times;</button>
+      </div>
+      <div class="modal-body">
+        <form id="edit-institute-form" novalidate>
+          <input type="hidden" id="edit-inst-id">
+          <div class="form-group">
+            <label for="edit-inst-name">Institute Name <span class="required">*</span></label>
+            <input type="text" id="edit-inst-name" required>
+          </div>
+          <div class="form-group">
+            <label for="edit-inst-website">Website</label>
+            <input type="url" id="edit-inst-website" placeholder="https://...">
+          </div>
+          <div class="form-group">
+            <label for="edit-inst-keywords">Keywords <span class="hint">(comma-separated)</span></label>
+            <input type="text" id="edit-inst-keywords">
+          </div>
+          <div class="form-group">
+            <label for="edit-inst-summary">Summary</label>
+            <textarea id="edit-inst-summary" rows="4"></textarea>
+          </div>
+          <div class="form-group">
+            <label>Links</label>
+            <div id="edit-inst-links-container">
+              <div class="link-row">
+                <input type="text" name="link-label" placeholder="Label">
+                <input type="url" name="link-url" placeholder="https://...">
+              </div>
+            </div>
+            <button type="button" id="btn-edit-inst-add-link" class="btn btn-text btn-sm">+ Add another link</button>
+          </div>
+          <div class="form-group">
+            <label for="edit-inst-logo-url">Logo URL</label>
+            <input type="url" id="edit-inst-logo-url" placeholder="https://example.com/logo.png">
+            <div id="edit-inst-logo-current" class="photo-preview hidden">
+              <img id="edit-inst-logo-img" alt="Current logo">
+            </div>
+          </div>
+          <div id="edit-inst-message" class="form-message hidden" role="alert"></div>
+          <button type="submit" class="btn btn-primary btn-full">Save Changes</button>
+        </form>
+      </div>
+    </div>
+  </div>
+
   <!-- ========== SUBMISSION DETAIL MODAL (for admin review) ========== -->
   <div id="modal-submission" class="modal-overlay hidden" role="dialog" aria-modal="true" aria-label="Review Submission">
     <div class="modal">

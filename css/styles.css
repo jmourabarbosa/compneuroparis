@@ -477,41 +477,18 @@ img {
 /* ========== INSTITUTES GRID ========== */
 .institutes-grid {
   display: grid;
-  grid-template-columns: repeat(auto-fill, minmax(260px, 1fr));
-  gap: 1rem;
+  grid-template-columns: repeat(auto-fill, minmax(340px, 1fr));
+  gap: 1.5rem;
 }
 
-.institute-card {
-  background: var(--color-surface);
-  border: 1px solid var(--color-border);
-  border-radius: var(--radius-md);
-  padding: 1rem 1.25rem;
-  display: flex;
-  align-items: center;
-  justify-content: space-between;
-  gap: 0.75rem;
-  cursor: pointer;
-  transition: border-color 0.2s, box-shadow 0.2s, transform 0.2s;
+/* Rich institute card (reuses group-card) */
+.institute-card-rich {
+  border-left: 3px solid var(--color-institutes);
 }
 
-.institute-card:hover {
-  border-color: var(--color-institutes);
-  box-shadow: var(--shadow-md);
-  transform: translateY(-2px);
-}
-
-.institute-card.active {
-  border-color: var(--color-institutes);
+.keyword-pill-institute {
   background: var(--color-institutes-light);
-}
-
-.institute-card-name {
-  font-weight: 600;
-  font-size: 0.95rem;
-}
-
-.institute-card-links {
-  flex-shrink: 0;
+  color: var(--color-institutes-dark);
 }
 
 /* Active institute filter banner */
@@ -1248,6 +1225,74 @@ img {
   padding: 1.25rem;
 }
 
+/* ========== INSTITUTE DETAIL MODAL ========== */
+.inst-detail-content {
+  display: flex;
+  gap: 1.5rem;
+  align-items: flex-start;
+}
+
+.inst-detail-logo-wrap {
+  flex-shrink: 0;
+}
+
+.inst-detail-logo {
+  width: 160px;
+  height: 160px;
+  object-fit: contain;
+  border-radius: var(--radius-md);
+  background: var(--color-institutes-light);
+}
+
+.inst-detail-info {
+  flex: 1;
+  min-width: 0;
+}
+
+.inst-detail-website {
+  margin-bottom: 0.35rem;
+}
+
+.inst-detail-website a {
+  font-size: 0.9rem;
+  word-break: break-all;
+}
+
+.inst-detail-summary {
+  font-size: 0.9rem;
+  color: var(--color-text-secondary);
+  line-height: 1.6;
+  margin-top: 0.75rem;
+  margin-bottom: 0.75rem;
+}
+
+.inst-detail-view-pis {
+  margin-top: 1.25rem;
+  padding-top: 1.25rem;
+  border-top: 1px solid var(--color-border);
+}
+
+/* ========== CLAIM TYPE BADGE ========== */
+.admin-item-type-badge {
+  display: inline-block;
+  padding: 0.1rem 0.45rem;
+  border-radius: 999px;
+  font-size: 0.7rem;
+  font-weight: 600;
+  margin-right: 0.25rem;
+  vertical-align: middle;
+}
+
+.admin-item-type-badge--pi {
+  background: var(--color-computational-light);
+  color: var(--color-computational-dark);
+}
+
+.admin-item-type-badge--institute {
+  background: var(--color-institutes-light);
+  color: var(--color-institutes-dark);
+}
+
 /* ========== RESPONSIVE ========== */
 @media (max-width: 768px) {
   .header-inner {
@@ -1293,5 +1338,20 @@ img {
     max-width: 200px;
     height: auto;
     aspect-ratio: 1;
+  }
+
+  .inst-detail-content {
+    flex-direction: column;
+  }
+
+  .inst-detail-logo {
+    width: 100%;
+    max-width: 160px;
+    height: auto;
+    aspect-ratio: 1;
+  }
+
+  .institutes-grid {
+    grid-template-columns: 1fr;
   }
 }

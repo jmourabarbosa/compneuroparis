@@ -1,10 +1,11 @@
-import { loadGroups, initSearch, initSections, loadPublicInstitutes, initPiDetail } from './ui-groups.js';
+import { loadGroups, initSearch, initSections, loadPublicInstitutes, initPiDetail, initInstituteDetail } from './ui-groups.js';
 import { initForm, updateSubmissionAuthUI } from './ui-form.js';
 import { onAuthChange, login, logout, resetPassword, authReady } from './auth.js';
 import {
   initTabs, loadPending, loadManageGroups, loadAdmins,
   initSubmissionActions, initEditForm, initAddAdmin,
   showEditModalForCreator,
+  showEditInstituteModalForCreator, initEditInstituteForm,
   loadPendingInstitutes, loadApprovedInstitutes,
   loadPendingClaims
 } from './ui-admin.js';
@@ -167,9 +168,13 @@ onAuthChange((user, isAdmin) => {
   loadGroups();
 });
 
-// ========== CREATOR EDIT EVENT ==========
+// ========== CREATOR EDIT EVENTS ==========
 document.addEventListener('creator-edit-group', (e) => {
   showEditModalForCreator(e.detail);
+});
+
+document.addEventListener('creator-edit-institute', (e) => {
+  showEditInstituteModalForCreator(e.detail);
 });
 
 // ========== INIT ==========
@@ -180,8 +185,10 @@ initForm();
 initTabs();
 initSubmissionActions();
 initEditForm();
+initEditInstituteForm();
 initAddAdmin();
 initPiDetail();
+initInstituteDetail();
 
 // Load groups and institutes (public data)
 loadGroups();

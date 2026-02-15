@@ -117,15 +117,30 @@ export async function fetchPendingInstitutes() {
   return snapshot.docs.map(d => ({ id: d.id, ...d.data() }));
 }
 
-export async function createInstitute(name, proposedByUid, { website = '', autoApprove = false } = {}) {
+export async function createInstitute(name, proposedByUid, { website = '', summary = '', keywords = [], links = [], logoURL = '', autoApprove = false } = {}) {
   const docRef = await addDoc(collection(db, 'institutes'), {
     name,
     status: autoApprove ? 'approved' : 'pending',
     proposedBy: proposedByUid,
     website,
+    summary,
+    keywords,
+    links,
+    logoURL,
     createdAt: serverTimestamp()
   });
   return docRef.id;
+}
+
+export async function updateInstitute(id, data) {
+  await updateDoc(doc(db, 'institutes', id), {
+    ...data,
+    updatedAt: serverTimestamp()
+  });
+}
+
+export async function deleteInstitute(id) {
+  await deleteDoc(doc(db, 'institutes', id));
 }
 
 export async function fetchAllInstitutes() {
@@ -146,10 +161,14 @@ export async function rejectInstitute(id) {
 
 // ========== CLAIMS ==========
 
-export async function createClaim({ piId, piName, claimantUid, claimantEmail, justification }) {
+export async function createClaim({ targetId, targetName, type = 'pi', claimantUid, claimantEmail, justification }) {
   const docRef = await addDoc(collection(db, 'claims'), {
-    piId,
-    piName,
+    targetId,
+    targetName,
+    type,
+    // Backward compat fields
+    piId: targetId,
+    piName: targetName,
     claimantUid,
     claimantEmail,
     justification: justification || '',
@@ -175,9 +194,11 @@ export async function approveClaim(claimId) {
   if (!claimSnap.exists()) throw new Error('Claim not found');
 
   const claim = claimSnap.data();
+  const targetId = claim.targetId || claim.piId;
+  const targetCollection = claim.type === 'institute' ? 'institutes' : 'groups';
 
-  // Set claimedBy on the PI (group) doc
-  await updateDoc(doc(db, 'groups', claim.piId), {
+  // Set claimedBy on the target doc
+  await updateDoc(doc(db, targetCollection, targetId), {
     claimedBy: claim.claimantUid,
     updatedAt: serverTimestamp()
   });
@@ -188,10 +209,10 @@ export async function approveClaim(claimId) {
     reviewedAt: serverTimestamp()
   });
 
-  // Auto-reject other pending claims for the same PI
+  // Auto-reject other pending claims for the same target
   const othersQ = query(
     collection(db, 'claims'),
-    where('piId', '==', claim.piId),
+    where('targetId', '==', targetId),
     where('status', '==', 'pending')
   );
   const othersSnap = await getDocs(othersQ);
@@ -212,16 +233,19 @@ export async function rejectClaim(claimId) {
   });
 }
 
-export async function fetchMyClaimForPi(uid, piId) {
+export async function fetchMyClaimForTarget(uid, targetId) {
   const q = query(
     collection(db, 'claims'),
     where('claimantUid', '==', uid),
-    where('piId', '==', piId),
+    where('targetId', '==', targetId),
     where('status', '==', 'pending')
   );
   const snapshot = await getDocs(q);
   return snapshot.docs.length > 0 ? { id: snapshot.docs[0].id, ...snapshot.docs[0].data() } : null;
 }
+
+// Backward compat alias
+export const fetchMyClaimForPi = fetchMyClaimForTarget;
 
 // ========== ADMINS ==========
 
