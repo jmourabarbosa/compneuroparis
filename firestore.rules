@@ -23,9 +23,10 @@ service cloud.firestore {
       allow read, update, delete: if isAdmin();
     }
 
-    // Admins: admin only
+    // Admins: users can check their own admin status, admins can read all and write
     match /admins/{uid} {
-      allow read, write: if isAdmin();
+      allow read: if isAdmin() || (request.auth != null && request.auth.uid == uid);
+      allow write: if isAdmin();
     }
   }
 }
