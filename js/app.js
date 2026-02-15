@@ -1,6 +1,6 @@
 import { loadGroups, initSearch } from './ui-groups.js';
 import { initForm, updateSubmissionAuthUI } from './ui-form.js';
-import { onAuthChange, login, logout, authReady } from './auth.js';
+import { onAuthChange, login, logout, resetPassword, authReady } from './auth.js';
 import {
   initTabs, loadPending, loadManageGroups, loadAdmins,
   initSubmissionActions, initEditForm, initAddAdmin,
@@ -106,6 +106,20 @@ btnAdminPanel.addEventListener('click', () => {
   loadPending();
   loadManageGroups();
   loadAdmins();
+});
+
+document.getElementById('btn-login-forgot').addEventListener('click', async () => {
+  const email = document.getElementById('login-email').value.trim();
+  if (!email) {
+    showLoginMsg('Please enter your email address first.', 'error');
+    return;
+  }
+  try {
+    await resetPassword(email);
+    showLoginMsg('Password reset email sent. Check your inbox.', 'success');
+  } catch (err) {
+    showLoginMsg(err.message || 'Error sending reset email.', 'error');
+  }
 });
 
 function showLoginMsg(text, type) {

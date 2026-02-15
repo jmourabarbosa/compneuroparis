@@ -1,5 +1,5 @@
 import { createSubmission } from './db.js';
-import { getCurrentUser, createAccount, login, logout } from './auth.js';
+import { getCurrentUser, createAccount, login, logout, resetPassword } from './auth.js';
 
 const form = document.getElementById('submission-form');
 const formWrapper = document.getElementById('submission-form-wrapper');
@@ -35,6 +35,20 @@ export function initForm() {
   btnSubCreate.addEventListener('click', handleCreateAccount);
   btnSubLogin.addEventListener('click', handleLogin);
   btnSubLogout.addEventListener('click', handleSubLogout);
+
+  document.getElementById('btn-sub-forgot').addEventListener('click', async () => {
+    const email = subAuthEmail.value.trim();
+    if (!email) {
+      showAuthMsg('Please enter your email address first.', 'error');
+      return;
+    }
+    try {
+      await resetPassword(email);
+      showAuthMsg('Password reset email sent. Check your inbox.', 'success');
+    } catch (err) {
+      showAuthMsg(err.message || 'Error sending reset email.', 'error');
+    }
+  });
 }
 
 export function updateSubmissionAuthUI(user) {
