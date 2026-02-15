@@ -159,18 +159,28 @@ function renderGroups() {
 
   let totalVisible = 0;
 
+  const isSearching = searchText || activeKeyword || activeInstitute;
+
   SUBFIELDS.forEach(sf => {
     const { grid, count, el } = sections[sf];
     grid.innerHTML = '';
     const groups = bySubfield[sf];
     count.textContent = groups.length;
 
+    // Always show sections
+    el.classList.remove('section-hidden');
+
     if (groups.length === 0) {
-      el.classList.add('section-hidden');
+      grid.innerHTML = '<p class="empty-state" style="padding:1rem">No PIs in this category.</p>';
     } else {
-      el.classList.remove('section-hidden');
       groups.forEach(g => grid.appendChild(createCard(g)));
       totalVisible += groups.length;
+    }
+
+    // Auto-expand sections with results when searching
+    if (isSearching && groups.length > 0) {
+      el.classList.remove('collapsed');
+      sections[sf].header.setAttribute('aria-expanded', 'true');
     }
   });
 
@@ -471,12 +481,14 @@ export async function loadPublicInstitutes() {
     institutesPublicCount.textContent = institutes.length;
     institutesPublicList.innerHTML = '';
 
+    // Always show the section
+    institutesSection.classList.remove('section-hidden');
+
     if (institutes.length === 0) {
-      institutesSection.classList.add('section-hidden');
+      institutesPublicList.innerHTML = '<p class="empty-state" style="padding:1rem">No institutes yet.</p>';
       return;
     }
 
-    institutesSection.classList.remove('section-hidden');
     institutes.forEach(inst => {
       institutesPublicList.appendChild(createInstituteCard(inst));
     });
