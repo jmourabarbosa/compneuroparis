@@ -225,7 +225,6 @@ function createCard(group) {
       <h3 class="card-name">${escapeHTML(group.name)}</h3>
       ${instituteHTML}
       <div class="card-keywords">${keywordHTML}</div>
-      <p class="card-summary">${escapeHTML(group.summary || '')}</p>
     </div>
   `;
 
