@@ -2,6 +2,7 @@ import { fetchGroups, fetchApprovedInstitutes, createClaim, fetchMyClaimForTarge
 import { getCurrentUser, getIsAdmin, createAccount, login } from './auth.js';
 
 let allGroups = [];
+let allInstitutes = [];
 let activeKeyword = null;
 let searchText = '';
 let activeInstitute = null;
@@ -125,6 +126,7 @@ export function filterGroups() {
   searchText = searchInput.value.trim().toLowerCase();
   keywordFilters.classList.toggle('hidden', searchText.length === 0 && !activeKeyword);
   renderGroups();
+  renderInstitutes();
 }
 
 function renderGroups() {
@@ -477,23 +479,43 @@ export function setInstituteFilter(name) {
 
 export async function loadPublicInstitutes() {
   try {
-    const institutes = await fetchApprovedInstitutes();
-    institutesPublicCount.textContent = institutes.length;
-    institutesPublicList.innerHTML = '';
-
-    // Always show the section
-    institutesSection.classList.remove('section-hidden');
-
-    if (institutes.length === 0) {
-      institutesPublicList.innerHTML = '<p class="empty-state" style="padding:1rem">No institutes yet.</p>';
-      return;
-    }
-
-    institutes.forEach(inst => {
-      institutesPublicList.appendChild(createInstituteCard(inst));
-    });
+    allInstitutes = await fetchApprovedInstitutes();
   } catch (err) {
     console.error('Error loading public institutes:', err);
+    allInstitutes = [];
+  }
+  renderInstitutes();
+}
+
+function renderInstitutes() {
+  institutesSection.classList.remove('section-hidden');
+  institutesPublicList.innerHTML = '';
+
+  const filtered = allInstitutes.filter(inst => {
+    if (!searchText) return true;
+    const haystack = [
+      inst.name,
+      inst.summary || '',
+      ...(inst.keywords || [])
+    ].join(' ').toLowerCase();
+    return haystack.includes(searchText);
+  });
+
+  institutesPublicCount.textContent = filtered.length;
+
+  if (filtered.length === 0) {
+    institutesPublicList.innerHTML = '<p class="empty-state" style="padding:1rem">No institutes yet.</p>';
+    return;
+  }
+
+  filtered.forEach(inst => {
+    institutesPublicList.appendChild(createInstituteCard(inst));
+  });
+
+  // Auto-expand institutes section when searching with results
+  if (searchText && filtered.length > 0) {
+    institutesSection.classList.remove('collapsed');
+    institutesSection.querySelector('.subfield-header').setAttribute('aria-expanded', 'true');
   }
 }
 
