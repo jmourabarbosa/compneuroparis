@@ -14,6 +14,19 @@
   --color-danger: #DC2626;
   --color-danger-light: #FEE2E2;
   --color-success-light: #DCFCE7;
+  /* Subfield colors */
+  --color-computational: #0D7377;
+  --color-computational-light: #E0F2F2;
+  --color-computational-dark: #095B5E;
+  --color-systems: #7C3AED;
+  --color-systems-light: #EDE9FE;
+  --color-systems-dark: #5B21B6;
+  --color-human: #D97706;
+  --color-human-light: #FEF3C7;
+  --color-human-dark: #92400E;
+  --color-institutes: #6366F1;
+  --color-institutes-light: #E0E7FF;
+  --color-institutes-dark: #4338CA;
   --shadow-sm: 0 1px 3px rgba(0, 0, 0, 0.08);
   --shadow-md: 0 4px 12px rgba(0, 0, 0, 0.1);
   --shadow-lg: 0 8px 24px rgba(0, 0, 0, 0.12);
@@ -303,7 +316,7 @@ img {
   width: 100%;
   background: none;
   border: none;
-  border-bottom: 2px solid var(--color-border);
+  border-bottom: 2px solid var(--sf-color, var(--color-border));
   padding: 0.75rem 0.5rem;
   cursor: pointer;
   font-family: var(--font);
@@ -312,13 +325,13 @@ img {
 }
 
 .subfield-header:hover {
-  background: var(--color-primary-light);
+  background: var(--sf-color-light, var(--color-primary-light));
 }
 
 .subfield-header h2 {
   font-size: 1.2rem;
   font-weight: 600;
-  color: var(--color-text);
+  color: var(--sf-color, var(--color-text));
   margin: 0;
 }
 
@@ -330,15 +343,40 @@ img {
   height: 1.5rem;
   padding: 0 0.4rem;
   border-radius: 999px;
-  background: var(--color-primary-light);
-  color: var(--color-primary-dark);
+  background: var(--sf-color-light, var(--color-primary-light));
+  color: var(--sf-color-dark, var(--color-primary-dark));
   font-size: 0.75rem;
   font-weight: 600;
 }
 
+/* Per-subfield colors */
+.subfield-section[data-subfield="computational"] {
+  --sf-color: var(--color-computational);
+  --sf-color-light: var(--color-computational-light);
+  --sf-color-dark: var(--color-computational-dark);
+}
+
+.subfield-section[data-subfield="systems"] {
+  --sf-color: var(--color-systems);
+  --sf-color-light: var(--color-systems-light);
+  --sf-color-dark: var(--color-systems-dark);
+}
+
+.subfield-section[data-subfield="human"] {
+  --sf-color: var(--color-human);
+  --sf-color-light: var(--color-human-light);
+  --sf-color-dark: var(--color-human-dark);
+}
+
+.subfield-section[data-subfield="institutes"] {
+  --sf-color: var(--color-institutes);
+  --sf-color-light: var(--color-institutes-light);
+  --sf-color-dark: var(--color-institutes-dark);
+}
+
 .subfield-arrow {
   margin-left: auto;
-  color: var(--color-text-secondary);
+  color: var(--sf-color, var(--color-text-secondary));
   transition: transform 0.2s;
 }
 
@@ -452,6 +490,19 @@ img {
   align-items: center;
   justify-content: space-between;
   gap: 0.75rem;
+  cursor: pointer;
+  transition: border-color 0.2s, box-shadow 0.2s, transform 0.2s;
+}
+
+.institute-card:hover {
+  border-color: var(--color-institutes);
+  box-shadow: var(--shadow-md);
+  transform: translateY(-2px);
+}
+
+.institute-card.active {
+  border-color: var(--color-institutes);
+  background: var(--color-institutes-light);
 }
 
 .institute-card-name {
@@ -461,6 +512,42 @@ img {
 
 .institute-card-links {
   flex-shrink: 0;
+}
+
+/* Active institute filter banner */
+.institute-filter-banner {
+  display: flex;
+  align-items: center;
+  gap: 0.75rem;
+  padding: 0.65rem 1rem;
+  margin-bottom: 1rem;
+  background: var(--color-institutes-light);
+  border: 1.5px solid var(--color-institutes);
+  border-radius: var(--radius-sm);
+  font-size: 0.9rem;
+  color: var(--color-institutes-dark);
+}
+
+.institute-filter-banner strong {
+  font-weight: 600;
+}
+
+.institute-filter-clear {
+  margin-left: auto;
+  background: none;
+  border: none;
+  font-family: var(--font);
+  font-size: 0.85rem;
+  font-weight: 500;
+  color: var(--color-institutes);
+  cursor: pointer;
+  padding: 0.2rem 0.5rem;
+  border-radius: var(--radius-sm);
+  transition: background 0.2s;
+}
+
+.institute-filter-clear:hover {
+  background: rgba(99, 102, 241, 0.15);
 }
 
 /* ========== GROUP CARD ========== */
@@ -478,6 +565,18 @@ img {
 .group-card:hover {
   transform: translateY(-3px);
   box-shadow: var(--shadow-md);
+}
+
+.group-card[data-subfield="computational"] {
+  border-left: 3px solid var(--color-computational);
+}
+
+.group-card[data-subfield="systems"] {
+  border-left: 3px solid var(--color-systems);
+}
+
+.group-card[data-subfield="human"] {
+  border-left: 3px solid var(--color-human);
 }
 
 .card-photo {

@@ -4,6 +4,7 @@ import { getCurrentUser, getIsAdmin } from './auth.js';
 let allGroups = [];
 let activeKeyword = null;
 let searchText = '';
+let activeInstitute = null;
 
 const SUBFIELDS = ['computational', 'systems', 'human'];
 
@@ -23,6 +24,9 @@ const groupsLoading = document.getElementById('groups-loading');
 const groupsEmpty = document.getElementById('groups-empty');
 const searchInput = document.getElementById('search-input');
 const keywordFilters = document.getElementById('keyword-filters');
+const instituteFilterBanner = document.getElementById('institute-filter-banner');
+const instituteFilterName = document.getElementById('institute-filter-name');
+const instituteFilterClear = document.getElementById('institute-filter-clear');
 
 export async function loadGroups() {
   groupsLoading.classList.remove('hidden');
@@ -86,6 +90,10 @@ export function filterGroups() {
 
 function renderGroups() {
   const filtered = allGroups.filter(g => {
+    // Institute filter
+    if (activeInstitute) {
+      if ((g.institute || '') !== activeInstitute) return false;
+    }
     // Keyword filter
     if (activeKeyword) {
       const kws = (g.keywords || []).map(k => k.trim().toLowerCase());
@@ -137,6 +145,8 @@ function renderGroups() {
 function createCard(group) {
   const card = document.createElement('article');
   card.className = 'group-card';
+  const sf = group.subfield || 'computational';
+  card.dataset.subfield = sf;
 
   const photoSrc = group.photoURL || 'assets/placeholder-lab.svg';
 
@@ -194,6 +204,32 @@ const institutesSection = document.querySelector('.subfield-section[data-subfiel
 const institutesPublicList = document.getElementById('institutes-public-list');
 const institutesPublicCount = document.getElementById('institutes-public-count');
 
+export function setInstituteFilter(name) {
+  if (activeInstitute === name) {
+    // Toggle off
+    activeInstitute = null;
+    instituteFilterBanner.classList.add('hidden');
+  } else {
+    activeInstitute = name;
+    instituteFilterName.textContent = name;
+    instituteFilterBanner.classList.remove('hidden');
+    // Expand subfield sections so filtered groups are visible
+    SUBFIELDS.forEach(sf => {
+      sections[sf].el.classList.remove('collapsed');
+      sections[sf].header.setAttribute('aria-expanded', 'true');
+    });
+  }
+  // Update active state on institute cards
+  institutesPublicList.querySelectorAll('.institute-card').forEach(card => {
+    card.classList.toggle('active', card.dataset.institute === activeInstitute);
+  });
+  renderGroups();
+  // Scroll to the groups area
+  if (activeInstitute) {
+    instituteFilterBanner.scrollIntoView({ behavior: 'smooth', block: 'start' });
+  }
+}
+
 export async function loadPublicInstitutes() {
   try {
     const institutes = await fetchApprovedInstitutes();
@@ -209,13 +245,16 @@ export async function loadPublicInstitutes() {
     institutes.forEach(inst => {
       const card = document.createElement('div');
       card.className = 'institute-card';
+      card.dataset.institute = inst.name;
+      if (activeInstitute === inst.name) card.classList.add('active');
       const websiteHTML = inst.website
-        ? `<a href="${escapeHTML(inst.website)}" class="card-link" target="_blank" rel="noopener noreferrer">Website</a>`
+        ? `<a href="${escapeHTML(inst.website)}" class="card-link" target="_blank" rel="noopener noreferrer" onclick="event.stopPropagation()">Website</a>`
         : '';
       card.innerHTML = `
         <div class="institute-card-name">${escapeHTML(inst.name)}</div>
         <div class="institute-card-links">${websiteHTML}</div>
       `;
+      card.addEventListener('click', () => setInstituteFilter(inst.name));
       institutesPublicList.appendChild(card);
     });
   } catch (err) {
@@ -237,5 +276,10 @@ export function initSections() {
   instHeader.addEventListener('click', () => {
     const isCollapsed = institutesSection.classList.toggle('collapsed');
     instHeader.setAttribute('aria-expanded', !isCollapsed);
+  });
+
+  // Institute filter clear
+  instituteFilterClear.addEventListener('click', () => {
+    setInstituteFilter(activeInstitute); // toggle off
   });
 }
