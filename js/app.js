@@ -116,15 +116,13 @@ onAuthChange((user, isAdmin) => {
 });
 
 // ========== INIT ==========
-document.addEventListener('DOMContentLoaded', async () => {
-  // Init UI components
-  initSearch();
-  initForm();
-  initTabs();
-  initSubmissionActions();
-  initEditForm();
-  initAddAdmin();
+// Modules are deferred, so DOM is ready when this runs
+initSearch();
+initForm();
+initTabs();
+initSubmissionActions();
+initEditForm();
+initAddAdmin();
 
-  // Load groups (public data)
-  await loadGroups();
-});
+// Load groups (public data)
+loadGroups();
