@@ -1,11 +1,18 @@
 import { createSubmission } from './db.js';
 
 const form = document.getElementById('submission-form');
+const formWrapper = document.getElementById('submission-form-wrapper');
+const btnShowForm = document.getElementById('btn-show-form');
 const formMessage = document.getElementById('form-message');
 const linksContainer = document.getElementById('links-container');
 const btnAddLink = document.getElementById('btn-add-link');
 
 export function initForm() {
+  btnShowForm.addEventListener('click', () => {
+    formWrapper.classList.remove('hidden');
+    btnShowForm.classList.add('hidden');
+  });
+
   btnAddLink.addEventListener('click', () => {
     addLinkRow(linksContainer);
   });

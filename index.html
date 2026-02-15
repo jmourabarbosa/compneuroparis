@@ -60,8 +60,10 @@
   <!-- ========== ADD YOUR GROUP ========== -->
   <section class="submit-section" id="submit-section" aria-label="Submit your group">
     <div class="submit-inner">
-      <h2>Add Your Group</h2>
-      <p class="submit-description">Know a computational neuroscience group in Paris? Submit it for review.</p>
+      <button id="btn-show-form" class="btn btn-primary btn-add-group">Add New Research Group</button>
+      <div id="submission-form-wrapper" class="hidden">
+        <h2>Add Your Group</h2>
+        <p class="submit-description">Know a computational neuroscience group in Paris? Submit it for review.</p>
       <form id="submission-form" class="submission-form" novalidate>
         <div class="form-group">
           <label for="sub-name">Group / Lab Name <span class="required">*</span></label>
@@ -106,6 +108,7 @@
         <div id="form-message" class="form-message hidden" role="alert"></div>
         <button type="submit" id="btn-submit" class="btn btn-primary">Submit for Review</button>
       </form>
+      </div>
     </div>
   </section>
 
