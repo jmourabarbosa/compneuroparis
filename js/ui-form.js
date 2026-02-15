@@ -1,6 +1,6 @@
 import { createSubmission, createGroup, fetchApprovedInstitutes, createInstitute } from './db.js';
 import { getCurrentUser, getIsAdmin, createAccount, login, logout, resetPassword } from './auth.js';
-import { loadGroups } from './ui-groups.js';
+import { loadGroups, loadPublicInstitutes } from './ui-groups.js';
 
 const form = document.getElementById('submission-form');
 const formWrapper = document.getElementById('submission-form-wrapper');
@@ -8,6 +8,23 @@ const btnShowForm = document.getElementById('btn-show-form');
 const formMessage = document.getElementById('form-message');
 const linksContainer = document.getElementById('links-container');
 const btnAddLink = document.getElementById('btn-add-link');
+
+// Institute submission form
+const instForm = document.getElementById('institute-submission-form');
+const instFormWrapper = document.getElementById('institute-form-wrapper');
+const btnShowInstForm = document.getElementById('btn-show-institute-form');
+const instFormMessage = document.getElementById('inst-form-message');
+
+// Institute submission auth
+const instSubAuthForm = document.getElementById('inst-sub-auth-form');
+const instSubAuthStatus = document.getElementById('inst-sub-auth-status');
+const instSubAuthEmail = document.getElementById('inst-sub-auth-email');
+const instSubAuthPassword = document.getElementById('inst-sub-auth-password');
+const instSubAuthMessage = document.getElementById('inst-sub-auth-message');
+const instSubAuthUserEmail = document.getElementById('inst-sub-auth-user-email');
+const btnInstSubCreate = document.getElementById('btn-inst-sub-create');
+const btnInstSubLogin = document.getElementById('btn-inst-sub-login');
+const btnInstSubLogout = document.getElementById('btn-inst-sub-logout');
 
 // Subfield checkboxes & institute
 const subSubfieldContainer = document.getElementById('sub-subfield');
@@ -36,8 +53,23 @@ const btnSubLogout = document.getElementById('btn-sub-logout');
 export function initForm() {
   btnShowForm.addEventListener('click', () => {
     formWrapper.classList.remove('hidden');
+    instFormWrapper.classList.add('hidden');
     btnShowForm.classList.add('hidden');
+    btnShowInstForm.classList.add('hidden');
   });
+
+  btnShowInstForm.addEventListener('click', () => {
+    instFormWrapper.classList.remove('hidden');
+    formWrapper.classList.add('hidden');
+    btnShowForm.classList.add('hidden');
+    btnShowInstForm.classList.add('hidden');
+  });
+
+  // Institute submission form
+  instForm.addEventListener('submit', handleInstituteSubmit);
+  btnInstSubCreate.addEventListener('click', () => handleInstSubAuth(true));
+  btnInstSubLogin.addEventListener('click', () => handleInstSubAuth(false));
+  btnInstSubLogout.addEventListener('click', async () => { try { await logout(); } catch (e) { console.error(e); } });
 
   btnAddLink.addEventListener('click', () => {
     addLinkRow(linksContainer);
@@ -129,6 +161,100 @@ export function updateSubmissionAuthUI(user) {
     subAuthUserEmail.textContent = '';
   }
   subAuthMessage.classList.add('hidden');
+
+  // Also update institute submission auth
+  if (user) {
+    instSubAuthForm.classList.add('hidden');
+    instSubAuthStatus.classList.remove('hidden');
+    instSubAuthUserEmail.textContent = user.email;
+  } else {
+    instSubAuthForm.classList.remove('hidden');
+    instSubAuthStatus.classList.add('hidden');
+    instSubAuthUserEmail.textContent = '';
+  }
+  instSubAuthMessage.classList.add('hidden');
+}
+
+async function handleInstSubAuth(isCreate) {
+  const email = instSubAuthEmail.value.trim();
+  const password = instSubAuthPassword.value;
+  instSubAuthMessage.classList.add('hidden');
+
+  if (!email || !password) {
+    showInstAuthMsg('Email and password are required.', 'error');
+    return;
+  }
+  if (isCreate && password.length < 6) {
+    showInstAuthMsg('Password must be at least 6 characters.', 'error');
+    return;
+  }
+
+  btnInstSubCreate.disabled = true;
+  btnInstSubLogin.disabled = true;
+  try {
+    if (isCreate) await createAccount(email, password);
+    else await login(email, password);
+  } catch (err) {
+    showInstAuthMsg(err.message || 'Authentication failed.', 'error');
+  } finally {
+    btnInstSubCreate.disabled = false;
+    btnInstSubLogin.disabled = false;
+  }
+}
+
+function showInstAuthMsg(text, type) {
+  instSubAuthMessage.textContent = text;
+  instSubAuthMessage.className = `form-message ${type}`;
+  instSubAuthMessage.classList.remove('hidden');
+}
+
+async function handleInstituteSubmit(e) {
+  e.preventDefault();
+  hideMessage(instFormMessage);
+
+  const user = getCurrentUser();
+  if (!user) {
+    showMessage(instFormMessage, 'Please create an account or log in before submitting.', 'error');
+    return;
+  }
+
+  const name = instForm.elements.name.value.trim();
+  const website = instForm.elements.website.value.trim();
+  const keywordsRaw = instForm.elements.keywords.value.trim();
+  const summary = instForm.elements.summary.value.trim();
+  const logoURL = instForm.elements.logoURL.value.trim();
+
+  if (!name) {
+    showMessage(instFormMessage, 'Institute name is required.', 'error');
+    return;
+  }
+
+  const keywords = keywordsRaw ? keywordsRaw.split(',').map(k => k.trim()).filter(Boolean) : [];
+
+  const submitBtn = document.getElementById('btn-inst-submit');
+  submitBtn.disabled = true;
+  submitBtn.textContent = 'Submitting...';
+
+  try {
+    const isAdmin = getIsAdmin();
+    await createInstitute(name, user.uid, { website, summary, keywords, logoURL, autoApprove: isAdmin });
+
+    if (isAdmin) {
+      showMessage(instFormMessage, 'Institute added successfully!', 'success');
+      await loadPublicInstitutes();
+    } else {
+      showMessage(instFormMessage, 'Thank you! Your institute submission is pending review.', 'success');
+    }
+
+    instForm.reset();
+    loadInstituteOptions();
+  } catch (err) {
+    console.error('Institute submission error:', err);
+    showMessage(instFormMessage, 'Something went wrong. Please try again.', 'error');
+  } finally {
+    submitBtn.disabled = false;
+    submitBtn.textContent = 'Submit for Review';
+  }
 }
 
 async function handleCreateAccount() {
