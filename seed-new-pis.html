@@ -1,0 +1,549 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<title>Seed New PIs</title>
+<style>
+  body { font-family: system-ui; max-width: 800px; margin: 40px auto; padding: 0 20px; background: #111; color: #eee; }
+  button { padding: 10px 24px; font-size: 16px; cursor: pointer; border: none; border-radius: 6px; }
+  #loginBtn { background: #4285f4; color: white; }
+  #seedBtn { background: #34a853; color: white; font-size: 18px; padding: 14px 32px; }
+  #seedBtn:disabled { background: #555; cursor: not-allowed; color: #999; }
+  #log { background: #1a1a1a; padding: 16px; border-radius: 8px; max-height: 600px; overflow-y: auto; font-family: monospace; font-size: 13px; white-space: pre-wrap; margin-top: 16px; }
+  .success { color: #34a853; }
+  .error { color: #ea4335; }
+  .info { color: #4285f4; }
+  input { padding: 8px 12px; font-size: 14px; border-radius: 4px; border: 1px solid #444; background: #222; color: #eee; width: 240px; }
+  #authSection { margin-bottom: 24px; }
+</style>
+</head>
+<body>
+<h1>Seed New PIs (Feb 2026)</h1>
+<p style="color:#aaa;">3 named PIs + ~28 NeuroPSI team leaders. Skips any already in DB.</p>
+
+<div id="authSection">
+  <p id="authStatus">Not logged in</p>
+  <div id="loginForm">
+    <input type="email" id="email" placeholder="Admin email">
+    <input type="password" id="password" placeholder="Password">
+    <button id="loginBtn" onclick="doLogin()">Login</button>
+  </div>
+</div>
+
+<button id="seedBtn" disabled onclick="runSeed()">Seed New PIs</button>
+<div id="log"></div>
+
+<script type="module">
+import { initializeApp } from 'https://www.gstatic.com/firebasejs/11.4.0/firebase-app.js';
+import { getAuth, signInWithEmailAndPassword, onAuthStateChanged } from 'https://www.gstatic.com/firebasejs/11.4.0/firebase-auth.js';
+import { getFirestore, collection, addDoc, serverTimestamp, query, where, getDocs } from 'https://www.gstatic.com/firebasejs/11.4.0/firebase-firestore.js';
+
+const firebaseConfig = {
+  apiKey: "AIzaSyCEUSVBEAPYfsoG00GKPqw_lHJQKelgVbk",
+  authDomain: "compneuroparis.firebaseapp.com",
+  projectId: "compneuroparis",
+  storageBucket: "compneuroparis.firebasestorage.app",
+  messagingSenderId: "768335946036",
+  appId: "1:768335946036:web:61184dde3b4b66c58bc561"
+};
+
+const app = initializeApp(firebaseConfig);
+const auth = getAuth(app);
+const db = getFirestore(app);
+
+const logEl = document.getElementById('log');
+function log(msg, cls = '') {
+  const span = document.createElement('span');
+  span.className = cls;
+  span.textContent = msg + '\n';
+  logEl.appendChild(span);
+  logEl.scrollTop = logEl.scrollHeight;
+}
+
+let currentUser = null;
+
+onAuthStateChanged(auth, user => {
+  currentUser = user;
+  if (user) {
+    document.getElementById('authStatus').textContent = `Logged in as ${user.email}`;
+    document.getElementById('loginForm').style.display = 'none';
+    document.getElementById('seedBtn').disabled = false;
+  }
+});
+
+window.doLogin = async () => {
+  const email = document.getElementById('email').value;
+  const pw = document.getElementById('password').value;
+  try {
+    await signInWithEmailAndPassword(auth, email, pw);
+    log('Logged in!', 'success');
+  } catch (e) {
+    log('Login error: ' + e.message, 'error');
+  }
+};
+
+// ========== NEW INSTITUTE ==========
+const newInstitutes = [
+  { name: "IBPS - Sorbonne Universite", website: "https://www.ibps.sorbonne-universite.fr", logoURL: "" },
+];
+
+// ========== PI DATA ==========
+const pis = [
+
+  // ===== 3 NAMED PIs =====
+
+  {
+    name: "Heike Stein",
+    keywords: ["computational neuroscience", "neural population dynamics", "behavioral modeling", "dimensionality reduction", "working memory", "cerebellum"],
+    summary: "Computational neuroscientist developing data-driven models of behavioral dynamics and neural population activity. Combines dynamical systems models, dimensionality reduction, and probabilistic machine learning to understand neural circuits underlying cognition and motor behavior.",
+    photoURL: "https://heikestein.github.io/assets/img/head.jpg",
+    subfields: ["computational", "systems"],
+    institutes: ["ISIR - Sorbonne Universite"],
+    links: [
+      { label: "Personal Website", url: "https://heikestein.github.io" },
+      { label: "ISIR Profile", url: "https://www.isir.upmc.fr/personnel/stein/" }
+    ]
+  },
+  {
+    name: "Yves Boubenec",
+    keywords: ["auditory neuroscience", "functional ultrasound imaging", "sound perception", "sensorimotor integration", "neural coding"],
+    summary: "Investigates how the mammalian neocortex encodes natural sounds and how this encoding adjusts to contextual needs. Combines psychophysics in humans with functional ultrasound imaging and electrophysiology in behaving ferrets.",
+    photoURL: "https://qbio.ens.psl.eu/sites/ens/files/styles/photo_340x330/public/2021-09/Fiche%20annuaire-BOUBENEC_0.jpeg",
+    subfields: ["systems", "computational"],
+    institutes: ["ENS - Ecole Normale Superieure"],
+    links: [
+      { label: "Personal Website", url: "https://sites.google.com/view/yves-boubenec/home" },
+      { label: "LSP Lab", url: "https://lsp.dec.ens.fr/en/member/616/yves-boubenec" }
+    ]
+  },
+  {
+    name: "Claire Meissner-Bernard",
+    keywords: ["olfactory memory", "computational neuroscience", "neural network dynamics", "learning and memory", "sleep"],
+    summary: "Studies how the brain stores sensory information and retrieves it using olfaction as a model system. Bridges experimental and computational neuroscience, combining spiking network modeling with optogenetics and behavioral experiments.",
+    photoURL: "https://cmeissnerbernard.com/wp-content/uploads/2023/10/photocmb_crop-890x1024.jpeg",
+    subfields: ["computational", "systems"],
+    institutes: ["IBPS - Sorbonne Universite"],
+    links: [
+      { label: "Personal Website", url: "https://cmeissnerbernard.com" },
+      { label: "Girardeau Lab", url: "https://girardeaulab.org" }
+    ]
+  },
+
+  // ===== NeuroPSI — ICN Department =====
+
+  {
+    name: "Alain Destexhe",
+    keywords: ["computational neuroscience", "neural network modeling", "sleep oscillations", "thalamocortical dynamics", "mean-field models", "dynamical systems"],
+    summary: "Studies the brain at the interface of biophysics, physics, and computer science, investigating themes from single neurons to networks using theoretical methods and computer simulations, including the genesis of sleep rhythms and their physiological roles.",
+    photoURL: "",
+    subfields: ["computational"],
+    institutes: ["NeuroPSI (Paris-Saclay)"],
+    links: [
+      { label: "NeuroPSI Lab", url: "https://neuropsi.cnrs.fr/en/departments/icn/group-leader-alain-destexhe/" },
+      { label: "Lab Website", url: "https://neurocompute.cnrs.fr/destexhe-team/" },
+      { label: "Google Scholar", url: "https://scholar.google.com/citations?user=x-MyT34AAAAJ" }
+    ]
+  },
+  {
+    name: "Andrew Davison",
+    keywords: ["neuroinformatics", "reproducible research", "neural simulation", "PyNN", "large-scale modeling", "data sharing"],
+    summary: "Develops neuroinformatics tools for neuroscience data sharing, modeling, and simulation, with research interests in large-scale, data-constrained, biologically-detailed modeling of neuronal networks. Promotes reproducible research through tools like PyNN, Neo, and Sumatra.",
+    photoURL: "https://andrewdavison.info/images/andrewdavison2015_small.jpg",
+    subfields: ["computational"],
+    institutes: ["NeuroPSI (Paris-Saclay)"],
+    links: [
+      { label: "NeuroPSI Lab", url: "https://neuropsi.cnrs.fr/en/departments/icn/group-leader-andrew-davison/" },
+      { label: "Personal Website", url: "https://andrewdavison.info/" },
+      { label: "Google Scholar", url: "https://scholar.google.com/citations?user=a_sFeLwAAAAJ" }
+    ]
+  },
+  {
+    name: "Thierry Bal",
+    keywords: ["thalamocortical oscillations", "claustrum", "homeostatic plasticity", "visual cortex", "sleep rhythms", "dynamic clamp"],
+    summary: "Studies cortical mechanisms of vision, oscillations in claustro-cortical networks, and homeostatic synaptic plasticity, investigating how sensory perception and selective attention are linked to neuronal assembly states during wake and sleep.",
+    photoURL: "",
+    subfields: ["systems"],
+    institutes: ["NeuroPSI (Paris-Saclay)"],
+    links: [
+      { label: "NeuroPSI Lab", url: "https://neuropsi.cnrs.fr/en/departments/icn/group-leader-thierry-bal/" },
+      { label: "Google Scholar", url: "https://scholar.google.com/citations?user=hM9QCTkAAAAJ" }
+    ]
+  },
+  {
+    name: "Valerie Ego-Stengel",
+    keywords: ["brain-machine interfaces", "sensorimotor integration", "whisker system", "cortical topography", "neuroprosthetics", "tactile perception"],
+    summary: "Studies somatosensory-motor integration and brain-machine interfaces using the mouse whisker system, investigating neural mechanisms of sensorimotor learning, predictive coding in primary somatosensory cortex, and developing innovative neuroprostheses.",
+    photoURL: "",
+    subfields: ["systems", "computational"],
+    institutes: ["NeuroPSI (Paris-Saclay)"],
+    links: [
+      { label: "NeuroPSI Lab", url: "https://neuropsi.cnrs.fr/en/departments/icn/group-leader-ego-stengel-ferezou/" },
+      { label: "Google Scholar", url: "https://scholar.google.com/citations?user=PI2P_oEAAAAJ" }
+    ]
+  },
+  {
+    name: "Isabelle Ferezou",
+    keywords: ["voltage-sensitive dye imaging", "cortical dynamics", "sensorimotor integration", "barrel cortex", "cortical waves", "tactile prediction"],
+    summary: "Studies spatiotemporal dynamics of cortical activity during sensorimotor integration using voltage-sensitive dye imaging and calcium imaging in mice, investigating how the cortex extracts global properties of explored objects from complex sequences of tactile stimuli.",
+    photoURL: "",
+    subfields: ["systems"],
+    institutes: ["NeuroPSI (Paris-Saclay)"],
+    links: [
+      { label: "NeuroPSI Lab", url: "https://neuropsi.cnrs.fr/en/departments/icn/group-leader-ego-stengel-ferezou/" },
+      { label: "Google Scholar", url: "https://scholar.google.com/citations?user=SUwQco0AAAAJ" }
+    ]
+  },
+  {
+    name: "Guy Bouvier",
+    keywords: ["visual-vestibular integration", "self-motion", "visual cortex", "two-photon imaging", "circuit tracing", "sensory integration"],
+    summary: "Investigates the neuronal circuits and computations underlying sensory processing during self-motion, studying how vestibular signals reach and modulate the primary visual cortex, providing insights into visual-vestibular integration during ethological behavior.",
+    photoURL: "",
+    subfields: ["systems", "computational"],
+    institutes: ["NeuroPSI (Paris-Saclay)"],
+    links: [
+      { label: "NeuroPSI Lab", url: "https://neuropsi.cnrs.fr/en/group-leader-guy-bouvier/" },
+      { label: "Google Scholar", url: "https://scholar.google.com/citations?user=IdMatQoAAAAJ" }
+    ]
+  },
+  {
+    name: "Catherine Del Negro",
+    keywords: ["auditory perception", "neural coding", "communication sounds", "songbird", "sequence processing", "cochlear implants"],
+    summary: "Studies the neural code involved in processing communication sounds, showing in songbirds that high-level auditory regions encode the sequential order of song elements, and in mammals that robustness of neuronal responses to acoustic degradations is present at each level of the auditory system.",
+    photoURL: "",
+    subfields: ["systems"],
+    institutes: ["NeuroPSI (Paris-Saclay)"],
+    links: [
+      { label: "NeuroPSI Lab", url: "https://neuropsi.cnrs.fr/en/departments/icn/group-leader-catherine-del-negro-jean-marc-edeline/" }
+    ]
+  },
+  {
+    name: "Jean-Marc Edeline",
+    keywords: ["auditory cortex", "neural plasticity", "neuromodulation", "thalamocortical system", "sound discrimination", "descending projections"],
+    summary: "Studies auditory cortex plasticity and neural coding through electrophysiological recordings in the thalamo-cortical auditory system, investigating how neuromodulators shape selective plasticity in frequency tuning and how the auditory cortex influences subcortical structures.",
+    photoURL: "",
+    subfields: ["systems"],
+    institutes: ["NeuroPSI (Paris-Saclay)"],
+    links: [
+      { label: "NeuroPSI Lab", url: "https://neuropsi.cnrs.fr/en/departments/icn/group-leader-catherine-del-negro-jean-marc-edeline/" },
+      { label: "Google Scholar", url: "https://scholar.google.com/citations?user=Efkq6mkAAAAJ" }
+    ]
+  },
+  {
+    name: "Julien Bouvier",
+    keywords: ["motor control", "reticulospinal neurons", "locomotion", "brainstem circuits", "spinal cord", "neural rehabilitation"],
+    summary: "Studies how the brainstem and spinal cord cooperate to elaborate movements, focusing on genetically-identified reticulospinal neurons that control limb movements, using viral tracing, optogenetics, and chemogenetic silencing to identify priority neural circuits for motor rehabilitation.",
+    photoURL: "",
+    subfields: ["systems"],
+    institutes: ["NeuroPSI (Paris-Saclay)"],
+    links: [
+      { label: "NeuroPSI Lab", url: "https://neuropsi.cnrs.fr/en/departments/icn/group-leader-julien-bouvier/" },
+      { label: "Lab Website", url: "https://www.bouvier-lab.com/" },
+      { label: "Google Scholar", url: "https://scholar.google.com/citations?user=rNHs0ecAAAAJ" }
+    ]
+  },
+
+  // ===== NeuroPSI — CNN Department =====
+
+  {
+    name: "Claire Eschbach",
+    keywords: ["reinforcement learning", "Drosophila larva", "recurrent circuits", "dopamine", "associative memory", "connectomics"],
+    summary: "Studies how recurrent brain circuits implement reinforcement learning to form flexible memories that track the value of choice outcomes for adaptive decision-making, using the Drosophila larva connectome as a model system with unprecedented circuit-level precision.",
+    photoURL: "",
+    subfields: ["computational", "systems"],
+    institutes: ["NeuroPSI (Paris-Saclay)"],
+    links: [
+      { label: "NeuroPSI Lab", url: "https://neuropsi.cnrs.fr/en/group-leader-claire-eschbach/" },
+      { label: "Google Scholar", url: "https://scholar.google.com/citations?user=wd9RgnUAAAAJ" }
+    ]
+  },
+  {
+    name: "Valerie Doyere",
+    keywords: ["associative memory", "fear conditioning", "interval timing", "amygdala", "memory reconsolidation", "temporal processing"],
+    summary: "Investigates the neural networks and mechanisms underlying associative memory formation and updating, with a special focus on the temporal component controlling anticipatory behavior, and how emotion modulates memory and time estimation processes.",
+    photoURL: "",
+    subfields: ["systems"],
+    institutes: ["NeuroPSI (Paris-Saclay)"],
+    links: [
+      { label: "NeuroPSI Lab", url: "https://neuropsi.cnrs.fr/en/departments/cnn/group-leader-valerie-doyere/" }
+    ]
+  },
+  {
+    name: "Sylvie Granon",
+    keywords: ["decision-making", "executive functions", "nicotinic receptors", "behavioral flexibility", "social cognition", "gambling behavior"],
+    summary: "Studies decision-making processes and behavioral flexibility in social and non-social contexts, including the neural bases of inter-individual differences, the role of neuronal nicotinic receptors in cognition, and how the brain makes efficient choices in uncertain environments.",
+    photoURL: "",
+    subfields: ["systems", "human"],
+    institutes: ["NeuroPSI (Paris-Saclay)"],
+    links: [
+      { label: "NeuroPSI Lab", url: "https://neuropsi.cnrs.fr/en/departments/cnn/group-leader-sylvie-granon/" },
+      { label: "Google Scholar", url: "https://scholar.google.com/citations?user=_SYkVr0AAAAJ" }
+    ]
+  },
+  {
+    name: "Cyrille Vaillend",
+    keywords: ["Duchenne muscular dystrophy", "intellectual disability", "synaptic plasticity", "cognitive dysfunction", "gene therapy", "neurodevelopmental disorders"],
+    summary: "Investigates molecular and cellular mechanisms responsible for cognitive dysfunction in neurodevelopmental diseases including Duchenne muscular dystrophy, using a multidisciplinary approach spanning behavior, brain plasticity, imaging, and gene therapy in rodent models.",
+    photoURL: "",
+    subfields: ["systems"],
+    institutes: ["NeuroPSI (Paris-Saclay)"],
+    links: [
+      { label: "NeuroPSI Lab", url: "https://neuropsi.cnrs.fr/en/group-leader-cyrille-vaillend/" },
+      { label: "Google Scholar", url: "https://scholar.google.com/citations?user=t4pmD_oAAAAJ" }
+    ]
+  },
+  {
+    name: "Isabelle Charrier",
+    keywords: ["bioacoustics", "vocal communication", "marine mammals", "mother-offspring recognition", "pinnipeds", "animal behavior"],
+    summary: "Investigates communication and recognition processes in marine mammal and bird species, studying how social systems influence communication systems using playback experiments, acoustic tags, and field studies of vocal behavior.",
+    photoURL: "",
+    subfields: ["systems"],
+    institutes: ["NeuroPSI (Paris-Saclay)"],
+    links: [
+      { label: "NeuroPSI Lab", url: "https://neuropsi.cnrs.fr/en/group-leader-isabelle-charrier/" },
+      { label: "Personal Website", url: "https://sites.google.com/view/isabelle-charrier/" },
+      { label: "Google Scholar", url: "https://scholar.google.com/citations?user=StiLS6QAAAAJ" }
+    ]
+  },
+  {
+    name: "Francois Rouyer",
+    keywords: ["circadian rhythms", "Drosophila", "clock genes", "sleep-wake cycles", "PDF neuropeptide", "cryptochrome"],
+    summary: "Studies how the brain controls sleep-wake rhythms using neurogenetics approaches in Drosophila, investigating how a multi-oscillator brain clock is organized at molecular, cellular, and network levels and how circadian information is translated into behavioral rhythms.",
+    photoURL: "",
+    subfields: ["systems"],
+    institutes: ["NeuroPSI (Paris-Saclay)"],
+    links: [
+      { label: "NeuroPSI Lab", url: "https://neuropsi.cnrs.fr/en/departments/cnn/group-leader-francois-rouyer/" }
+    ]
+  },
+  {
+    name: "Jean-Rene Martin",
+    keywords: ["Drosophila", "bioluminescence imaging", "calcium signaling", "locomotor behavior", "snoRNA jouvence", "mushroom bodies"],
+    summary: "Studies the neural bases of behavior including locomotor activity and olfaction in Drosophila, using a novel in vivo bioluminescence-based brain imaging approach to record neuronal calcium activity, and investigates the snoRNA jouvence that increases lifespan and protects against neurodegeneration.",
+    photoURL: "",
+    subfields: ["systems"],
+    institutes: ["NeuroPSI (Paris-Saclay)"],
+    links: [
+      { label: "NeuroPSI Lab", url: "https://neuropsi.cnrs.fr/en/departments/cnn/group-leader-jean-rene-martin/" }
+    ]
+  },
+  {
+    name: "Gilles Bonvento",
+    keywords: ["astrocyte-neuron metabolism", "brain energy", "neurodegenerative diseases", "Alzheimer's disease", "gene therapy", "neurovascular coupling"],
+    summary: "Studies the metabolic interactions between neurons and astrocytes, focusing on how astrocytic glycolytic metabolism cooperates with neuronal oxidative metabolism to support brain activity, and investigates how metabolic dysfunction contributes to neurodegenerative diseases.",
+    photoURL: "",
+    subfields: ["systems"],
+    institutes: ["NeuroPSI (Paris-Saclay)"],
+    links: [
+      { label: "NeuroPSI Lab", url: "https://neuropsi.cnrs.fr/en/group-leader-gilles-bonvento/" }
+    ]
+  },
+
+  // ===== NeuroPSI — DECS Department =====
+
+  {
+    name: "Kei Yamamoto",
+    keywords: ["convergent evolution", "comparative neuroanatomy", "cognition", "teleost brain", "forebrain regionalization", "tool use"],
+    summary: "Investigates neural architectures necessary for higher-order cognitive abilities through comparative analyses of mammalian, avian, and teleost brains, with a focus on the convergent evolution of cognitive functions between parrots, primates, and tool-using wrasses.",
+    photoURL: "",
+    subfields: ["systems"],
+    institutes: ["NeuroPSI (Paris-Saclay)"],
+    links: [
+      { label: "NeuroPSI Lab", url: "https://neuropsi.cnrs.fr/en/group-leader-kei-yamamoto/" },
+      { label: "Google Scholar", url: "https://scholar.google.com/citations?user=XNYaLZAAAAAJ" }
+    ]
+  },
+  {
+    name: "Carole Escartin",
+    keywords: ["reactive astrocytes", "neurodegeneration", "JAK-STAT3 pathway", "Alzheimer's disease", "Huntington's disease", "glia-neuron interactions"],
+    summary: "Studies how astrocytes become reactive during neurodegenerative diseases, identifying the JAK2-STAT3 pathway as a key regulator of astrocyte reactivity, and developing viral vector tools to manipulate reactive astrocytes in vivo to understand their impact on neuronal function.",
+    photoURL: "",
+    subfields: ["systems"],
+    institutes: ["NeuroPSI (Paris-Saclay)"],
+    links: [
+      { label: "NeuroPSI Lab", url: "https://neuropsi.cnrs.fr/en/departments/decs/group-leader-carole-escartin/" },
+      { label: "Google Scholar", url: "https://scholar.google.com/citations?user=wKCXxQIAAAAJ" }
+    ]
+  },
+  {
+    name: "Sylvie Retaux",
+    keywords: ["cavefish", "forebrain evolution", "evo-devo", "neuropeptides", "Astyanax mexicanus", "neural development"],
+    summary: "Uses the blind cavefish Astyanax mexicanus as a natural mutant model to study how genetic and developmental variations in forebrain organization lead to adaptive behavioral changes during evolution.",
+    photoURL: "",
+    subfields: ["systems"],
+    institutes: ["NeuroPSI (Paris-Saclay)"],
+    links: [
+      { label: "NeuroPSI Lab", url: "https://neuropsi.cnrs.fr/en/departments/decs/group-leader-sylvie-retaux/" },
+      { label: "Google Scholar", url: "https://scholar.google.com/citations?user=4NwsDqEAAAAJ" }
+    ]
+  },
+  {
+    name: "Martial Ruat",
+    keywords: ["Sonic Hedgehog signaling", "neural stem cells", "oligodendrocytes", "signal transduction", "neuropharmacology", "brain repair"],
+    summary: "Investigates Sonic Hedgehog signaling in the adult and developing brain, demonstrating its role in regulating neural stem cell quiescence, activation, and symmetric division, as well as oligodendrocyte production and remyelination.",
+    photoURL: "",
+    subfields: ["systems"],
+    institutes: ["NeuroPSI (Paris-Saclay)"],
+    links: [
+      { label: "NeuroPSI Lab", url: "https://neuropsi.cnrs.fr/en/departments/decs/group-leader-martial-ruat/" }
+    ]
+  },
+  {
+    name: "Muriel Perron",
+    keywords: ["retinal stem cells", "Muller glia", "retinal regeneration", "neurogenesis", "Xenopus", "YAP signaling"],
+    summary: "Studies the molecular mechanisms underlying the maintenance, recruitment, and activity of retinal neural stem cells, with the goal of awakening neurogenic potential in dormant mammalian retinal stem cells for therapeutic strategies against retinal dystrophies.",
+    photoURL: "",
+    subfields: ["systems"],
+    institutes: ["NeuroPSI (Paris-Saclay)"],
+    links: [
+      { label: "NeuroPSI Lab", url: "https://neuropsi.cnrs.fr/en/departments/decs/group-leader-muriel-perron/" },
+      { label: "Google Scholar", url: "https://scholar.google.com/citations?user=GEOPovIAAAAJ" }
+    ]
+  },
+  {
+    name: "Sophie Creuzet",
+    keywords: ["neural crest", "craniofacial development", "brain morphogenesis", "BMP signaling", "avian models", "developmental encephalopathy"],
+    summary: "Studies how the cephalic neural crest controls forebrain and craniofacial morphogenesis through paracrine signaling, and how dysfunctions of neural crest-derived meninges may cause neurodevelopmental defects and encephalopathies.",
+    photoURL: "",
+    subfields: ["systems"],
+    institutes: ["NeuroPSI (Paris-Saclay)"],
+    links: [
+      { label: "NeuroPSI Lab", url: "https://neuropsi.cnrs.fr/en/departments/decs/group-leader-sophie-creuzet/" }
+    ]
+  },
+  {
+    name: "Jean-Pierre Levraud",
+    keywords: ["zebrafish", "viral encephalitis", "innate immunity", "interferon-stimulated genes", "neuroinflammation", "host-pathogen interactions"],
+    summary: "Uses transparent zebrafish larvae to study central nervous system viral infections in real time, investigating how the innate immune response controls viral encephalitis while analyzing how neuroinflammation damages the developing brain.",
+    photoURL: "",
+    subfields: ["systems"],
+    institutes: ["NeuroPSI (Paris-Saclay)"],
+    links: [
+      { label: "NeuroPSI Lab", url: "https://neuropsi.cnrs.fr/en/departments/decs/group-leader-jean-pierre-levraud/" },
+      { label: "Google Scholar", url: "https://scholar.google.com/citations?user=EdaYjAcAAAAJ" }
+    ]
+  },
+  {
+    name: "Daniel Vasiliauskas",
+    keywords: ["Drosophila", "photoreceptor specification", "rhodopsin", "neurogenetics", "natural variation", "circadian rhythms"],
+    summary: "Uses Drosophila to investigate how genetic programs specify and maintain different neuron types, focusing on stochastic photoreceptor rhodopsin expression and natural variation in the visual system that influences color preference and circadian behavior.",
+    photoURL: "",
+    subfields: ["systems"],
+    institutes: ["NeuroPSI (Paris-Saclay)"],
+    links: [
+      { label: "NeuroPSI Lab", url: "https://neuropsi.cnrs.fr/en/departments/decs/group-leader-daniel-vasiliauskas/" }
+    ]
+  },
+  {
+    name: "Mohammed Taouis",
+    keywords: ["neuroendocrinology", "hypothalamic inflammation", "insulin resistance", "leptin signaling", "resistin", "microRNA"],
+    summary: "Studies the mechanisms underlying hypothalamic leptin and insulin resistance, focusing on how inappropriate perinatal endocrine environments durably impair hypothalamic neuronal organization and signaling cascades, with emphasis on resistin/TLR4 pathways and microRNA regulation.",
+    photoURL: "",
+    subfields: ["systems"],
+    institutes: ["NeuroPSI (Paris-Saclay)"],
+    links: [
+      { label: "NeuroPSI Lab", url: "https://neuropsi.cnrs.fr/en/group-leader-mohammed-taouis/" },
+      { label: "Google Scholar", url: "https://scholar.google.com/citations?user=l9flKSgAAAAJ" }
+    ]
+  },
+
+  // ===== NeuroPSI — New Recruits =====
+
+  {
+    name: "Glenda Comai",
+    keywords: ["neuromuscular systems", "craniofacial muscles", "extraocular muscles", "muscle stem cells", "single-cell genomics", "developmental biology"],
+    summary: "Investigates how craniofacial muscles develop and regenerate, combining mouse genetics, single-nucleus genomics, and 3D imaging to understand how neuronal, myogenic, and connective tissue signals integrate to build functional neuromuscular units.",
+    photoURL: "",
+    subfields: ["systems"],
+    institutes: ["NeuroPSI (Paris-Saclay)"],
+    links: [
+      { label: "NeuroPSI Lab", url: "https://neuropsi.cnrs.fr/en/group-leader-glenda-comai/" },
+      { label: "Personal Website", url: "https://glenda-comai.webnode.fr/" }
+    ]
+  },
+  {
+    name: "Idoia Quintana-Urzainqui",
+    keywords: ["brain evolution", "shark development", "telencephalon", "single-cell transcriptomics", "pallial neurogenesis", "Cajal-Retzius cells"],
+    summary: "Uses shark embryos as a model to study evolutionary origins of the vertebrate forebrain, combining single-cell and spatial transcriptomics to reveal that key pallial features originated in the gnathostome stem several hundred million years ago.",
+    photoURL: "",
+    subfields: ["systems"],
+    institutes: ["NeuroPSI (Paris-Saclay)"],
+    links: [
+      { label: "NeuroPSI Lab", url: "https://neuropsi.cnrs.fr/en/idoia-quintana-urzainqui-new-team-leader-neuropsi-recipient-erc-consolidator-grant/" },
+      { label: "Google Scholar", url: "https://scholar.google.com/citations?user=4l9AE2MAAAAJ" }
+    ]
+  },
+];
+
+// ========== SEED FUNCTIONS ==========
+
+async function seedNewInstitutes() {
+  log('--- Checking / Creating New Institutes ---', 'info');
+  for (const inst of newInstitutes) {
+    const q = query(collection(db, 'institutes'), where('name', '==', inst.name), where('status', '==', 'approved'));
+    const snap = await getDocs(q);
+    if (snap.size > 0) {
+      log(`  Skip (exists): ${inst.name}`);
+      continue;
+    }
+    await addDoc(collection(db, 'institutes'), {
+      name: inst.name,
+      website: inst.website,
+      logoURL: inst.logoURL || '',
+      status: 'approved',
+      proposedBy: currentUser.uid,
+      createdAt: serverTimestamp()
+    });
+    log(`  Created institute: ${inst.name}`, 'success');
+  }
+}
+
+async function seedPIs() {
+  log('--- Seeding New PIs ---', 'info');
+  let created = 0, skipped = 0, errors = 0;
+  for (const pi of pis) {
+    // Check if PI already exists by name
+    const q = query(collection(db, 'groups'), where('name', '==', pi.name));
+    const snap = await getDocs(q);
+    if (snap.size > 0) {
+      log(`  Skip (exists): ${pi.name}`);
+      skipped++;
+      continue;
+    }
+    try {
+      await addDoc(collection(db, 'groups'), {
+        name: pi.name,
+        keywords: pi.keywords,
+        summary: pi.summary,
+        links: pi.links,
+        photoURL: pi.photoURL || '',
+        subfields: pi.subfields,
+        institutes: pi.institutes,
+        subfield: pi.subfields[0],
+        institute: pi.institutes[0],
+        creatorUid: currentUser.uid,
+        createdAt: serverTimestamp(),
+        updatedAt: serverTimestamp()
+      });
+      log(`  Created: ${pi.name}`, 'success');
+      created++;
+    } catch (e) {
+      log(`  ERROR creating ${pi.name}: ${e.message}`, 'error');
+      errors++;
+    }
+  }
+  log(`\nDone! Created ${created}, skipped ${skipped} (already existed), errors ${errors}.`, 'info');
+}
+
+window.runSeed = async () => {
+  document.getElementById('seedBtn').disabled = true;
+  try {
+    await seedNewInstitutes();
+    await seedPIs();
+  } catch (e) {
+    log('ERROR: ' + e.message, 'error');
+  }
+  document.getElementById('seedBtn').disabled = false;
+};
+</script>
+</body>
+</html>
