@@ -91,21 +91,8 @@ export async function loadGroups() {
 }
 
 function buildKeywordFilters() {
-  const keywords = new Set();
-  allGroups.forEach(g => {
-    (g.keywords || []).forEach(k => keywords.add(k.trim().toLowerCase()));
-  });
-
-  keywordFilters.innerHTML = '';
-  const sorted = [...keywords].sort();
-  sorted.forEach(kw => {
-    const btn = document.createElement('button');
-    btn.className = 'keyword-btn';
-    btn.textContent = kw;
-    btn.setAttribute('aria-pressed', 'false');
-    btn.addEventListener('click', () => toggleKeyword(kw, btn));
-    keywordFilters.appendChild(btn);
-  });
+  // Initial keyword pills are built by renderGroups() via rebuildKeywordPills().
+  // This function now just ensures keyword bar visibility on first load.
   keywordFilters.classList.toggle('hidden', searchText.length === 0 && !activeKeyword);
 }
 
@@ -134,6 +121,44 @@ export function filterGroups() {
   renderInstitutes();
 }
 
+// Levenshtein edit distance
+function editDistance(a, b) {
+  const m = a.length, n = b.length;
+  const dp = Array.from({ length: m + 1 }, () => new Array(n + 1));
+  for (let i = 0; i <= m; i++) dp[i][0] = i;
+  for (let j = 0; j <= n; j++) dp[0][j] = j;
+  for (let i = 1; i <= m; i++) {
+    for (let j = 1; j <= n; j++) {
+      dp[i][j] = a[i - 1] === b[j - 1]
+        ? dp[i - 1][j - 1]
+        : 1 + Math.min(dp[i - 1][j], dp[i][j - 1], dp[i - 1][j - 1]);
+    }
+  }
+  return dp[m][n];
+}
+
+// Fuzzy match: splits query into words, each must match at least one word in
+// the haystack via substring (short words) or Levenshtein distance ≤ 2 (≥ 4 chars).
+function fuzzyMatch(haystack, query) {
+  const haystackLower = haystack.toLowerCase();
+  const queryWords = query.toLowerCase().split(/\s+/).filter(Boolean);
+  if (queryWords.length === 0) return true;
+
+  const haystackWords = haystackLower.split(/\s+/).filter(Boolean);
+
+  return queryWords.every(qw => {
+    // Substring match first (fast path)
+    if (haystackLower.includes(qw)) return true;
+    // For short query words (< 4 chars), only allow substring match
+    if (qw.length < 4) return false;
+    // Levenshtein fuzzy match against individual haystack words
+    return haystackWords.some(hw => {
+      if (Math.abs(hw.length - qw.length) > 2) return false;
+      return editDistance(qw, hw) <= 2;
+    });
+  });
+}
+
 function renderGroups() {
   const filtered = allGroups.filter(g => {
     // Institute filter
@@ -146,14 +171,16 @@ function renderGroups() {
       const kws = (g.keywords || []).map(k => k.trim().toLowerCase());
       if (!kws.includes(activeKeyword)) return false;
     }
-    // Text search
+    // Text search (fuzzy)
     if (searchText) {
+      const institutes = toArray(g.institutes || g.institute);
       const haystack = [
         g.name,
         g.summary,
-        ...(g.keywords || [])
-      ].join(' ').toLowerCase();
-      if (!haystack.includes(searchText)) return false;
+        ...(g.keywords || []),
+        ...institutes
+      ].join(' ');
+      if (!fuzzyMatch(haystack, searchText)) return false;
     }
     return true;
   });
@@ -190,11 +217,11 @@ function renderGroups() {
       }
     }
 
-    // Auto-expand sections with results when searching, collapse when not
+    // Auto-expand sections with results when searching, collapse otherwise
     if (isSearching && groups.length > 0) {
       el.classList.remove('collapsed');
       sections[sf].header.setAttribute('aria-expanded', 'true');
-    } else if (!isSearching) {
+    } else {
       el.classList.add('collapsed');
       sections[sf].header.setAttribute('aria-expanded', 'false');
     }
@@ -202,6 +229,38 @@ function renderGroups() {
 
   // Hide "No PIs found" message when searching (sections handle their own visibility)
   groupsEmpty.classList.add('hidden');
+
+  // Rebuild keyword pills based on filtered PIs
+  rebuildKeywordPills(filtered);
+}
+
+function rebuildKeywordPills(filteredGroups) {
+  const keywords = new Set();
+  filteredGroups.forEach(g => {
+    (g.keywords || []).forEach(k => keywords.add(k.trim().toLowerCase()));
+  });
+
+  // If active keyword is no longer in filtered results, deactivate it
+  if (activeKeyword && !keywords.has(activeKeyword)) {
+    activeKeyword = null;
+  }
+
+  keywordFilters.innerHTML = '';
+  const sorted = [...keywords].sort();
+  sorted.forEach(kw => {
+    const btn = document.createElement('button');
+    btn.className = 'keyword-btn';
+    if (kw === activeKeyword) {
+      btn.classList.add('active');
+      btn.setAttribute('aria-pressed', 'true');
+    } else {
+      btn.setAttribute('aria-pressed', 'false');
+    }
+    btn.textContent = kw;
+    btn.addEventListener('click', () => toggleKeyword(kw, btn));
+    keywordFilters.appendChild(btn);
+  });
+  keywordFilters.classList.toggle('hidden', sorted.length === 0 && !searchText && !activeKeyword);
 }
 
 function createCard(group) {
