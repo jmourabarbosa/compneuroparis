@@ -209,12 +209,18 @@ function renderGroups() {
     validSfs.forEach(sf => bySubfield[sf].push(g));
   });
 
-  // Sort each section: claimed PIs first, then alphabetical within each group
+  // Sort each section: claimed first, primary subfield before secondary, then alphabetical
   for (const sf of SUBFIELDS) {
     bySubfield[sf].sort((a, b) => {
       const aClaimed = a.claimedBy ? 0 : 1;
       const bClaimed = b.claimedBy ? 0 : 1;
       if (aClaimed !== bClaimed) return aClaimed - bClaimed;
+      // Primary subfield (index 0) matches this section → 0, otherwise → 1
+      const aSfs = toArray(a.subfields || a.subfield);
+      const bSfs = toArray(b.subfields || b.subfield);
+      const aPrimary = (aSfs[0] || 'computational') === sf ? 0 : 1;
+      const bPrimary = (bSfs[0] || 'computational') === sf ? 0 : 1;
+      if (aPrimary !== bPrimary) return aPrimary - bPrimary;
       return (a.name || '').localeCompare(b.name || '');
     });
   }
