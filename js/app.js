@@ -1,6 +1,6 @@
 import { loadGroups, initSearch, initSections, loadPublicInstitutes, initPiDetail, initInstituteDetail } from './ui-groups.js';
 import { initForm, updateSubmissionAuthUI } from './ui-form.js';
-import { onAuthChange, login, logout, resetPassword, createAccount, authReady } from './auth.js';
+import { onAuthChange, login, logout, resetPassword, createAccount, isEmailVerified, resendVerification, authReady } from './auth.js';
 import {
   initTabs, loadPending, loadManageGroups, loadAdmins,
   initSubmissionActions, initEditForm, initAddAdmin,
@@ -20,6 +20,10 @@ const modalLogin = document.getElementById('modal-login');
 const loginForm = document.getElementById('login-form');
 const loginMessage = document.getElementById('login-message');
 const modalAdmin = document.getElementById('modal-admin');
+
+// Global verification banner
+const globalVerifyBanner = document.getElementById('global-verify-banner');
+const btnGlobalResend = document.getElementById('btn-global-resend');
 
 // Sign up
 const btnSignup = document.getElementById('btn-signup');
@@ -158,8 +162,12 @@ signupForm.addEventListener('submit', async (e) => {
 
   try {
     await createAccount(email, password);
-    showSignupMsg('Account created! A verification email has been sent — please check your inbox (and spam folder).', 'success');
-    // Don't close modal — let user read the message
+    // Show verification banner inside the signup modal
+    signupMessage.innerHTML = `
+      <span>Account created! Please verify your email. Check your spam inbox for a confirmation link.</span>
+    `;
+    signupMessage.className = 'verify-banner';
+    signupMessage.classList.remove('hidden');
   } catch (err) {
     showSignupMsg(err.message || 'Error creating account.', 'error');
   } finally {
@@ -186,10 +194,33 @@ function showLoginMsg(text, type) {
   loginMessage.classList.remove('hidden');
 }
 
+// ========== GLOBAL VERIFY BANNER ==========
+btnGlobalResend.addEventListener('click', async () => {
+  btnGlobalResend.disabled = true;
+  btnGlobalResend.textContent = 'Sending...';
+  try {
+    await resendVerification();
+    btnGlobalResend.textContent = 'Sent!';
+    setTimeout(() => { btnGlobalResend.textContent = 'Resend email'; btnGlobalResend.disabled = false; }, 3000);
+  } catch (err) {
+    btnGlobalResend.textContent = 'Error';
+    setTimeout(() => { btnGlobalResend.textContent = 'Resend email'; btnGlobalResend.disabled = false; }, 3000);
+  }
+});
+
+function updateGlobalVerifyBanner(user) {
+  if (user && !user.emailVerified) {
+    globalVerifyBanner.classList.remove('hidden');
+  } else {
+    globalVerifyBanner.classList.add('hidden');
+  }
+}
+
 // ========== AUTH STATE (3 states: admin, creator, anon) ==========
 onAuthChange((user, isAdmin) => {
   // Update submission auth UI
   updateSubmissionAuthUI(user);
+  updateGlobalVerifyBanner(user);
 
   if (user && isAdmin) {
     // Admin state

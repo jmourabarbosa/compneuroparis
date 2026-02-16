@@ -906,6 +906,13 @@ img {
   background: rgba(245, 200, 66, 0.15);
 }
 
+.global-verify-banner {
+  margin: 0;
+  border-radius: 0;
+  padding: 0.6rem 2rem;
+  justify-content: center;
+}
+
 /* ========== FOOTER ========== */
 .site-footer {
   border-top: 1px solid var(--color-border);
