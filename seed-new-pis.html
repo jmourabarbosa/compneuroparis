@@ -36,7 +36,7 @@
 <script type="module">
 import { initializeApp } from 'https://www.gstatic.com/firebasejs/11.4.0/firebase-app.js';
 import { getAuth, signInWithEmailAndPassword, onAuthStateChanged } from 'https://www.gstatic.com/firebasejs/11.4.0/firebase-auth.js';
-import { getFirestore, collection, addDoc, serverTimestamp, query, where, getDocs } from 'https://www.gstatic.com/firebasejs/11.4.0/firebase-firestore.js';
+import { getFirestore, collection, addDoc, updateDoc, doc, serverTimestamp, query, where, getDocs } from 'https://www.gstatic.com/firebasejs/11.4.0/firebase-firestore.js';
 
 const firebaseConfig = {
   apiKey: "AIzaSyCEUSVBEAPYfsoG00GKPqw_lHJQKelgVbk",
@@ -499,14 +499,32 @@ async function seedNewInstitutes() {
 
 async function seedPIs() {
   log('--- Seeding New PIs ---', 'info');
-  let created = 0, skipped = 0, errors = 0;
+  let created = 0, updated = 0, skipped = 0, errors = 0;
   for (const pi of pis) {
     // Check if PI already exists by name
     const q = query(collection(db, 'groups'), where('name', '==', pi.name));
     const snap = await getDocs(q);
     if (snap.size > 0) {
-      log(`  Skip (exists): ${pi.name}`);
-      skipped++;
+      // Update photo if existing PI has no photo and we have one
+      const existing = snap.docs[0];
+      const data = existing.data();
+      const needsPhoto = pi.photoURL && (!data.photoURL || data.photoURL === '');
+      if (needsPhoto) {
+        try {
+          await updateDoc(doc(db, 'groups', existing.id), {
+            photoURL: pi.photoURL,
+            updatedAt: serverTimestamp()
+          });
+          log(`  Updated photo: ${pi.name}`, 'success');
+          updated++;
+        } catch (e) {
+          log(`  ERROR updating ${pi.name}: ${e.message}`, 'error');
+          errors++;
+        }
+      } else {
+        log(`  Skip (exists, has photo): ${pi.name}`);
+        skipped++;
+      }
       continue;
     }
     try {
@@ -531,7 +549,7 @@ async function seedPIs() {
       errors++;
     }
   }
-  log(`\nDone! Created ${created}, skipped ${skipped} (already existed), errors ${errors}.`, 'info');
+  log(`\nDone! Created ${created}, updated photos ${updated}, skipped ${skipped}, errors ${errors}.`, 'info');
 }
 
 window.runSeed = async () => {
