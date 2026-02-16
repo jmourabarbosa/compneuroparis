@@ -8,7 +8,7 @@ import {
 } from './db.js';
 import { getCurrentUser, createAdminUser } from './auth.js';
 import { loadGroups, loadPublicInstitutes } from './ui-groups.js';
-import { initSubfieldPicker, setSubfieldPicker, renderSubfieldPicker } from './ui-form.js';
+import { getSubfieldsFromPicker, setSubfieldDropdown, syncSecondaryCheckboxes } from './ui-form.js';
 import { loadInstituteOptions } from './ui-form.js';
 
 // DOM refs
@@ -31,8 +31,7 @@ const reviewPhotoURL = document.getElementById('review-photo-url');
 const reviewMeta = document.getElementById('review-meta');
 const btnApprove = document.getElementById('btn-approve');
 const btnReject = document.getElementById('btn-reject');
-const reviewSubfieldContainer = document.getElementById('review-subfield');
-let reviewSelectedSubfields = [];
+const reviewPrimarySubfield = document.getElementById('review-primary-subfield');
 const reviewInstituteDisplay = document.getElementById('review-institute-display');
 const reviewInstituteWarning = document.getElementById('review-institute-warning');
 
@@ -49,8 +48,7 @@ const editPhotoURL = document.getElementById('edit-photo-url');
 const editPhotoCurrentDiv = document.getElementById('edit-photo-current');
 const editPhotoImg = document.getElementById('edit-photo-img');
 const editMessage = document.getElementById('edit-message');
-const editSubfieldContainer = document.getElementById('edit-subfield');
-let editSelectedSubfields = [];
+const editPrimarySubfield = document.getElementById('edit-primary-subfield');
 const editInstituteSelect = document.getElementById('edit-institute-select');
 const editInstitutePills = document.getElementById('edit-institute-pills');
 
@@ -168,9 +166,9 @@ async function showSubmissionDetail(sub) {
   reviewSummary.value = sub.summary || '';
   reviewPhotoURL.value = sub.photoURL || '';
 
-  // Subfield picker
+  // Subfield dropdown
   const subfields = toArray(sub.subfields || sub.subfield || 'computational');
-  setSubfieldPicker(reviewSubfieldContainer, reviewSelectedSubfields, subfields);
+  setSubfieldDropdown(reviewPrimarySubfield, 'review-secondary', subfields);
 
   // Institute display + warning
   const institutes = toArray(sub.institutes || sub.institute);
@@ -221,7 +219,7 @@ function getReviewFormData() {
   const keywords = reviewKeywords.value.split(',').map(k => k.trim()).filter(Boolean);
   const summary = reviewSummary.value.trim();
   const photoURL = reviewPhotoURL.value.trim();
-  const subfields = [...reviewSelectedSubfields];
+  const subfields = getSubfieldsFromPicker(reviewPrimarySubfield, 'review-secondary');
   if (subfields.length === 0) subfields.push('computational');
 
   const linkRows = reviewLinksContainer.querySelectorAll('.link-row');
@@ -239,7 +237,7 @@ function getReviewFormData() {
 }
 
 export function initSubmissionActions() {
-  initSubfieldPicker(reviewSubfieldContainer, reviewSelectedSubfields, (updated) => { reviewSelectedSubfields = updated; });
+  reviewPrimarySubfield.addEventListener('change', () => syncSecondaryCheckboxes(reviewPrimarySubfield, 'review-secondary'));
   btnReviewAddLink.addEventListener('click', () => addReviewLinkRow());
 
   btnApprove.addEventListener('click', async () => {
@@ -326,9 +324,9 @@ function showEditModal(group) {
   editKeywords.value = (group.keywords || []).join(', ');
   editSummary.value = group.summary || '';
 
-  // Subfield picker
+  // Subfield dropdown
   const subfields = toArray(group.subfields || group.subfield || 'computational');
-  setSubfieldPicker(editSubfieldContainer, editSelectedSubfields, subfields);
+  setSubfieldDropdown(editPrimarySubfield, 'edit-secondary', subfields);
 
   // Institute picker — pre-populate with existing institutes
   editSelectedInstitutes = [...toArray(group.institutes || group.institute)];
@@ -414,7 +412,7 @@ function renderEditInstitutePills() {
 }
 
 export function initEditForm() {
-  initSubfieldPicker(editSubfieldContainer, editSelectedSubfields, (updated) => { editSelectedSubfields = updated; });
+  editPrimarySubfield.addEventListener('change', () => syncSecondaryCheckboxes(editPrimarySubfield, 'edit-secondary'));
   btnEditAddLink.addEventListener('click', () => addEditLinkRow());
   editInstituteSelect.addEventListener('change', () => {
     handleEditAddInstitute();
@@ -433,7 +431,7 @@ export function initEditForm() {
 
     const keywords = editKeywords.value.split(',').map(k => k.trim()).filter(Boolean);
     const summary = editSummary.value.trim();
-    const subfields = [...editSelectedSubfields];
+    const subfields = getSubfieldsFromPicker(editPrimarySubfield, 'edit-secondary');
     if (subfields.length === 0) subfields.push('computational');
 
     const linkRows = editLinksContainer.querySelectorAll('.link-row');

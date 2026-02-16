@@ -221,13 +221,19 @@
         </div>
         <div class="form-row">
           <div class="form-group">
-            <label>Subfield(s) <span class="required">*</span></label>
-            <div id="sub-subfield" class="subfield-picker">
-              <button type="button" class="subfield-pill" data-value="computational">Computational</button>
-              <button type="button" class="subfield-pill" data-value="systems">Systems</button>
-              <button type="button" class="subfield-pill" data-value="human">Human</button>
+            <label for="sub-primary-subfield">Primary subfield <span class="required">*</span></label>
+            <select id="sub-primary-subfield">
+              <option value="" disabled selected>Select primary subfield...</option>
+              <option value="computational">Computational</option>
+              <option value="systems">Systems</option>
+              <option value="human">Human</option>
+            </select>
+            <div class="secondary-subfields">
+              <span class="secondary-label">Also list under:</span>
+              <label class="subfield-checkbox"><input type="checkbox" name="sub-secondary" value="computational"> Computational</label>
+              <label class="subfield-checkbox"><input type="checkbox" name="sub-secondary" value="systems"> Systems</label>
+              <label class="subfield-checkbox"><input type="checkbox" name="sub-secondary" value="human"> Human</label>
             </div>
-            <p class="subfield-hint">Click to add. First selected = primary section &amp; card color.</p>
           </div>
           <div class="form-group">
             <label>Institute(s) <span class="required">*</span></label>
@@ -445,13 +451,19 @@
             <input type="text" id="edit-name" required>
           </div>
           <div class="form-group">
-            <label>Subfield(s)</label>
-            <div id="edit-subfield" class="subfield-picker">
-              <button type="button" class="subfield-pill" data-value="computational">Computational</button>
-              <button type="button" class="subfield-pill" data-value="systems">Systems</button>
-              <button type="button" class="subfield-pill" data-value="human">Human</button>
+            <label for="edit-primary-subfield">Primary subfield</label>
+            <select id="edit-primary-subfield">
+              <option value="" disabled selected>Select primary subfield...</option>
+              <option value="computational">Computational</option>
+              <option value="systems">Systems</option>
+              <option value="human">Human</option>
+            </select>
+            <div class="secondary-subfields">
+              <span class="secondary-label">Also list under:</span>
+              <label class="subfield-checkbox"><input type="checkbox" name="edit-secondary" value="computational"> Computational</label>
+              <label class="subfield-checkbox"><input type="checkbox" name="edit-secondary" value="systems"> Systems</label>
+              <label class="subfield-checkbox"><input type="checkbox" name="edit-secondary" value="human"> Human</label>
             </div>
-            <p class="subfield-hint">Click to add. First selected = primary section &amp; card color.</p>
           </div>
           <div class="form-group">
             <label>Institute(s)</label>
@@ -677,10 +689,17 @@
         </div>
         <div class="form-group">
           <label>Subfield(s)</label>
-          <div id="review-subfield" class="subfield-picker">
-            <button type="button" class="subfield-pill" data-value="computational">Computational</button>
-            <button type="button" class="subfield-pill" data-value="systems">Systems</button>
-            <button type="button" class="subfield-pill" data-value="human">Human</button>
+          <select id="review-primary-subfield">
+            <option value="" disabled selected>Select primary subfield...</option>
+            <option value="computational">Computational</option>
+            <option value="systems">Systems</option>
+            <option value="human">Human</option>
+          </select>
+          <div class="secondary-subfields">
+            <span class="secondary-label">Also list under:</span>
+            <label class="subfield-checkbox"><input type="checkbox" name="review-secondary" value="computational"> Computational</label>
+            <label class="subfield-checkbox"><input type="checkbox" name="review-secondary" value="systems"> Systems</label>
+            <label class="subfield-checkbox"><input type="checkbox" name="review-secondary" value="human"> Human</label>
           </div>
         </div>
         <div class="form-group">

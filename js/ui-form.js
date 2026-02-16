@@ -26,9 +26,8 @@ const btnInstSubCreate = document.getElementById('btn-inst-sub-create');
 const btnInstSubLogin = document.getElementById('btn-inst-sub-login');
 const btnInstSubLogout = document.getElementById('btn-inst-sub-logout');
 
-// Subfield picker & institute
-const subSubfieldContainer = document.getElementById('sub-subfield');
-let subSelectedSubfields = [];
+// Subfield dropdown + checkboxes
+const subPrimarySubfield = document.getElementById('sub-primary-subfield');
 const subInstitute = document.getElementById('sub-institute');
 const subInstitutePills = document.getElementById('sub-institute-pills');
 const subInstituteNewName = document.getElementById('sub-institute-new-name');
@@ -77,8 +76,10 @@ export function initForm() {
 
   form.addEventListener('submit', handleSubmit);
 
-  // Subfield picker
-  initSubfieldPicker(subSubfieldContainer, subSelectedSubfields, (updated) => { subSelectedSubfields = updated; });
+  // Auto-disable primary subfield in secondary checkboxes
+  subPrimarySubfield.addEventListener('change', () => {
+    syncSecondaryCheckboxes(subPrimarySubfield, 'sub-secondary');
+  });
 
   // Institute picker: add on select for existing, show fields for new
   subInstitute.addEventListener('change', () => {
@@ -374,7 +375,7 @@ function addLinkRow(container) {
 }
 
 function getSelectedSubfields() {
-  return [...subSelectedSubfields];
+  return getSubfieldsFromPicker(subPrimarySubfield, 'sub-secondary');
 }
 
 function handleAddInstitute() {
@@ -519,8 +520,8 @@ async function handleSubmit(e) {
     subInstituteNewWebsite.value = '';
     selectedInstitutes = [];
     newInstituteData = {};
-    subSelectedSubfields = [];
-    renderSubfieldPicker(subSubfieldContainer, subSelectedSubfields);
+    subPrimarySubfield.selectedIndex = 0;
+    document.querySelectorAll('input[name="sub-secondary"]').forEach(cb => { cb.checked = false; cb.disabled = false; });
     renderInstitutePills();
     // Reset links to single row
     linksContainer.innerHTML = '';
@@ -547,40 +548,37 @@ function hideMessage(el) {
   el.textContent = '';
 }
 
-// ========== SHARED SUBFIELD PICKER ==========
-export function initSubfieldPicker(container, selected, onUpdate) {
-  container.querySelectorAll('.subfield-pill').forEach(pill => {
-    pill.addEventListener('click', () => {
-      const val = pill.dataset.value;
-      const idx = selected.indexOf(val);
-      if (idx >= 0) {
-        selected.splice(idx, 1);
-      } else {
-        selected.push(val);
-      }
-      if (onUpdate) onUpdate(selected);
-      renderSubfieldPicker(container, selected);
-    });
-  });
-  renderSubfieldPicker(container, selected);
+// ========== SHARED SUBFIELD HELPERS ==========
+// Build ordered subfields array: primary first, then checked secondaries
+export function getSubfieldsFromPicker(primarySelect, secondaryName) {
+  const primary = primarySelect.value;
+  const secondaries = [...document.querySelectorAll(`input[name="${secondaryName}"]:checked`)]
+    .map(cb => cb.value)
+    .filter(v => v !== primary);
+  if (!primary) return secondaries;
+  return [primary, ...secondaries];
 }
 
-export function renderSubfieldPicker(container, selected) {
-  container.querySelectorAll('.subfield-pill').forEach(pill => {
-    const val = pill.dataset.value;
-    const idx = selected.indexOf(val);
-    if (idx >= 0) {
-      pill.classList.add('selected');
-      pill.innerHTML = `<span class="pill-order">${idx + 1}</span> ${pill.dataset.value.charAt(0).toUpperCase() + pill.dataset.value.slice(1)}`;
+// Populate a dropdown + checkboxes from an existing subfields array
+export function setSubfieldDropdown(primarySelect, secondaryName, subfields) {
+  const primary = subfields[0] || '';
+  primarySelect.value = primary;
+  const rest = subfields.slice(1);
+  document.querySelectorAll(`input[name="${secondaryName}"]`).forEach(cb => {
+    cb.checked = rest.includes(cb.value);
+    cb.disabled = cb.value === primary;
+  });
+}
+
+// Disable the primary value in secondary checkboxes and uncheck it
+export function syncSecondaryCheckboxes(primarySelect, secondaryName) {
+  const primary = primarySelect.value;
+  document.querySelectorAll(`input[name="${secondaryName}"]`).forEach(cb => {
+    if (cb.value === primary) {
+      cb.checked = false;
+      cb.disabled = true;
     } else {
-      pill.classList.remove('selected');
-      pill.textContent = pill.dataset.value.charAt(0).toUpperCase() + pill.dataset.value.slice(1);
+      cb.disabled = false;
     }
   });
-}
-
-export function setSubfieldPicker(container, selected, values) {
-  selected.length = 0;
-  values.forEach(v => { if (!selected.includes(v)) selected.push(v); });
-  renderSubfieldPicker(container, selected);
 }
