@@ -797,6 +797,17 @@ img {
   flex-shrink: 0;
 }
 
+.card-job-badge {
+  font-size: 0.65rem;
+  font-weight: 500;
+  padding: 0.1rem 0.4rem;
+  border-radius: 999px;
+  background: var(--color-danger-light);
+  color: var(--color-danger);
+  white-space: nowrap;
+  flex-shrink: 0;
+}
+
 .card-institute {
   font-size: 0.8rem;
   color: var(--color-text-secondary);

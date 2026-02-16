@@ -324,10 +324,14 @@ function createCard(group) {
     ? '<span class="card-managed-badge">Managed by PI</span>'
     : '<span class="card-unclaimed-badge">Unclaimed</span>';
 
+  const hasJobs = allJobs.some(j => j.piId === group.id);
+  const jobBadgeHTML = hasJobs ? '<span class="card-job-badge">Job ad</span>' : '';
+
   card.innerHTML = `
     <div class="card-body">
       <div class="card-name-row">
         <h3 class="card-name">${escapeHTML(group.name)}</h3>
+        ${jobBadgeHTML}
         ${managedHTML}
       </div>
       ${instituteHTML}
@@ -349,7 +353,8 @@ async function openPiDetail(group) {
   history.replaceState(null, '', '#pi-' + group.id);
 
   // Populate modal fields
-  piDetailTitle.textContent = group.name || 'PI Details';
+  const hasJobAds = allJobs.some(j => j.piId === group.id);
+  piDetailTitle.innerHTML = escapeHTML(group.name || 'PI Details') + (hasJobAds ? ' <span class="card-job-badge">Job ad</span>' : '');
   piDetailPhoto.src = group.photoURL || 'assets/placeholder-lab.svg';
   piDetailPhoto.alt = group.name || '';
   const institutes = toArray(group.institutes || group.institute);
@@ -915,7 +920,7 @@ function createJobCard(job) {
         <h3 class="job-card-title">${escapeHTML(job.title)}</h3>
         ${deleteHTML}
       </div>
-      <div class="job-card-pi">${escapeHTML(job.piName || '')}</div>
+      <div class="job-card-pi">${escapeHTML(job.piName || '')} <span class="card-job-badge">Job ad</span></div>
       <div class="job-card-meta">
         <span class="job-position-badge">${escapeHTML(job.positionType)}</span>
         ${dateStr ? `<span class="job-card-date">${dateStr}</span>` : ''}
