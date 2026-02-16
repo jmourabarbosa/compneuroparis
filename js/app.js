@@ -223,12 +223,13 @@ function updateGlobalVerifyBanner(user) {
 async function updateAdminBadge() {
   const badge = document.getElementById('admin-badge');
   try {
+    const safe = (p) => p.catch(() => []);
     const [submissions, claims, institutes, reports, messages] = await Promise.all([
-      fetchPendingSubmissions(),
-      dbFetchPendingClaims(),
-      dbFetchPendingInstitutes(),
-      fetchOpenReports(),
-      dbFetchOpenMessages()
+      safe(fetchPendingSubmissions()),
+      safe(dbFetchPendingClaims()),
+      safe(dbFetchPendingInstitutes()),
+      safe(fetchOpenReports()),
+      safe(dbFetchOpenMessages())
     ]);
     const total = submissions.length + claims.length + institutes.length + reports.length + messages.length;
     if (total > 0) {
