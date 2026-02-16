@@ -258,6 +258,38 @@ export async function fetchMyClaimForTarget(uid, targetId) {
 // Backward compat alias
 export const fetchMyClaimForPi = fetchMyClaimForTarget;
 
+// ========== REPORTS ==========
+
+export async function createReport({ targetId, targetName, type, reporterEmail, message }) {
+  const docRef = await addDoc(collection(db, 'reports'), {
+    targetId,
+    targetName,
+    type,
+    reporterEmail: reporterEmail || '',
+    message,
+    status: 'open',
+    createdAt: serverTimestamp()
+  });
+  return docRef.id;
+}
+
+export async function fetchOpenReports() {
+  const q = query(
+    collection(db, 'reports'),
+    where('status', '==', 'open'),
+    orderBy('createdAt', 'desc')
+  );
+  const snapshot = await getDocs(q);
+  return snapshot.docs.map(d => ({ id: d.id, ...d.data() }));
+}
+
+export async function resolveReport(reportId) {
+  await updateDoc(doc(db, 'reports', reportId), {
+    status: 'resolved',
+    resolvedAt: serverTimestamp()
+  });
+}
+
 // ========== ADMINS ==========
 
 export async function fetchAdmins() {

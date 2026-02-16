@@ -1474,6 +1474,70 @@ img {
   gap: 0.35rem;
 }
 
+/* ========== MANAGED-BY & REPORT ========== */
+.managed-by-badge {
+  margin-top: 1.25rem;
+  padding: 0.6rem 1rem;
+  border-radius: var(--radius-sm);
+  background: var(--color-success-light);
+  color: var(--color-success);
+  font-size: 0.85rem;
+  font-weight: 500;
+  border: 1px solid var(--color-success);
+}
+
+.unclaimed-warning {
+  margin-top: 1.25rem;
+  padding: 0.6rem 1rem;
+  border-radius: var(--radius-sm);
+  background: #FEF3C7;
+  color: #92400E;
+  font-size: 0.85rem;
+  border: 1px solid #F59E0B;
+}
+
+.report-section {
+  margin-top: 1rem;
+  padding-top: 1rem;
+  border-top: 1px solid var(--color-border);
+}
+
+.report-toggle-btn {
+  background: none;
+  border: none;
+  font-family: var(--font);
+  font-size: 0.82rem;
+  color: var(--color-text-secondary);
+  cursor: pointer;
+  padding: 0;
+  text-decoration: underline;
+}
+
+.report-toggle-btn:hover {
+  color: var(--color-danger);
+}
+
+.report-form {
+  margin-top: 0.75rem;
+}
+
+.report-textarea {
+  width: 100%;
+  padding: 0.65rem 0.85rem;
+  border: 1.5px solid var(--color-border);
+  border-radius: var(--radius-sm);
+  font-family: var(--font);
+  font-size: 0.85rem;
+  resize: vertical;
+  margin-bottom: 0.5rem;
+}
+
+.report-textarea:focus {
+  outline: none;
+  border-color: var(--color-danger);
+  box-shadow: 0 0 0 3px rgba(220, 38, 38, 0.1);
+}
+
 /* ========== RESPONSIVE ========== */
 @media (max-width: 768px) {
   .site-header {

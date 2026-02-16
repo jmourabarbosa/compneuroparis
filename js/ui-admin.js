@@ -4,7 +4,8 @@ import {
   fetchAdmins, removeAdmin,
   fetchApprovedInstitutes, fetchPendingInstitutes,
   approveInstitute, rejectInstitute, updateInstitute, deleteInstitute,
-  fetchPendingClaims, approveClaim, rejectClaim
+  fetchPendingClaims, approveClaim, rejectClaim,
+  fetchOpenReports, resolveReport
 } from './db.js';
 import { getCurrentUser, createAdminUser } from './auth.js';
 import { loadGroups, loadPublicInstitutes } from './ui-groups.js';
@@ -86,6 +87,10 @@ const institutesPendingEmpty = document.getElementById('institutes-pending-empty
 const institutesApprovedList = document.getElementById('institutes-approved-list');
 const institutesApprovedEmpty = document.getElementById('institutes-approved-empty');
 
+// Reports tab
+const reportsList = document.getElementById('reports-list');
+const reportsEmpty = document.getElementById('reports-empty');
+
 let currentSubmission = null;
 
 // Cache for institute status lookups
@@ -107,6 +112,11 @@ export function initTabs() {
       // Update panels
       document.querySelectorAll('.tab-panel').forEach(p => p.classList.remove('active'));
       document.getElementById(target).classList.add('active');
+
+      // Auto-load reports when tab is selected
+      if (target === 'tab-reports') {
+        loadReports();
+      }
     });
   });
 }
@@ -816,6 +826,62 @@ export function initEditInstituteForm() {
       submitBtn.disabled = false;
     }
   });
+}
+
+// ========== REPORTS TAB ==========
+
+export async function loadReports() {
+  reportsList.innerHTML = '';
+  reportsEmpty.classList.add('hidden');
+
+  try {
+    const reports = await fetchOpenReports();
+
+    if (reports.length === 0) {
+      reportsEmpty.classList.remove('hidden');
+      return;
+    }
+
+    reports.forEach(report => {
+      const item = document.createElement('div');
+      item.className = 'admin-item';
+      const typeBadge = `<span class="admin-item-type-badge admin-item-type-badge--${report.type}">[${report.type === 'institute' ? 'Institute' : 'PI'}]</span>`;
+      const reporterHTML = report.reporterEmail
+        ? `<div class="admin-item-meta">Reported by: ${escapeHTML(report.reporterEmail)}</div>`
+        : `<div class="admin-item-meta">Reported anonymously</div>`;
+      item.innerHTML = `
+        <div class="admin-item-info">
+          <div class="admin-item-name">${typeBadge} ${escapeHTML(report.targetName)}</div>
+          ${reporterHTML}
+          <div class="admin-item-meta">${escapeHTML(report.message)}</div>
+        </div>
+        <div class="admin-item-actions">
+          <button class="btn btn-success btn-sm btn-resolve-report" aria-label="Resolve report">Resolve</button>
+        </div>
+      `;
+
+      item.querySelector('.btn-resolve-report').addEventListener('click', async (e) => {
+        const btn = e.currentTarget;
+        btn.disabled = true;
+        try {
+          await resolveReport(report.id);
+          item.remove();
+          // Check if list is now empty
+          if (reportsList.children.length === 0) {
+            reportsEmpty.classList.remove('hidden');
+          }
+        } catch (err) {
+          console.error('Resolve report error:', err);
+          alert('Error resolving report.');
+          btn.disabled = false;
+        }
+      });
+
+      reportsList.appendChild(item);
+    });
+  } catch (err) {
+    console.error('Error loading reports:', err);
+  }
 }
 
 // ========== HELPERS ==========

@@ -1,4 +1,4 @@
-import { fetchGroups, fetchApprovedInstitutes, createClaim, fetchMyClaimForTarget, deleteGroup, deleteInstitute } from './db.js';
+import { fetchGroups, fetchApprovedInstitutes, createClaim, fetchMyClaimForTarget, deleteGroup, deleteInstitute, createReport } from './db.js';
 import { getCurrentUser, getIsAdmin, createAccount, login, isEmailVerified, resendVerification } from './auth.js';
 
 let allGroups = [];
@@ -43,11 +43,16 @@ const piDetailSummary = document.getElementById('pi-detail-summary');
 const piDetailLinks = document.getElementById('pi-detail-links');
 const piDetailClaimSection = document.getElementById('pi-detail-claim-section');
 const piDetailClaimPending = document.getElementById('pi-detail-claim-pending');
-const piDetailClaimed = document.getElementById('pi-detail-claimed');
+const piDetailManagedBy = document.getElementById('pi-detail-managed-by');
 const btnClaimPi = document.getElementById('btn-claim-pi');
 const piDetailEditSection = document.getElementById('pi-detail-edit-section');
 const btnPiDetailEdit = document.getElementById('btn-pi-detail-edit');
 const btnPiDetailDelete = document.getElementById('btn-pi-detail-delete');
+const btnPiReportToggle = document.getElementById('btn-pi-report-toggle');
+const piReportForm = document.getElementById('pi-report-form');
+const piReportMessage = document.getElementById('pi-report-message');
+const piReportMsg = document.getElementById('pi-report-msg');
+const btnPiReportSubmit = document.getElementById('btn-pi-report-submit');
 
 let currentDetailGroup = null;
 
@@ -62,11 +67,16 @@ const instDetailLinks = document.getElementById('inst-detail-links');
 const instDetailEditSection = document.getElementById('inst-detail-edit-section');
 const instDetailClaimSection = document.getElementById('inst-detail-claim-section');
 const instDetailClaimPending = document.getElementById('inst-detail-claim-pending');
-const instDetailClaimed = document.getElementById('inst-detail-claimed');
+const instDetailManagedBy = document.getElementById('inst-detail-managed-by');
 const btnClaimInst = document.getElementById('btn-claim-inst');
 const btnInstDetailEdit = document.getElementById('btn-inst-detail-edit');
 const btnInstDetailDelete = document.getElementById('btn-inst-detail-delete');
 const btnInstViewPis = document.getElementById('btn-inst-view-pis');
+const btnInstReportToggle = document.getElementById('btn-inst-report-toggle');
+const instReportForm = document.getElementById('inst-report-form');
+const instReportMessage = document.getElementById('inst-report-message');
+const instReportMsg = document.getElementById('inst-report-msg');
+const btnInstReportSubmit = document.getElementById('btn-inst-report-submit');
 
 let currentDetailInstitute = null;
 
@@ -346,9 +356,21 @@ async function openPiDetail(group) {
   piDetailEditSection.classList.add('hidden');
   piDetailClaimSection.classList.add('hidden');
   piDetailClaimPending.classList.add('hidden');
-  piDetailClaimed.classList.add('hidden');
   btnClaimPi.disabled = false;
   btnClaimPi.textContent = 'Claim this page';
+
+  // Reset report form
+  piReportForm.classList.add('hidden');
+  piReportMessage.value = '';
+  piReportMsg.classList.add('hidden');
+  btnPiReportSubmit.disabled = false;
+
+  // Managed-by display
+  if (group.claimedBy) {
+    piDetailManagedBy.innerHTML = '<div class="managed-by-badge">Managed by the PI</div>';
+  } else {
+    piDetailManagedBy.innerHTML = '<div class="unclaimed-warning">Not yet claimed — information was semi-automatically populated and may contain errors</div>';
+  }
 
   const user = getCurrentUser();
   const isAdmin = getIsAdmin();
@@ -361,11 +383,6 @@ async function openPiDetail(group) {
   }
   // Show delete button only for admins
   btnPiDetailDelete.classList.toggle('hidden', !isAdmin);
-
-  // Show "managed by PI" badge if already claimed
-  if (group.claimedBy) {
-    piDetailClaimed.classList.remove('hidden');
-  }
 
   // Always show claim button initially (except for current claimer)
   if (user && isClaimer) {
@@ -543,10 +560,46 @@ export function initPiDetail() {
     }
   });
 
+  // Report button
+  btnPiReportToggle.addEventListener('click', () => {
+    piReportForm.classList.toggle('hidden');
+  });
+  btnPiReportSubmit.addEventListener('click', async () => {
+    const msg = piReportMessage.value.trim();
+    if (!msg) {
+      showReportMsg(piReportMsg, 'Please describe the issue.', 'error');
+      return;
+    }
+    btnPiReportSubmit.disabled = true;
+    try {
+      const user = getCurrentUser();
+      await createReport({
+        targetId: currentDetailGroup.id,
+        targetName: currentDetailGroup.name,
+        type: 'pi',
+        reporterEmail: user?.email || '',
+        message: msg
+      });
+      piReportMessage.value = '';
+      showReportMsg(piReportMsg, 'Report submitted. Thank you!', 'success');
+    } catch (err) {
+      console.error('Report error:', err);
+      showReportMsg(piReportMsg, 'Error submitting report.', 'error');
+    } finally {
+      btnPiReportSubmit.disabled = false;
+    }
+  });
+
   // Claim modal buttons
   btnClaimCreate.addEventListener('click', () => handleClaimAuth(true));
   btnClaimLogin.addEventListener('click', () => handleClaimAuth(false));
   btnClaimSubmit.addEventListener('click', handleClaimSubmit);
+}
+
+function showReportMsg(el, text, type) {
+  el.textContent = text;
+  el.className = `form-message ${type}`;
+  el.classList.remove('hidden');
 }
 
 function escapeHTML(str) {
@@ -707,7 +760,19 @@ async function openInstituteDetail(inst) {
   instDetailEditSection.classList.add('hidden');
   instDetailClaimSection.classList.add('hidden');
   instDetailClaimPending.classList.add('hidden');
-  instDetailClaimed.classList.add('hidden');
+
+  // Reset report form
+  instReportForm.classList.add('hidden');
+  instReportMessage.value = '';
+  instReportMsg.classList.add('hidden');
+  btnInstReportSubmit.disabled = false;
+
+  // Managed-by display
+  if (inst.claimedBy) {
+    instDetailManagedBy.innerHTML = '<div class="managed-by-badge">Managed by a member</div>';
+  } else {
+    instDetailManagedBy.innerHTML = '<div class="unclaimed-warning">Not yet claimed — information was semi-automatically populated and may contain errors</div>';
+  }
 
   const user = getCurrentUser();
   const isAdmin = getIsAdmin();
@@ -719,11 +784,6 @@ async function openInstituteDetail(inst) {
   }
   // Show delete button only for admins
   btnInstDetailDelete.classList.toggle('hidden', !isAdmin);
-
-  // Show "managed by member" badge if already claimed
-  if (inst.claimedBy) {
-    instDetailClaimed.classList.remove('hidden');
-  }
 
   // Show claim button (except for current claimer)
   if (user && isClaimer) {
@@ -753,6 +813,36 @@ export function initInstituteDetail() {
     if (!currentDetailInstitute) return;
     currentClaimTarget = { id: currentDetailInstitute.id, name: currentDetailInstitute.name, type: 'institute' };
     openClaimModal();
+  });
+
+  // Report button
+  btnInstReportToggle.addEventListener('click', () => {
+    instReportForm.classList.toggle('hidden');
+  });
+  btnInstReportSubmit.addEventListener('click', async () => {
+    const msg = instReportMessage.value.trim();
+    if (!msg) {
+      showReportMsg(instReportMsg, 'Please describe the issue.', 'error');
+      return;
+    }
+    btnInstReportSubmit.disabled = true;
+    try {
+      const user = getCurrentUser();
+      await createReport({
+        targetId: currentDetailInstitute.id,
+        targetName: currentDetailInstitute.name,
+        type: 'institute',
+        reporterEmail: user?.email || '',
+        message: msg
+      });
+      instReportMessage.value = '';
+      showReportMsg(instReportMsg, 'Report submitted. Thank you!', 'success');
+    } catch (err) {
+      console.error('Report error:', err);
+      showReportMsg(instReportMsg, 'Error submitting report.', 'error');
+    } finally {
+      btnInstReportSubmit.disabled = false;
+    }
   });
 
   btnInstDetailEdit.addEventListener('click', () => {

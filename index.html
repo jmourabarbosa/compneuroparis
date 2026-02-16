@@ -365,6 +365,7 @@
           <button class="tab" data-tab="tab-claims" role="tab" aria-selected="false">Claims</button>
           <button class="tab" data-tab="tab-admins" role="tab" aria-selected="false">Admins</button>
           <button class="tab" data-tab="tab-institutes" role="tab" aria-selected="false">Institutes</button>
+          <button class="tab" data-tab="tab-reports" role="tab" aria-selected="false">Reports</button>
         </div>
 
         <!-- Pending Submissions Tab -->
@@ -429,6 +430,14 @@
             </div>
             <div id="institutes-approved-list" class="admin-list"></div>
           </div>
+        </div>
+
+        <!-- Reports Tab -->
+        <div id="tab-reports" class="tab-panel" role="tabpanel">
+          <div id="reports-empty" class="empty-state hidden">
+            <p>No open reports.</p>
+          </div>
+          <div id="reports-list" class="admin-list"></div>
         </div>
       </div>
     </div>
@@ -530,6 +539,7 @@
           <button id="btn-pi-detail-edit" class="btn btn-primary btn-sm">Edit</button>
           <button id="btn-pi-detail-delete" class="btn btn-danger btn-sm hidden">Delete</button>
         </div>
+        <div id="pi-detail-managed-by"></div>
         <div id="pi-detail-claim-section" class="pi-detail-claim-section hidden">
           <p class="pi-detail-claim-hint">Are you this PI? Claim this page to manage your own information.</p>
           <button id="btn-claim-pi" class="btn btn-accent">Claim this page</button>
@@ -537,8 +547,13 @@
         <div id="pi-detail-claim-pending" class="pi-detail-claim-pending hidden">
           Your claim for this page is pending admin review.
         </div>
-        <div id="pi-detail-claimed" class="pi-detail-claimed hidden">
-          This page is managed by the PI.
+        <div id="pi-detail-report-section" class="report-section">
+          <button type="button" class="report-toggle-btn" id="btn-pi-report-toggle">Report an issue</button>
+          <div id="pi-report-form" class="report-form hidden">
+            <textarea id="pi-report-message" class="report-textarea" rows="3" placeholder="Describe the issue (e.g. incorrect information, outdated link...)"></textarea>
+            <div id="pi-report-msg" class="form-message hidden"></div>
+            <button type="button" id="btn-pi-report-submit" class="btn btn-danger btn-sm">Submit Report</button>
+          </div>
         </div>
       </div>
     </div>
@@ -611,6 +626,7 @@
           <button id="btn-inst-detail-edit" class="btn btn-primary btn-sm">Edit</button>
           <button id="btn-inst-detail-delete" class="btn btn-danger btn-sm hidden">Delete</button>
         </div>
+        <div id="inst-detail-managed-by"></div>
         <div id="inst-detail-claim-section" class="pi-detail-claim-section hidden">
           <p class="pi-detail-claim-hint">Do you manage this institute? Claim this page to manage its information.</p>
           <button id="btn-claim-inst" class="btn btn-accent">Claim this page</button>
@@ -618,8 +634,13 @@
         <div id="inst-detail-claim-pending" class="pi-detail-claim-pending hidden">
           Your claim for this page is pending admin review.
         </div>
-        <div id="inst-detail-claimed" class="pi-detail-claimed hidden">
-          This page is managed by a member.
+        <div id="inst-detail-report-section" class="report-section">
+          <button type="button" class="report-toggle-btn" id="btn-inst-report-toggle">Report an issue</button>
+          <div id="inst-report-form" class="report-form hidden">
+            <textarea id="inst-report-message" class="report-textarea" rows="3" placeholder="Describe the issue (e.g. incorrect information, outdated link...)"></textarea>
+            <div id="inst-report-msg" class="form-message hidden"></div>
+            <button type="button" id="btn-inst-report-submit" class="btn btn-danger btn-sm">Submit Report</button>
+          </div>
         </div>
       </div>
     </div>
