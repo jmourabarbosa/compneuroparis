@@ -653,6 +653,50 @@ img {
   color: var(--color-danger);
 }
 
+/* ========== JOB DETAIL MODAL ========== */
+.job-detail-position {
+  margin-bottom: 0.75rem;
+}
+
+.job-detail-pi {
+  font-size: 0.9rem;
+  color: var(--color-text-secondary);
+  margin-bottom: 0.5rem;
+}
+
+.job-detail-pi a {
+  color: var(--color-primary);
+  font-weight: 500;
+  cursor: pointer;
+}
+
+.job-detail-pi a:hover {
+  color: var(--color-primary-dark);
+}
+
+.job-detail-date {
+  font-size: 0.8rem;
+  color: var(--color-text-secondary);
+  margin-bottom: 1rem;
+}
+
+.job-detail-link {
+  margin-bottom: 1rem;
+}
+
+.job-detail-link a {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.3rem;
+  font-size: 0.9rem;
+  font-weight: 500;
+  color: var(--color-primary);
+}
+
+.job-detail-link a::before {
+  content: '\2192';
+}
+
 .pi-detail-jobs-badge {
   display: inline-block;
   font-size: 0.85rem;
@@ -687,6 +731,11 @@ img {
   border-radius: var(--radius-sm);
   border-left: 3px solid var(--color-danger);
   font-size: 0.85rem;
+  transition: background 0.15s;
+}
+
+.pi-job-item:hover {
+  background: var(--color-danger-light);
 }
 
 .pi-job-item-info {

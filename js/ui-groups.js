@@ -442,50 +442,25 @@ async function openPiDetail(group) {
       // Build expandable jobs list
       piDetailJobs.innerHTML = `<div class="pi-detail-jobs-list"></div>`;
       const listEl = piDetailJobs.querySelector('.pi-detail-jobs-list');
-      const user = getCurrentUser();
-      const admin = getIsAdmin();
 
       piJobs.forEach(job => {
-        let jobLink = job.link || '';
-        if (jobLink && !/^https?:\/\//i.test(jobLink)) jobLink = 'https://' + jobLink;
-
-        const canManage = user && (user.uid === job.postedBy || admin);
-
         const item = document.createElement('div');
         item.className = 'pi-job-item';
+        item.style.cursor = 'pointer';
         item.innerHTML = `
           <div class="pi-job-item-info">
-            <div class="pi-job-item-title">
-              <a href="${escapeHTML(jobLink)}" target="_blank" rel="noopener noreferrer">${escapeHTML(job.title)}</a>
-            </div>
+            <div class="pi-job-item-title">${escapeHTML(job.title)}</div>
             <div class="pi-job-item-meta">
               <span class="job-position-badge">${escapeHTML(job.positionType)}</span>
               ${job.createdAt?.toDate ? ' · ' + job.createdAt.toDate().toLocaleDateString('en-GB', { day: 'numeric', month: 'short', year: 'numeric' }) : ''}
             </div>
           </div>
-          ${canManage ? `<div class="pi-job-item-actions">
-            <button class="btn btn-outline-dark btn-sm btn-job-edit" title="Edit">Edit</button>
-            <button class="btn btn-danger btn-sm btn-job-delete" title="Delete">Delete</button>
-          </div>` : ''}
         `;
 
-        if (canManage) {
-          item.querySelector('.btn-job-edit').addEventListener('click', () => {
-            startInlineJobEdit(item, job);
-          });
-          item.querySelector('.btn-job-delete').addEventListener('click', async () => {
-            if (!confirm('Delete this job ad?')) return;
-            try {
-              await deleteJob(job.id);
-              await loadPublicJobs();
-              // Refresh PI detail
-              openPiDetail(group);
-            } catch (err) {
-              console.error('Delete job error:', err);
-              alert('Error deleting job.');
-            }
-          });
-        }
+        item.addEventListener('click', () => {
+          modalPiDetail.classList.add('hidden');
+          openJobDetail(job);
+        });
 
         listEl.appendChild(item);
       });
@@ -969,107 +944,158 @@ function createJobCard(job) {
     ? job.createdAt.toDate().toLocaleDateString('en-GB', { day: 'numeric', month: 'short', year: 'numeric' })
     : '';
 
-  const user = getCurrentUser();
-  const canDelete = user && (user.uid === job.postedBy || getIsAdmin());
-  const deleteHTML = canDelete
-    ? `<button class="job-card-delete" data-job-id="${escapeHTML(job.id)}" title="Delete this job ad">&times;</button>`
-    : '';
-
-  // Ensure link has a protocol
-  let jobLink = job.link || '';
-  if (jobLink && !/^https?:\/\//i.test(jobLink)) {
-    jobLink = 'https://' + jobLink;
-  }
-
   card.innerHTML = `
     <div class="card-body">
       <div class="card-name-row">
         <h3 class="job-card-title">${escapeHTML(job.title)}</h3>
-        ${deleteHTML}
       </div>
-      <div class="job-card-pi">${escapeHTML(job.piName || '')} <span class="card-job-badge">Hiring</span></div>
+      <div class="job-card-pi">${escapeHTML(job.piName || '')}</div>
       <div class="job-card-meta">
         <span class="job-position-badge">${escapeHTML(job.positionType)}</span>
         ${dateStr ? `<span class="job-card-date">${dateStr}</span>` : ''}
       </div>
-      <div class="job-card-link">
-        <a href="${escapeHTML(jobLink)}" target="_blank" rel="noopener noreferrer">View job ad</a>
-      </div>
     </div>
   `;
 
-  const delBtn = card.querySelector('.job-card-delete');
-  if (delBtn) {
-    delBtn.addEventListener('click', async (e) => {
-      e.stopPropagation();
-      if (!confirm('Delete this job ad?')) return;
-      delBtn.disabled = true;
-      try {
-        await deleteJob(job.id);
-        await loadPublicJobs();
-      } catch (err) {
-        console.error('Delete job error:', err);
-        alert('Error deleting job.');
-        delBtn.disabled = false;
-      }
-    });
-  }
+  card.addEventListener('click', (e) => {
+    if (e.target.closest('a') || e.target.closest('button')) return;
+    openJobDetail(job);
+  });
 
   return card;
 }
 
-function startInlineJobEdit(itemEl, job) {
+// Job Detail modal
+let currentDetailJob = null;
+const modalJobDetail = document.getElementById('modal-job-detail');
+
+function openJobDetail(job, fromPiDetail = false) {
+  currentDetailJob = job;
+
+  document.getElementById('job-detail-title').textContent = job.title || 'Job Details';
+
+  // Position type badge
+  document.getElementById('job-detail-position').innerHTML =
+    `<span class="job-position-badge">${escapeHTML(job.positionType)}</span>`;
+
+  // PI name — clickable to open PI detail
+  const piEl = document.getElementById('job-detail-pi');
+  const piGroup = allGroups.find(g => g.id === job.piId);
+  if (piGroup) {
+    piEl.innerHTML = `PI: <a class="job-detail-pi-link">${escapeHTML(job.piName || '')}</a>`;
+    piEl.querySelector('.job-detail-pi-link').addEventListener('click', () => {
+      modalJobDetail.classList.add('hidden');
+      openPiDetail(piGroup);
+    });
+  } else {
+    piEl.textContent = `PI: ${job.piName || ''}`;
+  }
+
+  // Date
+  const dateStr = job.createdAt?.toDate
+    ? job.createdAt.toDate().toLocaleDateString('en-GB', { day: 'numeric', month: 'short', year: 'numeric' })
+    : '';
+  document.getElementById('job-detail-date').textContent = dateStr ? `Posted ${dateStr}` : '';
+
+  // External link
   let jobLink = job.link || '';
   if (jobLink && !/^https?:\/\//i.test(jobLink)) jobLink = 'https://' + jobLink;
+  document.getElementById('job-detail-link').innerHTML = jobLink
+    ? `<a href="${escapeHTML(jobLink)}" target="_blank" rel="noopener noreferrer">External link to job details</a>`
+    : '';
 
-  itemEl.innerHTML = `
-    <div class="pi-job-item-info" style="width:100%">
-      <div class="form-group" style="margin-bottom:0.5rem">
-        <input type="text" class="job-edit-title" value="${escapeHTML(job.title)}" placeholder="Job title" style="width:100%;padding:0.4rem 0.6rem;font-size:0.85rem;border:1.5px solid var(--color-border);border-radius:var(--radius-sm);font-family:var(--font)">
-      </div>
-      <div class="form-group" style="margin-bottom:0.5rem">
-        <select class="job-edit-type" style="width:100%;padding:0.4rem 0.6rem;font-size:0.85rem;border:1.5px solid var(--color-border);border-radius:var(--radius-sm);font-family:var(--font)">
-          <option value="PhD" ${job.positionType === 'PhD' ? 'selected' : ''}>PhD</option>
-          <option value="Postdoc" ${job.positionType === 'Postdoc' ? 'selected' : ''}>Postdoc</option>
-          <option value="Research Engineer" ${job.positionType === 'Research Engineer' ? 'selected' : ''}>Research Engineer</option>
-          <option value="Internship" ${job.positionType === 'Internship' ? 'selected' : ''}>Internship</option>
-          <option value="Other" ${job.positionType === 'Other' ? 'selected' : ''}>Other</option>
-        </select>
-      </div>
-      <div class="form-group" style="margin-bottom:0.5rem">
-        <input type="url" class="job-edit-link" value="${escapeHTML(jobLink)}" placeholder="https://..." style="width:100%;padding:0.4rem 0.6rem;font-size:0.85rem;border:1.5px solid var(--color-border);border-radius:var(--radius-sm);font-family:var(--font)">
-      </div>
-      <div style="display:flex;gap:0.35rem">
-        <button class="btn btn-primary btn-sm btn-job-save">Save</button>
-        <button class="btn btn-outline-dark btn-sm btn-job-cancel">Cancel</button>
-      </div>
-    </div>
-  `;
+  // Edit/delete section
+  const editSection = document.getElementById('job-detail-edit-section');
+  const editForm = document.getElementById('job-detail-edit-form');
+  editSection.classList.add('hidden');
+  editForm.classList.add('hidden');
 
-  itemEl.querySelector('.btn-job-save').addEventListener('click', async () => {
-    const title = itemEl.querySelector('.job-edit-title').value.trim();
-    const positionType = itemEl.querySelector('.job-edit-type').value;
-    let link = itemEl.querySelector('.job-edit-link').value.trim();
-    if (!title || !link) { alert('Title and link are required.'); return; }
+  const user = getCurrentUser();
+  const canManage = user && (user.uid === job.postedBy || getIsAdmin());
+  if (canManage) {
+    editSection.classList.remove('hidden');
+  }
+
+  modalJobDetail.classList.remove('hidden');
+}
+
+export function initJobDetail() {
+  const btnEdit = document.getElementById('btn-job-detail-edit');
+  const btnDelete = document.getElementById('btn-job-detail-delete');
+  const editForm = document.getElementById('job-detail-edit-form');
+  const editSection = document.getElementById('job-detail-edit-section');
+  const editMsg = document.getElementById('job-edit-message');
+
+  btnEdit.addEventListener('click', () => {
+    if (!currentDetailJob) return;
+    let jobLink = currentDetailJob.link || '';
+    if (jobLink && !/^https?:\/\//i.test(jobLink)) jobLink = 'https://' + jobLink;
+
+    document.getElementById('job-edit-title-input').value = currentDetailJob.title || '';
+    document.getElementById('job-edit-type-input').value = currentDetailJob.positionType || 'Other';
+    document.getElementById('job-edit-link-input').value = jobLink;
+    editMsg.classList.add('hidden');
+    editSection.classList.add('hidden');
+    editForm.classList.remove('hidden');
+  });
+
+  document.getElementById('btn-job-edit-cancel').addEventListener('click', () => {
+    editForm.classList.add('hidden');
+    editSection.classList.remove('hidden');
+  });
+
+  document.getElementById('btn-job-edit-save').addEventListener('click', async () => {
+    const title = document.getElementById('job-edit-title-input').value.trim();
+    const positionType = document.getElementById('job-edit-type-input').value;
+    let link = document.getElementById('job-edit-link-input').value.trim();
+    if (!title || !link) {
+      editMsg.textContent = 'Title and link are required.';
+      editMsg.className = 'form-message error';
+      editMsg.classList.remove('hidden');
+      return;
+    }
     if (!/^https?:\/\//i.test(link)) link = 'https://' + link;
 
-    const saveBtn = itemEl.querySelector('.btn-job-save');
+    const saveBtn = document.getElementById('btn-job-edit-save');
     saveBtn.disabled = true;
     saveBtn.textContent = 'Saving...';
     try {
-      await updateJob(job.id, { title, positionType, link });
+      await updateJob(currentDetailJob.id, { title, positionType, link });
       await loadPublicJobs();
-      openPiDetail(currentDetailGroup);
+      // Re-open with updated data
+      const updated = allJobs.find(j => j.id === currentDetailJob.id);
+      if (updated) {
+        openJobDetail(updated);
+      } else {
+        modalJobDetail.classList.add('hidden');
+      }
     } catch (err) {
       console.error('Update job error:', err);
-      alert('Error updating job.');
+      editMsg.textContent = 'Error updating job.';
+      editMsg.className = 'form-message error';
+      editMsg.classList.remove('hidden');
+    } finally {
       saveBtn.disabled = false;
       saveBtn.textContent = 'Save';
     }
   });
 
-  itemEl.querySelector('.btn-job-cancel').addEventListener('click', () => {
-    openPiDetail(currentDetailGroup);
+  btnDelete.addEventListener('click', async () => {
+    if (!currentDetailJob) return;
+    if (!confirm('Delete this job ad? This cannot be undone.')) return;
+    btnDelete.disabled = true;
+    btnDelete.textContent = 'Deleting...';
+    try {
+      await deleteJob(currentDetailJob.id);
+      await loadPublicJobs();
+      modalJobDetail.classList.add('hidden');
+    } catch (err) {
+      console.error('Delete job error:', err);
+      alert('Error deleting job.');
+    } finally {
+      btnDelete.disabled = false;
+      btnDelete.textContent = 'Delete';
+    }
   });
 }
 

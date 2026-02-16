@@ -647,6 +647,51 @@
     </div>
   </div>
 
+  <!-- ========== JOB DETAIL MODAL ========== -->
+  <div id="modal-job-detail" class="modal-overlay hidden" role="dialog" aria-modal="true" aria-label="Job Details">
+    <div class="modal">
+      <div class="modal-header">
+        <h3 id="job-detail-title">Job Details</h3>
+        <button class="modal-close" data-close-modal="modal-job-detail" aria-label="Close">&times;</button>
+      </div>
+      <div class="modal-body">
+        <div id="job-detail-position" class="job-detail-position"></div>
+        <div id="job-detail-pi" class="job-detail-pi"></div>
+        <div id="job-detail-date" class="job-detail-date"></div>
+        <div id="job-detail-link" class="job-detail-link"></div>
+        <div id="job-detail-edit-section" class="pi-detail-edit-section hidden">
+          <button id="btn-job-detail-edit" class="btn btn-primary btn-sm">Edit</button>
+          <button id="btn-job-detail-delete" class="btn btn-danger btn-sm">Delete</button>
+        </div>
+        <div id="job-detail-edit-form" class="hidden">
+          <div class="form-group">
+            <label for="job-edit-title-input">Job Title <span class="required">*</span></label>
+            <input type="text" id="job-edit-title-input">
+          </div>
+          <div class="form-group">
+            <label for="job-edit-type-input">Position Type <span class="required">*</span></label>
+            <select id="job-edit-type-input">
+              <option value="PhD">PhD</option>
+              <option value="Postdoc">Postdoc</option>
+              <option value="Research Engineer">Research Engineer</option>
+              <option value="Internship">Internship</option>
+              <option value="Other">Other</option>
+            </select>
+          </div>
+          <div class="form-group">
+            <label for="job-edit-link-input">Link to Ad <span class="required">*</span></label>
+            <input type="url" id="job-edit-link-input" placeholder="https://...">
+          </div>
+          <div id="job-edit-message" class="form-message hidden" role="alert"></div>
+          <div style="display:flex;gap:0.5rem">
+            <button id="btn-job-edit-save" class="btn btn-primary btn-sm">Save</button>
+            <button id="btn-job-edit-cancel" class="btn btn-outline-dark btn-sm">Cancel</button>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+
   <!-- ========== CLAIM MODAL ========== -->
   <div id="modal-claim" class="modal-overlay hidden" role="dialog" aria-modal="true" aria-label="Claim this page">
     <div class="modal">

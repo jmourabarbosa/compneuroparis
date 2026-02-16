@@ -1,4 +1,4 @@
-import { loadGroups, initSearch, initSections, loadPublicInstitutes, loadPublicJobs, initPiDetail, initInstituteDetail, handleDeepLink } from './ui-groups.js';
+import { loadGroups, initSearch, initSections, loadPublicInstitutes, loadPublicJobs, initPiDetail, initInstituteDetail, initJobDetail, handleDeepLink } from './ui-groups.js';
 import { initForm, initJobForm, updateSubmissionAuthUI } from './ui-form.js';
 import { onAuthChange, login, logout, resetPassword, createAccount, isEmailVerified, resendVerification, authReady } from './auth.js';
 import {
@@ -333,6 +333,7 @@ initAddAdmin();
 initEditUserForm();
 initPiDetail();
 initInstituteDetail();
+initJobDetail();
 initJobForm();
 
 // Load groups, institutes, and jobs (public data), then handle deep links
