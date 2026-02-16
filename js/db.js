@@ -1,6 +1,6 @@
 import {
   collection, getDocs, getDoc, addDoc, updateDoc, deleteDoc, doc,
-  query, where, orderBy, serverTimestamp, setDoc
+  query, where, orderBy, serverTimestamp, setDoc, deleteField
 } from 'https://www.gstatic.com/firebasejs/11.4.0/firebase-firestore.js';
 import { db } from './firebase-config.js';
 
@@ -243,6 +243,31 @@ export async function rejectClaim(claimId) {
     status: 'rejected',
     reviewedAt: serverTimestamp()
   });
+}
+
+export async function revokeClaim(targetId, type = 'pi') {
+  const targetCollection = type === 'institute' ? 'institutes' : 'groups';
+
+  // Remove claimedBy fields from the target document
+  await updateDoc(doc(db, targetCollection, targetId), {
+    claimedBy: deleteField(),
+    claimedByEmail: deleteField(),
+    updatedAt: serverTimestamp()
+  });
+
+  // Mark approved claim(s) as revoked
+  const q = query(
+    collection(db, 'claims'),
+    where('targetId', '==', targetId),
+    where('status', '==', 'approved')
+  );
+  const snapshot = await getDocs(q);
+  for (const d of snapshot.docs) {
+    await updateDoc(d.ref, {
+      status: 'revoked',
+      revokedAt: serverTimestamp()
+    });
+  }
 }
 
 export async function fetchMyClaimForTarget(uid, targetId) {

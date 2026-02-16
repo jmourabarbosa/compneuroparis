@@ -1524,6 +1524,26 @@ img {
   opacity: 0.8;
 }
 
+.btn-revoke-claim {
+  margin-left: 8px;
+  padding: 2px 8px;
+  font-size: 0.75rem;
+  background: transparent;
+  color: #dc3545;
+  border: 1px solid #dc3545;
+  border-radius: 4px;
+  cursor: pointer;
+  vertical-align: middle;
+}
+.btn-revoke-claim:hover {
+  background: #dc3545;
+  color: #fff;
+}
+.btn-revoke-claim:disabled {
+  opacity: 0.5;
+  cursor: not-allowed;
+}
+
 .unclaimed-warning {
   margin-top: 1.25rem;
   padding: 0.6rem 1rem;

@@ -1,4 +1,4 @@
-import { fetchGroups, fetchApprovedInstitutes, createClaim, fetchMyClaimForTarget, fetchApprovedClaimForTarget, deleteGroup, deleteInstitute, createReport } from './db.js';
+import { fetchGroups, fetchApprovedInstitutes, createClaim, fetchMyClaimForTarget, fetchApprovedClaimForTarget, revokeClaim, deleteGroup, deleteInstitute, createReport } from './db.js';
 import { getCurrentUser, getIsAdmin, createAccount, login, isEmailVerified, resendVerification } from './auth.js';
 
 let allGroups = [];
@@ -380,6 +380,7 @@ async function openPiDetail(group) {
   // Managed-by display
   if (group.claimedBy) {
     let emailStr = '';
+    let revokeBtn = '';
     if (isAdmin) {
       let email = group.claimedByEmail;
       if (!email) {
@@ -389,8 +390,9 @@ async function openPiDetail(group) {
         } catch (e) { /* ignore */ }
       }
       if (email) emailStr = ` <span class="managed-by-email">(${escapeHTML(email)})</span>`;
+      revokeBtn = ' <button class="btn-revoke-claim" data-target-id="' + escapeHTML(group.id) + '" data-type="pi">Remove claim</button>';
     }
-    piDetailManagedBy.innerHTML = `<div class="managed-by-badge">Managed by the PI${emailStr}</div>`;
+    piDetailManagedBy.innerHTML = `<div class="managed-by-badge">Managed by the PI${emailStr}${revokeBtn}</div>`;
   } else {
     piDetailManagedBy.innerHTML = '<div class="unclaimed-warning">Not yet claimed — information was semi-automatically populated and may contain errors</div>';
   }
@@ -608,6 +610,25 @@ export function initPiDetail() {
     }
   });
 
+  // Revoke claim (admin only)
+  piDetailManagedBy.addEventListener('click', async (e) => {
+    const btn = e.target.closest('.btn-revoke-claim');
+    if (!btn) return;
+    if (!confirm('Remove this claim? The profile will become unclaimed.')) return;
+    btn.disabled = true;
+    btn.textContent = 'Removing…';
+    try {
+      await revokeClaim(btn.dataset.targetId, btn.dataset.type);
+      modalPiDetail.classList.add('hidden');
+      await loadGroups();
+    } catch (err) {
+      console.error('Revoke claim error:', err);
+      alert('Error removing claim.');
+      btn.disabled = false;
+      btn.textContent = 'Remove claim';
+    }
+  });
+
   // Claim modal buttons
   btnClaimCreate.addEventListener('click', () => handleClaimAuth(true));
   btnClaimLogin.addEventListener('click', () => handleClaimAuth(false));
@@ -799,6 +820,7 @@ async function openInstituteDetail(inst) {
   // Managed-by display
   if (inst.claimedBy) {
     let emailStr = '';
+    let revokeBtn = '';
     if (isAdmin) {
       let email = inst.claimedByEmail;
       if (!email) {
@@ -808,8 +830,9 @@ async function openInstituteDetail(inst) {
         } catch (e) { /* ignore */ }
       }
       if (email) emailStr = ` <span class="managed-by-email">(${escapeHTML(email)})</span>`;
+      revokeBtn = ' <button class="btn-revoke-claim" data-target-id="' + escapeHTML(inst.id) + '" data-type="institute">Remove claim</button>';
     }
-    instDetailManagedBy.innerHTML = `<div class="managed-by-badge">Managed by a member${emailStr}</div>`;
+    instDetailManagedBy.innerHTML = `<div class="managed-by-badge">Managed by a member${emailStr}${revokeBtn}</div>`;
   } else {
     instDetailManagedBy.innerHTML = '<div class="unclaimed-warning">Not yet claimed — information was semi-automatically populated and may contain errors</div>';
   }
@@ -878,6 +901,25 @@ export function initInstituteDetail() {
       showReportMsg(instReportMsg, 'Error submitting report.', 'error');
     } finally {
       btnInstReportSubmit.disabled = false;
+    }
+  });
+
+  // Revoke claim (admin only)
+  instDetailManagedBy.addEventListener('click', async (e) => {
+    const btn = e.target.closest('.btn-revoke-claim');
+    if (!btn) return;
+    if (!confirm('Remove this claim? The profile will become unclaimed.')) return;
+    btn.disabled = true;
+    btn.textContent = 'Removing…';
+    try {
+      await revokeClaim(btn.dataset.targetId, btn.dataset.type);
+      modalInstDetail.classList.add('hidden');
+      await loadPublicInstitutes();
+    } catch (err) {
+      console.error('Revoke claim error:', err);
+      alert('Error removing claim.');
+      btn.disabled = false;
+      btn.textContent = 'Remove claim';
     }
   });
 
