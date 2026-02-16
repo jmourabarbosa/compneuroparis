@@ -116,7 +116,10 @@ function toggleKeyword(kw, btn) {
 
 export function filterGroups() {
   searchText = searchInput.value.trim().toLowerCase();
-  keywordFilters.classList.toggle('hidden', searchText.length === 0 && !activeKeyword);
+  // Clear keyword selection when search is emptied
+  if (!searchText) {
+    activeKeyword = null;
+  }
   renderGroups();
   renderInstitutes();
 }
@@ -235,19 +238,35 @@ function renderGroups() {
 }
 
 function rebuildKeywordPills(filteredGroups) {
-  const keywords = new Set();
+  keywordFilters.innerHTML = '';
+
+  // No search text → hide keywords entirely
+  if (!searchText) {
+    activeKeyword = null;
+    keywordFilters.classList.add('hidden');
+    return;
+  }
+
+  // Collect all keywords from filtered PIs
+  const allKws = new Set();
   filteredGroups.forEach(g => {
-    (g.keywords || []).forEach(k => keywords.add(k.trim().toLowerCase()));
+    (g.keywords || []).forEach(k => allKws.add(k.trim().toLowerCase()));
   });
 
-  // If active keyword is no longer in filtered results, deactivate it
-  if (activeKeyword && !keywords.has(activeKeyword)) {
+  // Only show keywords that themselves match the search query
+  const matching = [...allKws].filter(kw => fuzzyMatch(kw, searchText)).sort();
+
+  // If active keyword is no longer relevant, deactivate it
+  if (activeKeyword && !matching.includes(activeKeyword)) {
     activeKeyword = null;
   }
 
-  keywordFilters.innerHTML = '';
-  const sorted = [...keywords].sort();
-  sorted.forEach(kw => {
+  if (matching.length === 0) {
+    keywordFilters.classList.add('hidden');
+    return;
+  }
+
+  matching.forEach(kw => {
     const btn = document.createElement('button');
     btn.className = 'keyword-btn';
     if (kw === activeKeyword) {
@@ -260,7 +279,7 @@ function rebuildKeywordPills(filteredGroups) {
     btn.addEventListener('click', () => toggleKeyword(kw, btn));
     keywordFilters.appendChild(btn);
   });
-  keywordFilters.classList.toggle('hidden', sorted.length === 0 && !searchText && !activeKeyword);
+  keywordFilters.classList.remove('hidden');
 }
 
 function createCard(group) {
