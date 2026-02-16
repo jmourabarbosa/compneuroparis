@@ -261,8 +261,8 @@ async function seedPIs() {
 }
 
 async function updateInstitutes() {
-  log('--- Updating Existing Institutes ---', 'info');
-  let updated = 0, notFound = 0;
+  log('--- Updating Existing Institutes (empty fields only) ---', 'info');
+  let updated = 0, notFound = 0, skipped = 0;
   for (const inst of institutes) {
     const q = query(collection(db, 'institutes'), where('name', '==', inst.name), where('status', '==', 'approved'));
     const snap = await getDocs(q);
@@ -272,20 +272,27 @@ async function updateInstitutes() {
       continue;
     }
     const docRef = doc(db, 'institutes', snap.docs[0].id);
-    await updateDoc(docRef, {
-      logoURL: inst.logoURL || '',
-      website: inst.website,
-      updatedAt: serverTimestamp()
-    });
-    log(`  Updated: ${inst.name}`, 'success');
+    const existing = snap.docs[0].data();
+    const isEmpty = v => v === undefined || v === null || v === '' || (Array.isArray(v) && v.length === 0);
+    const patch = {};
+    if (isEmpty(existing.logoURL)) patch.logoURL = inst.logoURL || '';
+    if (isEmpty(existing.website)) patch.website = inst.website;
+    if (Object.keys(patch).length === 0) {
+      log(`  Skip (no empty fields): ${inst.name}`);
+      skipped++;
+      continue;
+    }
+    patch.updatedAt = serverTimestamp();
+    await updateDoc(docRef, patch);
+    log(`  Updated (${Object.keys(patch).filter(k => k !== 'updatedAt').join(', ')}): ${inst.name}`, 'success');
     updated++;
   }
-  log(`\nDone! Updated ${updated}, not found ${notFound}.`, 'info');
+  log(`\nDone! Updated ${updated}, skipped ${skipped}, not found ${notFound}.`, 'info');
 }
 
 async function updatePIs() {
-  log('--- Updating Existing PIs ---', 'info');
-  let updated = 0, notFound = 0;
+  log('--- Updating Existing PIs (empty fields only) ---', 'info');
+  let updated = 0, notFound = 0, skipped = 0;
   for (const pi of pis) {
     const q = query(collection(db, 'groups'), where('name', '==', pi.name));
     const snap = await getDocs(q);
@@ -295,19 +302,26 @@ async function updatePIs() {
       continue;
     }
     const docRef = doc(db, 'groups', snap.docs[0].id);
-    await updateDoc(docRef, {
-      summary: pi.summary,
-      keywords: pi.keywords,
-      subfields: pi.subfields,
-      subfield: pi.subfields[0],
-      photoURL: pi.photoURL || '',
-      links: [{ label: 'Website', url: pi.website }],
-      updatedAt: serverTimestamp()
-    });
-    log(`  Updated: ${pi.name}`, 'success');
+    const existing = snap.docs[0].data();
+    const isEmpty = v => v === undefined || v === null || v === '' || (Array.isArray(v) && v.length === 0);
+    const patch = {};
+    if (isEmpty(existing.summary)) patch.summary = pi.summary;
+    if (isEmpty(existing.keywords)) patch.keywords = pi.keywords;
+    if (isEmpty(existing.subfields)) { patch.subfields = pi.subfields; patch.subfield = pi.subfields[0]; }
+    if (isEmpty(existing.photoURL)) patch.photoURL = pi.photoURL || '';
+    if (isEmpty(existing.links)) patch.links = [{ label: 'Website', url: pi.website }];
+    if (isEmpty(existing.institutes)) { patch.institutes = pi.institutes; patch.institute = pi.institutes[0]; }
+    if (Object.keys(patch).length === 0) {
+      log(`  Skip (no empty fields): ${pi.name}`);
+      skipped++;
+      continue;
+    }
+    patch.updatedAt = serverTimestamp();
+    await updateDoc(docRef, patch);
+    log(`  Updated (${Object.keys(patch).filter(k => k !== 'updatedAt').join(', ')}): ${pi.name}`, 'success');
     updated++;
   }
-  log(`\nDone! Updated ${updated}, not found ${notFound}.`, 'info');
+  log(`\nDone! Updated ${updated}, skipped ${skipped}, not found ${notFound}.`, 'info');
 }
 
 window.runSeed = async () => {
