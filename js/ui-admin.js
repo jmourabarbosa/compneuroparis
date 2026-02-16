@@ -112,6 +112,10 @@ const editUserMessage = document.getElementById('edit-user-message');
 
 let currentSubmission = null;
 
+function notifyAdminDataChanged() {
+  document.dispatchEvent(new CustomEvent('admin-data-changed'));
+}
+
 // Cache for institute status lookups
 let approvedInstituteNames = new Set();
 
@@ -283,6 +287,7 @@ export function initSubmissionActions() {
       modalSubmission.classList.add('hidden');
       await loadPending();
       await loadGroups();
+      notifyAdminDataChanged();
     } catch (err) {
       console.error('Approve error:', err);
       alert('Error approving submission.');
@@ -299,6 +304,7 @@ export function initSubmissionActions() {
       await rejectSubmission(currentSubmission.id, user.uid);
       modalSubmission.classList.add('hidden');
       await loadPending();
+      notifyAdminDataChanged();
     } catch (err) {
       console.error('Reject error:', err);
       alert('Error rejecting submission.');
@@ -551,6 +557,7 @@ export async function loadPendingClaims() {
           await loadPendingClaims();
           await loadGroups();
           await loadPublicInstitutes();
+          notifyAdminDataChanged();
         } catch (err) {
           console.error('Approve claim error:', err);
           alert('Error approving claim.');
@@ -565,6 +572,7 @@ export async function loadPendingClaims() {
         try {
           await rejectClaim(claim.id);
           await loadPendingClaims();
+          notifyAdminDataChanged();
         } catch (err) {
           console.error('Reject claim error:', err);
           alert('Error rejecting claim.');
@@ -606,6 +614,7 @@ export async function loadAdmins() {
           try {
             await removeAdmin(a.uid);
             await loadAdmins();
+            notifyAdminDataChanged();
           } catch (err) {
             console.error('Remove admin error:', err);
             alert('Error removing admin.');
@@ -688,6 +697,7 @@ export async function loadPendingInstitutes() {
           await loadApprovedInstitutes();
           await loadInstituteOptions();
           await loadPublicInstitutes();
+          notifyAdminDataChanged();
         } catch (err) {
           console.error('Approve institute error:', err);
           alert('Error approving institute.');
@@ -699,6 +709,7 @@ export async function loadPendingInstitutes() {
         try {
           await rejectInstitute(inst.id);
           await loadPendingInstitutes();
+          notifyAdminDataChanged();
         } catch (err) {
           console.error('Reject institute error:', err);
           alert('Error rejecting institute.');
@@ -746,6 +757,7 @@ export async function loadApprovedInstitutes() {
           await loadApprovedInstitutes();
           await loadPublicInstitutes();
           await loadInstituteOptions();
+          notifyAdminDataChanged();
         } catch (err) {
           console.error('Delete institute error:', err);
           alert('Error deleting institute.');
@@ -913,10 +925,10 @@ export async function loadReports() {
         try {
           await resolveReport(report.id);
           item.remove();
-          // Check if list is now empty
           if (reportsList.children.length === 0) {
             reportsEmpty.classList.remove('hidden');
           }
+          notifyAdminDataChanged();
         } catch (err) {
           console.error('Resolve report error:', err);
           alert('Error resolving report.');
@@ -972,6 +984,7 @@ export async function loadMessages() {
           if (messagesList.children.length === 0) {
             messagesEmpty.classList.remove('hidden');
           }
+          notifyAdminDataChanged();
         } catch (err) {
           console.error('Resolve message error:', err);
           alert('Error resolving message.');
@@ -1059,6 +1072,12 @@ async function handleDeleteUser(user) {
   try {
     await deleteUserAccount(user.uid);
     await loadUsers();
+    await loadManageGroups();
+    await loadPendingClaims();
+    await loadApprovedInstitutes();
+    await loadGroups();
+    await loadPublicInstitutes();
+    notifyAdminDataChanged();
   } catch (err) {
     console.error('Delete user error:', err);
     alert('Error deleting user: ' + (err.message || err));

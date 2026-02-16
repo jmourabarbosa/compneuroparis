@@ -316,6 +316,10 @@ document.addEventListener('creator-edit-institute', (e) => {
   showEditInstituteModalForCreator(e.detail);
 });
 
+document.addEventListener('admin-data-changed', () => {
+  updateAdminBadge();
+});
+
 // ========== INIT ==========
 // Modules are deferred, so DOM is ready when this runs
 initSearch();
