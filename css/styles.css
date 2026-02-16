@@ -621,6 +621,39 @@ img {
   color: var(--color-primary-dark);
 }
 
+.card-name-row {
+  display: flex;
+  align-items: baseline;
+  gap: 0.5rem;
+  margin-bottom: 0.5rem;
+}
+
+.card-name-row .card-name {
+  margin-bottom: 0;
+}
+
+.card-managed-badge {
+  font-size: 0.65rem;
+  font-weight: 500;
+  padding: 0.1rem 0.4rem;
+  border-radius: 999px;
+  background: var(--color-success-light);
+  color: var(--color-success);
+  white-space: nowrap;
+  flex-shrink: 0;
+}
+
+.card-unclaimed-badge {
+  font-size: 0.65rem;
+  font-weight: 500;
+  padding: 0.1rem 0.4rem;
+  border-radius: 999px;
+  background: #FEF3C7;
+  color: #92400E;
+  white-space: nowrap;
+  flex-shrink: 0;
+}
+
 .card-institute {
   font-size: 0.8rem;
   color: var(--color-text-secondary);

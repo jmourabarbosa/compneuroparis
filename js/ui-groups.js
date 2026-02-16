@@ -308,9 +308,16 @@ function createCard(group) {
     ? `<div class="card-institute">${escapeHTML(institutes.join(', '))}</div>`
     : '';
 
+  const managedHTML = group.claimedBy
+    ? '<span class="card-managed-badge">Managed by PI</span>'
+    : '<span class="card-unclaimed-badge">Unclaimed</span>';
+
   card.innerHTML = `
     <div class="card-body">
-      <h3 class="card-name">${escapeHTML(group.name)}</h3>
+      <div class="card-name-row">
+        <h3 class="card-name">${escapeHTML(group.name)}</h3>
+        ${managedHTML}
+      </div>
       ${instituteHTML}
       <div class="card-keywords">${keywordHTML}</div>
     </div>

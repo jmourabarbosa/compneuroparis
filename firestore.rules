@@ -43,6 +43,12 @@ service cloud.firestore {
       allow update, delete: if isAdmin();
     }
 
+    // Reports: anyone can create (no login required), admin read/update/delete
+    match /reports/{reportId} {
+      allow create: if true;
+      allow read, update, delete: if isAdmin();
+    }
+
     // Admins: users can check their own admin status, admins can read all and write
     match /admins/{uid} {
       allow read: if isAdmin() || (request.auth != null && request.auth.uid == uid);
