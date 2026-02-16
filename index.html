@@ -170,6 +170,14 @@
             <input type="text" id="job-title" placeholder="e.g. Postdoc in computational neuroscience" required>
           </div>
           <div class="form-group">
+            <label for="job-description">Description <span class="hint">(optional, max 500 characters)</span></label>
+            <textarea id="job-description" rows="3" maxlength="500" placeholder="Brief description of the position..."></textarea>
+          </div>
+          <div class="form-group">
+            <label for="job-keywords">Keywords <span class="hint">(optional, comma-separated)</span></label>
+            <input type="text" id="job-keywords" placeholder="e.g. EEG, fMRI, machine learning">
+          </div>
+          <div class="form-group">
             <label for="job-link">Link to Ad <span class="required">*</span></label>
             <input type="url" id="job-link" placeholder="https://..." required>
           </div>
@@ -657,7 +665,10 @@
       <div class="modal-body">
         <div id="job-detail-position" class="job-detail-position"></div>
         <div id="job-detail-pi" class="job-detail-pi"></div>
+        <div id="job-detail-pi-keywords" class="card-keywords hidden" style="margin-top:0.5rem"></div>
         <div id="job-detail-date" class="job-detail-date"></div>
+        <div id="job-detail-keywords" class="card-keywords hidden" style="margin-top:0.5rem"></div>
+        <p id="job-detail-description" class="job-detail-description"></p>
         <div id="job-detail-link" class="job-detail-link"></div>
         <div id="job-detail-edit-section" class="pi-detail-edit-section hidden">
           <button id="btn-job-detail-edit" class="btn btn-primary btn-sm">Edit</button>
@@ -677,6 +688,14 @@
               <option value="Internship">Internship</option>
               <option value="Other">Other</option>
             </select>
+          </div>
+          <div class="form-group">
+            <label for="job-edit-description-input">Description <span class="hint">(optional, max 500 characters)</span></label>
+            <textarea id="job-edit-description-input" rows="3" maxlength="500" placeholder="Brief description of the position..."></textarea>
+          </div>
+          <div class="form-group">
+            <label for="job-edit-keywords-input">Keywords <span class="hint">(optional, comma-separated)</span></label>
+            <input type="text" id="job-edit-keywords-input" placeholder="e.g. EEG, fMRI, machine learning">
           </div>
           <div class="form-group">
             <label for="job-edit-link-input">Link to Ad <span class="required">*</span></label>

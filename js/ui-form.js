@@ -714,6 +714,9 @@ async function handleJobSubmit(e) {
   const piName = piOption?.dataset?.piName || piOption?.textContent || '';
   const positionType = document.getElementById('job-position-type').value;
   const title = document.getElementById('job-title').value.trim();
+  const description = document.getElementById('job-description').value.trim();
+  const keywordsRaw = document.getElementById('job-keywords').value.trim();
+  const keywords = keywordsRaw ? keywordsRaw.split(',').map(k => k.trim()).filter(Boolean) : [];
   let link = document.getElementById('job-link').value.trim();
 
   if (!piId || !positionType || !title || !link) {
@@ -736,6 +739,8 @@ async function handleJobSubmit(e) {
       piName,
       positionType,
       title,
+      description,
+      keywords,
       link,
       postedBy: user.uid,
       postedByEmail: user.email

@@ -548,6 +548,11 @@ img {
   color: var(--color-institutes-dark);
 }
 
+.keyword-pill-job {
+  background: #fef3c7;
+  color: #92400e;
+}
+
 /* ========== JOBS GRID ========== */
 .jobs-grid {
   display: grid;

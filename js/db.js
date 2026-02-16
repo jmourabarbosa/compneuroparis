@@ -408,12 +408,14 @@ export async function fetchInstitutesClaimedBy(uid) {
 
 // ========== JOBS ==========
 
-export async function createJob({ piId, piName, positionType, title, link, postedBy, postedByEmail }) {
+export async function createJob({ piId, piName, positionType, title, description, keywords, link, postedBy, postedByEmail }) {
   const docRef = await addDoc(collection(db, 'jobs'), {
     piId,
     piName,
     positionType,
     title,
+    description: description || '',
+    keywords: keywords || [],
     link,
     postedBy,
     postedByEmail,

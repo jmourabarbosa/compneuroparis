@@ -899,10 +899,14 @@ function renderJobs() {
 
   const filtered = allJobs.filter(job => {
     if (!searchText) return true;
+    const piGroupForSearch = allGroups.find(g => g.id === job.piId);
+    const piKwsForSearch = piGroupForSearch ? (piGroupForSearch.keywords || []) : [];
     const haystack = [
       job.piName || '',
       job.title || '',
-      job.positionType || ''
+      job.positionType || '',
+      ...(job.keywords || []),
+      ...piKwsForSearch
     ].join(' ').toLowerCase();
     return haystack.includes(searchText);
   });
@@ -944,12 +948,22 @@ function createJobCard(job) {
     ? job.createdAt.toDate().toLocaleDateString('en-GB', { day: 'numeric', month: 'short', year: 'numeric' })
     : '';
 
+  // Gather keywords: PI keywords + job-specific keywords
+  const piGroupForCard = allGroups.find(g => g.id === job.piId);
+  const piKws = piGroupForCard ? (piGroupForCard.keywords || []) : [];
+  const jobKws = job.keywords || [];
+  const allKwsForCard = [...piKws, ...jobKws.filter(k => !piKws.map(pk => pk.toLowerCase()).includes(k.toLowerCase()))];
+  const kwHTML = allKwsForCard.length > 0
+    ? `<div class="card-keywords">${allKwsForCard.map(k => `<span class="keyword-pill">${escapeHTML(k)}</span>`).join('')}</div>`
+    : '';
+
   card.innerHTML = `
     <div class="card-body">
       <div class="card-name-row">
         <h3 class="job-card-title">${escapeHTML(job.title)}</h3>
       </div>
       <div class="job-card-pi">${escapeHTML(job.piName || '')}</div>
+      ${kwHTML}
       <div class="job-card-meta">
         <span class="job-position-badge">${escapeHTML(job.positionType)}</span>
         ${dateStr ? `<span class="job-card-date">${dateStr}</span>` : ''}
@@ -991,11 +1005,45 @@ function openJobDetail(job, fromPiDetail = false) {
     piEl.textContent = `PI: ${job.piName || ''}`;
   }
 
+  // PI keywords
+  const piKwEl = document.getElementById('job-detail-pi-keywords');
+  if (piGroup && (piGroup.keywords || []).length > 0) {
+    piKwEl.innerHTML = (piGroup.keywords || [])
+      .map(k => `<span class="keyword-pill">${escapeHTML(k)}</span>`)
+      .join('');
+    piKwEl.classList.remove('hidden');
+  } else {
+    piKwEl.innerHTML = '';
+    piKwEl.classList.add('hidden');
+  }
+
   // Date
   const dateStr = job.createdAt?.toDate
     ? job.createdAt.toDate().toLocaleDateString('en-GB', { day: 'numeric', month: 'short', year: 'numeric' })
     : '';
   document.getElementById('job-detail-date').textContent = dateStr ? `Posted ${dateStr}` : '';
+
+  // Job-specific keywords
+  const jobKwEl = document.getElementById('job-detail-keywords');
+  if ((job.keywords || []).length > 0) {
+    jobKwEl.innerHTML = (job.keywords || [])
+      .map(k => `<span class="keyword-pill keyword-pill-job">${escapeHTML(k)}</span>`)
+      .join('');
+    jobKwEl.classList.remove('hidden');
+  } else {
+    jobKwEl.innerHTML = '';
+    jobKwEl.classList.add('hidden');
+  }
+
+  // Description
+  const descEl = document.getElementById('job-detail-description');
+  if (job.description) {
+    descEl.textContent = job.description;
+    descEl.classList.remove('hidden');
+  } else {
+    descEl.textContent = '';
+    descEl.classList.add('hidden');
+  }
 
   // External link
   let jobLink = job.link || '';
@@ -1033,7 +1081,9 @@ export function initJobDetail() {
 
     document.getElementById('job-edit-title-input').value = currentDetailJob.title || '';
     document.getElementById('job-edit-type-input').value = currentDetailJob.positionType || 'Other';
+    document.getElementById('job-edit-description-input').value = currentDetailJob.description || '';
     document.getElementById('job-edit-link-input').value = jobLink;
+    document.getElementById('job-edit-keywords-input').value = (currentDetailJob.keywords || []).join(', ');
     editMsg.classList.add('hidden');
     editSection.classList.add('hidden');
     editForm.classList.remove('hidden');
@@ -1047,6 +1097,9 @@ export function initJobDetail() {
   document.getElementById('btn-job-edit-save').addEventListener('click', async () => {
     const title = document.getElementById('job-edit-title-input').value.trim();
     const positionType = document.getElementById('job-edit-type-input').value;
+    const description = document.getElementById('job-edit-description-input').value.trim();
+    const keywordsRaw = document.getElementById('job-edit-keywords-input').value.trim();
+    const keywords = keywordsRaw ? keywordsRaw.split(',').map(k => k.trim()).filter(Boolean) : [];
     let link = document.getElementById('job-edit-link-input').value.trim();
     if (!title || !link) {
       editMsg.textContent = 'Title and link are required.';
@@ -1060,7 +1113,7 @@ export function initJobDetail() {
     saveBtn.disabled = true;
     saveBtn.textContent = 'Saving...';
     try {
-      await updateJob(currentDetailJob.id, { title, positionType, link });
+      await updateJob(currentDetailJob.id, { title, positionType, description, keywords, link });
       await loadPublicJobs();
       // Re-open with updated data
       const updated = allJobs.find(j => j.id === currentDetailJob.id);
