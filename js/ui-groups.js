@@ -724,9 +724,16 @@ function createInstituteCard(inst) {
     ? `<div class="card-links"><a href="${escapeHTML(inst.website)}" class="card-link" target="_blank" rel="noopener noreferrer">Website</a></div>`
     : '';
 
+  const managedHTML = inst.claimedBy
+    ? '<span class="card-managed-badge">Claimed</span>'
+    : '<span class="card-unclaimed-badge">Unclaimed</span>';
+
   card.innerHTML = `
     <div class="card-body">
-      <h3 class="card-name">${escapeHTML(inst.name)}</h3>
+      <div class="card-name-row">
+        <h3 class="card-name">${escapeHTML(inst.name)}</h3>
+        ${managedHTML}
+      </div>
       ${keywordHTML ? `<div class="card-keywords">${keywordHTML}</div>` : ''}
       ${truncated ? `<p class="card-summary">${escapeHTML(truncated)}</p>` : ''}
       ${websiteHTML}

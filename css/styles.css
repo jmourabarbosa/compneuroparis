@@ -1541,18 +1541,23 @@ img {
 }
 
 .report-toggle-btn {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.35rem;
   background: none;
-  border: none;
+  border: 1.5px solid var(--color-border);
+  border-radius: var(--radius-sm);
   font-family: var(--font);
   font-size: 0.82rem;
   color: var(--color-text-secondary);
   cursor: pointer;
-  padding: 0;
-  text-decoration: underline;
+  padding: 0.35rem 0.75rem;
+  transition: all 0.2s;
 }
 
 .report-toggle-btn:hover {
   color: var(--color-danger);
+  border-color: var(--color-danger);
 }
 
 .report-form {
