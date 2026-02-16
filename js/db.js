@@ -394,6 +394,18 @@ export async function resolveMessage(id) {
   });
 }
 
+export async function fetchGroupsClaimedBy(uid) {
+  const q = query(collection(db, 'groups'), where('claimedBy', '==', uid));
+  const snapshot = await getDocs(q);
+  return snapshot.docs.map(d => ({ id: d.id, ...d.data() }));
+}
+
+export async function fetchInstitutesClaimedBy(uid) {
+  const q = query(collection(db, 'institutes'), where('claimedBy', '==', uid));
+  const snapshot = await getDocs(q);
+  return snapshot.docs.map(d => ({ id: d.id, ...d.data() }));
+}
+
 // ========== USER MANAGEMENT (CALLABLE) ==========
 
 export async function listAllUsers() {

@@ -7,7 +7,8 @@ import {
   fetchPendingClaims, approveClaim, rejectClaim,
   fetchOpenReports, resolveReport,
   fetchOpenMessages, resolveMessage,
-  listAllUsers, deleteUserAccount, updateUserAccount, verifyUserAccount
+  listAllUsers, deleteUserAccount, updateUserAccount, verifyUserAccount,
+  fetchGroupsClaimedBy, fetchInstitutesClaimedBy, revokeClaim
 } from './db.js';
 import { getCurrentUser, createAdminUser } from './auth.js';
 import { loadGroups, loadPublicInstitutes } from './ui-groups.js';
@@ -109,6 +110,8 @@ const editUserUid = document.getElementById('edit-user-uid');
 const editUserEmail = document.getElementById('edit-user-email');
 const editUserDisplayName = document.getElementById('edit-user-display-name');
 const editUserMessage = document.getElementById('edit-user-message');
+const editUserClaimed = document.getElementById('edit-user-claimed');
+const editUserClaimedList = document.getElementById('edit-user-claimed-list');
 
 let currentSubmission = null;
 
@@ -1058,12 +1061,92 @@ export async function loadUsers() {
   }
 }
 
-function showEditUserModal(user) {
+async function showEditUserModal(user) {
   editUserUid.value = user.uid;
   editUserEmail.value = user.email || '';
   editUserDisplayName.value = user.displayName || '';
   editUserMessage.classList.add('hidden');
+  editUserClaimed.classList.add('hidden');
+  editUserClaimedList.innerHTML = '';
   modalEditUser.classList.remove('hidden');
+
+  // Fetch claimed pages
+  try {
+    const [groups, institutes] = await Promise.all([
+      fetchGroupsClaimedBy(user.uid),
+      fetchInstitutesClaimedBy(user.uid)
+    ]);
+
+    if (groups.length === 0 && institutes.length === 0) {
+      editUserClaimed.classList.remove('hidden');
+      editUserClaimedList.innerHTML = '<p class="admin-item-meta">No claimed pages.</p>';
+      return;
+    }
+
+    editUserClaimed.classList.remove('hidden');
+
+    groups.forEach(g => {
+      const item = document.createElement('div');
+      item.className = 'admin-item';
+      item.innerHTML = `
+        <div class="admin-item-info">
+          <div class="admin-item-name"><span class="admin-item-type-badge admin-item-type-badge--pi">[PI]</span> ${escapeHTML(g.name)}</div>
+        </div>
+        <div class="admin-item-actions">
+          <button class="btn btn-danger btn-sm btn-revoke" aria-label="Revoke claim on ${escapeHTML(g.name)}">Revoke</button>
+        </div>
+      `;
+      item.querySelector('.btn-revoke').addEventListener('click', async (e) => {
+        const btn = e.currentTarget;
+        if (!confirm(`Revoke claim on "${g.name}"?`)) return;
+        btn.disabled = true;
+        try {
+          await revokeClaim(g.id, 'pi');
+          await showEditUserModal(user);
+          await loadManageGroups();
+          await loadGroups();
+          notifyAdminDataChanged();
+        } catch (err) {
+          console.error('Revoke claim error:', err);
+          alert('Error revoking claim.');
+          btn.disabled = false;
+        }
+      });
+      editUserClaimedList.appendChild(item);
+    });
+
+    institutes.forEach(inst => {
+      const item = document.createElement('div');
+      item.className = 'admin-item';
+      item.innerHTML = `
+        <div class="admin-item-info">
+          <div class="admin-item-name"><span class="admin-item-type-badge admin-item-type-badge--institute">[Institution]</span> ${escapeHTML(inst.name)}</div>
+        </div>
+        <div class="admin-item-actions">
+          <button class="btn btn-danger btn-sm btn-revoke" aria-label="Revoke claim on ${escapeHTML(inst.name)}">Revoke</button>
+        </div>
+      `;
+      item.querySelector('.btn-revoke').addEventListener('click', async (e) => {
+        const btn = e.currentTarget;
+        if (!confirm(`Revoke claim on "${inst.name}"?`)) return;
+        btn.disabled = true;
+        try {
+          await revokeClaim(inst.id, 'institute');
+          await showEditUserModal(user);
+          await loadApprovedInstitutes();
+          await loadPublicInstitutes();
+          notifyAdminDataChanged();
+        } catch (err) {
+          console.error('Revoke claim error:', err);
+          alert('Error revoking claim.');
+          btn.disabled = false;
+        }
+      });
+      editUserClaimedList.appendChild(item);
+    });
+  } catch (err) {
+    console.error('Error fetching claimed pages:', err);
+  }
 }
 
 async function handleDeleteUser(user) {
