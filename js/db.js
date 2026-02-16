@@ -256,6 +256,16 @@ export async function fetchMyClaimForTarget(uid, targetId) {
   return snapshot.docs.length > 0 ? { id: snapshot.docs[0].id, ...snapshot.docs[0].data() } : null;
 }
 
+export async function fetchApprovedClaimForTarget(targetId) {
+  const q = query(
+    collection(db, 'claims'),
+    where('targetId', '==', targetId),
+    where('status', '==', 'approved')
+  );
+  const snapshot = await getDocs(q);
+  return snapshot.docs.length > 0 ? { id: snapshot.docs[0].id, ...snapshot.docs[0].data() } : null;
+}
+
 // Backward compat alias
 export const fetchMyClaimForPi = fetchMyClaimForTarget;
 
