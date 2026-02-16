@@ -372,17 +372,20 @@ async function openPiDetail(group) {
   piReportMsg.classList.add('hidden');
   btnPiReportSubmit.disabled = false;
 
-  // Managed-by display
-  if (group.claimedBy) {
-    piDetailManagedBy.innerHTML = '<div class="managed-by-badge">Managed by the PI</div>';
-  } else {
-    piDetailManagedBy.innerHTML = '<div class="unclaimed-warning">Not yet claimed — information was semi-automatically populated and may contain errors</div>';
-  }
-
   const user = getCurrentUser();
   const isAdmin = getIsAdmin();
   const isCreator = user && group.creatorUid && group.creatorUid === user.uid;
   const isClaimer = user && group.claimedBy && group.claimedBy === user.uid;
+
+  // Managed-by display
+  if (group.claimedBy) {
+    const adminInfo = isAdmin && group.claimedByEmail
+      ? ` <span class="managed-by-email">(${escapeHTML(group.claimedByEmail)})</span>`
+      : '';
+    piDetailManagedBy.innerHTML = `<div class="managed-by-badge">Managed by the PI${adminInfo}</div>`;
+  } else {
+    piDetailManagedBy.innerHTML = '<div class="unclaimed-warning">Not yet claimed — information was semi-automatically populated and may contain errors</div>';
+  }
 
   // Show edit button for admins, creators, or claimedBy users
   if (user && (isAdmin || isCreator || isClaimer)) {
@@ -774,16 +777,19 @@ async function openInstituteDetail(inst) {
   instReportMsg.classList.add('hidden');
   btnInstReportSubmit.disabled = false;
 
-  // Managed-by display
-  if (inst.claimedBy) {
-    instDetailManagedBy.innerHTML = '<div class="managed-by-badge">Managed by a member</div>';
-  } else {
-    instDetailManagedBy.innerHTML = '<div class="unclaimed-warning">Not yet claimed — information was semi-automatically populated and may contain errors</div>';
-  }
-
   const user = getCurrentUser();
   const isAdmin = getIsAdmin();
   const isClaimer = user && inst.claimedBy && inst.claimedBy === user.uid;
+
+  // Managed-by display
+  if (inst.claimedBy) {
+    const adminInfo = isAdmin && inst.claimedByEmail
+      ? ` <span class="managed-by-email">(${escapeHTML(inst.claimedByEmail)})</span>`
+      : '';
+    instDetailManagedBy.innerHTML = `<div class="managed-by-badge">Managed by a member${adminInfo}</div>`;
+  } else {
+    instDetailManagedBy.innerHTML = '<div class="unclaimed-warning">Not yet claimed — information was semi-automatically populated and may contain errors</div>';
+  }
 
   // Show edit button for admins or claimedBy users
   if (user && (isAdmin || isClaimer)) {

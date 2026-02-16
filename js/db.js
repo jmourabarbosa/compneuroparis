@@ -211,6 +211,7 @@ export async function approveClaim(claimId) {
   // Set claimedBy on the target doc
   await updateDoc(doc(db, targetCollection, targetId), {
     claimedBy: claim.claimantUid,
+    claimedByEmail: claim.claimantEmail || '',
     updatedAt: serverTimestamp()
   });
 
