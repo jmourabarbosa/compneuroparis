@@ -209,6 +209,16 @@ function renderGroups() {
     validSfs.forEach(sf => bySubfield[sf].push(g));
   });
 
+  // Sort each section: claimed PIs first, then alphabetical within each group
+  for (const sf of SUBFIELDS) {
+    bySubfield[sf].sort((a, b) => {
+      const aClaimed = a.claimedBy ? 0 : 1;
+      const bClaimed = b.claimedBy ? 0 : 1;
+      if (aClaimed !== bClaimed) return aClaimed - bClaimed;
+      return (a.name || '').localeCompare(b.name || '');
+    });
+  }
+
   let totalVisible = 0;
 
   const isSearching = searchText || activeKeyword || activeInstitute;
@@ -740,6 +750,14 @@ function renderInstitutes() {
       ...(inst.keywords || [])
     ].join(' ').toLowerCase();
     return haystack.includes(searchText);
+  });
+
+  // Sort: claimed institutes first, then alphabetical within each group
+  filtered.sort((a, b) => {
+    const aClaimed = a.claimedBy ? 0 : 1;
+    const bClaimed = b.claimedBy ? 0 : 1;
+    if (aClaimed !== bClaimed) return aClaimed - bClaimed;
+    return (a.name || '').localeCompare(b.name || '');
   });
 
   institutesPublicCount.textContent = filtered.length;
