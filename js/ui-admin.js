@@ -1,6 +1,6 @@
 import {
   fetchPendingSubmissions, approveSubmission, rejectSubmission,
-  fetchGroups, updateGroup, deleteGroup,
+  fetchGroups, fetchGroupById, fetchInstituteById, updateGroup, deleteGroup,
   fetchAdmins, removeAdmin,
   fetchApprovedInstitutes, fetchPendingInstitutes,
   approveInstitute, rejectInstitute, updateInstitute, deleteInstitute,
@@ -856,9 +856,33 @@ export async function loadReports() {
           <div class="admin-item-meta">${escapeHTML(report.message)}</div>
         </div>
         <div class="admin-item-actions">
+          <button class="btn btn-primary btn-sm btn-edit-reported" aria-label="Edit profile">Edit</button>
           <button class="btn btn-success btn-sm btn-resolve-report" aria-label="Resolve report">Resolve</button>
         </div>
       `;
+
+      item.querySelector('.btn-edit-reported').addEventListener('click', async (e) => {
+        const btn = e.currentTarget;
+        btn.disabled = true;
+        try {
+          if (report.type === 'institute') {
+            const inst = await fetchInstituteById(report.targetId);
+            if (!inst) { alert('Institute not found.'); return; }
+            document.querySelector('#modal-admin').classList.add('hidden');
+            document.dispatchEvent(new CustomEvent('creator-edit-institute', { detail: inst }));
+          } else {
+            const group = await fetchGroupById(report.targetId);
+            if (!group) { alert('PI not found.'); return; }
+            document.querySelector('#modal-admin').classList.add('hidden');
+            document.dispatchEvent(new CustomEvent('creator-edit-group', { detail: group }));
+          }
+        } catch (err) {
+          console.error('Edit reported profile error:', err);
+          alert('Error opening profile for editing.');
+        } finally {
+          btn.disabled = false;
+        }
+      });
 
       item.querySelector('.btn-resolve-report').addEventListener('click', async (e) => {
         const btn = e.currentTarget;

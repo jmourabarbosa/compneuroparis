@@ -12,6 +12,16 @@ export async function fetchGroups() {
   return snapshot.docs.map(d => ({ id: d.id, ...d.data() }));
 }
 
+export async function fetchGroupById(id) {
+  const snap = await getDoc(doc(db, 'groups', id));
+  return snap.exists() ? { id: snap.id, ...snap.data() } : null;
+}
+
+export async function fetchInstituteById(id) {
+  const snap = await getDoc(doc(db, 'institutes', id));
+  return snap.exists() ? { id: snap.id, ...snap.data() } : null;
+}
+
 export async function createGroup(data) {
   const docRef = await addDoc(collection(db, 'groups'), {
     ...data,
