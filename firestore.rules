@@ -55,6 +55,14 @@ service cloud.firestore {
       allow read, update, delete: if isAdmin();
     }
 
+    // Jobs: public read, authenticated create, poster or admin can delete
+    match /jobs/{jobId} {
+      allow read: if true;
+      allow create: if request.auth != null;
+      allow delete: if isAdmin()
+        || (request.auth != null && resource.data.postedBy == request.auth.uid);
+    }
+
     // Admins: users can check their own admin status, admins can read all and write
     match /admins/{uid} {
       allow read: if isAdmin() || (request.auth != null && request.auth.uid == uid);

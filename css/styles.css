@@ -27,9 +27,9 @@
   --color-institutes: #374151;
   --color-institutes-light: #F3F4F6;
   --color-institutes-dark: #111827;
-  --color-jobs: #0369A1;
-  --color-jobs-light: #E0F2FE;
-  --color-jobs-dark: #0C4A6E;
+  --color-jobs: #374151;
+  --color-jobs-light: #F3F4F6;
+  --color-jobs-dark: #111827;
   --shadow-sm: 0 1px 3px rgba(0, 0, 0, 0.08);
   --shadow-md: 0 4px 12px rgba(0, 0, 0, 0.1);
   --shadow-lg: 0 8px 24px rgba(0, 0, 0, 0.12);
@@ -626,11 +626,11 @@ img {
   gap: 0.3rem;
   font-size: 0.8rem;
   font-weight: 500;
-  color: var(--color-jobs);
+  color: var(--color-primary);
 }
 
 .job-card-link a:hover {
-  color: var(--color-jobs-dark);
+  color: var(--color-primary-dark);
 }
 
 .job-card-link a::before {
