@@ -714,11 +714,16 @@ async function handleJobSubmit(e) {
   const piName = piOption?.dataset?.piName || piOption?.textContent || '';
   const positionType = document.getElementById('job-position-type').value;
   const title = document.getElementById('job-title').value.trim();
-  const link = document.getElementById('job-link').value.trim();
+  let link = document.getElementById('job-link').value.trim();
 
   if (!piId || !positionType || !title || !link) {
     showMessage(jobFormMessage, 'Please fill in all required fields.', 'error');
     return;
+  }
+
+  // Ensure link has a protocol
+  if (!/^https?:\/\//i.test(link)) {
+    link = 'https://' + link;
   }
 
   const submitBtn = document.getElementById('btn-job-submit');

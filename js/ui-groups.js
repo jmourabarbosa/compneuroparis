@@ -903,6 +903,12 @@ function createJobCard(job) {
     ? `<button class="job-card-delete" data-job-id="${escapeHTML(job.id)}" title="Delete this job ad">&times;</button>`
     : '';
 
+  // Ensure link has a protocol
+  let jobLink = job.link || '';
+  if (jobLink && !/^https?:\/\//i.test(jobLink)) {
+    jobLink = 'https://' + jobLink;
+  }
+
   card.innerHTML = `
     <div class="card-body">
       <div class="card-name-row">
@@ -915,7 +921,7 @@ function createJobCard(job) {
         ${dateStr ? `<span class="job-card-date">${dateStr}</span>` : ''}
       </div>
       <div class="job-card-link">
-        <a href="${escapeHTML(job.link)}" target="_blank" rel="noopener noreferrer">View job ad</a>
+        <a href="${escapeHTML(jobLink)}" target="_blank" rel="noopener noreferrer">View job ad</a>
       </div>
     </div>
   `;
