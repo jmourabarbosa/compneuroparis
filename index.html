@@ -384,6 +384,7 @@
           <button class="tab" data-tab="tab-institutes" role="tab" aria-selected="false">Institutions</button>
           <button class="tab" data-tab="tab-reports" role="tab" aria-selected="false">Reports</button>
           <button class="tab" data-tab="tab-messages" role="tab" aria-selected="false">Messages</button>
+          <button class="tab" data-tab="tab-users" role="tab" aria-selected="false">Users</button>
         </div>
 
         <!-- Pending Submissions Tab -->
@@ -464,6 +465,17 @@
             <p>No open messages.</p>
           </div>
           <div id="messages-list" class="admin-list"></div>
+        </div>
+
+        <!-- Users Tab -->
+        <div id="tab-users" class="tab-panel" role="tabpanel">
+          <div id="users-loading" class="loading-state hidden">
+            <div class="spinner"></div>
+          </div>
+          <div id="users-empty" class="empty-state hidden">
+            <p>No registered users.</p>
+          </div>
+          <div id="users-list" class="admin-list"></div>
         </div>
       </div>
     </div>
@@ -784,6 +796,31 @@
           <button id="btn-approve" class="btn btn-success">Approve</button>
           <button id="btn-reject" class="btn btn-danger">Reject</button>
         </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- ========== EDIT USER MODAL ========== -->
+  <div id="modal-edit-user" class="modal-overlay hidden" role="dialog" aria-modal="true" aria-label="Edit User">
+    <div class="modal">
+      <div class="modal-header">
+        <h3>Edit User</h3>
+        <button class="modal-close" data-close-modal="modal-edit-user" aria-label="Close">&times;</button>
+      </div>
+      <div class="modal-body">
+        <form id="edit-user-form" novalidate>
+          <input type="hidden" id="edit-user-uid">
+          <div class="form-group">
+            <label for="edit-user-email">Email</label>
+            <input type="email" id="edit-user-email" required>
+          </div>
+          <div class="form-group">
+            <label for="edit-user-display-name">Display Name</label>
+            <input type="text" id="edit-user-display-name">
+          </div>
+          <div id="edit-user-message" class="form-message hidden" role="alert"></div>
+          <button type="submit" class="btn btn-primary btn-full">Save Changes</button>
+        </form>
       </div>
     </div>
   </div>

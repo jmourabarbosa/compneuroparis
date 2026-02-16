@@ -6,7 +6,8 @@ import {
   approveInstitute, rejectInstitute, updateInstitute, deleteInstitute,
   fetchPendingClaims, approveClaim, rejectClaim,
   fetchOpenReports, resolveReport,
-  fetchOpenMessages, resolveMessage
+  fetchOpenMessages, resolveMessage,
+  listAllUsers, deleteUserAccount, updateUserAccount
 } from './db.js';
 import { getCurrentUser, createAdminUser } from './auth.js';
 import { loadGroups, loadPublicInstitutes } from './ui-groups.js';
@@ -96,6 +97,19 @@ const reportsEmpty = document.getElementById('reports-empty');
 const messagesList = document.getElementById('messages-list');
 const messagesEmpty = document.getElementById('messages-empty');
 
+// Users tab
+const usersList = document.getElementById('users-list');
+const usersEmpty = document.getElementById('users-empty');
+const usersLoading = document.getElementById('users-loading');
+
+// Edit user modal
+const modalEditUser = document.getElementById('modal-edit-user');
+const editUserForm = document.getElementById('edit-user-form');
+const editUserUid = document.getElementById('edit-user-uid');
+const editUserEmail = document.getElementById('edit-user-email');
+const editUserDisplayName = document.getElementById('edit-user-display-name');
+const editUserMessage = document.getElementById('edit-user-message');
+
 let currentSubmission = null;
 
 // Cache for institute status lookups
@@ -118,11 +132,13 @@ export function initTabs() {
       document.querySelectorAll('.tab-panel').forEach(p => p.classList.remove('active'));
       document.getElementById(target).classList.add('active');
 
-      // Auto-load reports/messages when tab is selected
+      // Auto-load reports/messages/users when tab is selected
       if (target === 'tab-reports') {
         loadReports();
       } else if (target === 'tab-messages') {
         loadMessages();
+      } else if (target === 'tab-users') {
+        loadUsers();
       }
     });
   });
@@ -968,6 +984,97 @@ export async function loadMessages() {
   } catch (err) {
     console.error('Error loading messages:', err);
   }
+}
+
+// ========== USERS TAB ==========
+
+export async function loadUsers() {
+  usersList.innerHTML = '';
+  usersEmpty.classList.add('hidden');
+  usersLoading.classList.remove('hidden');
+
+  try {
+    const users = await listAllUsers();
+    usersLoading.classList.add('hidden');
+
+    if (users.length === 0) {
+      usersEmpty.classList.remove('hidden');
+      return;
+    }
+
+    users.forEach(u => {
+      const item = document.createElement('div');
+      item.className = 'admin-item';
+      const created = u.createdAt ? new Date(u.createdAt).toLocaleDateString() : '';
+      item.innerHTML = `
+        <div class="admin-item-info">
+          <div class="admin-item-name">${escapeHTML(u.email)}${u.displayName ? ` (${escapeHTML(u.displayName)})` : ''}</div>
+          <div class="admin-item-meta">UID: ${escapeHTML(u.uid)}${created ? ` | Joined: ${created}` : ''}${u.disabled ? ' | Disabled' : ''}</div>
+        </div>
+        <div class="admin-item-actions">
+          <button class="btn btn-primary btn-sm btn-edit-user" aria-label="Edit ${escapeHTML(u.email)}">Edit</button>
+          <button class="btn btn-danger btn-sm btn-delete-user" aria-label="Delete ${escapeHTML(u.email)}">Delete</button>
+        </div>
+      `;
+
+      item.querySelector('.btn-edit-user').addEventListener('click', () => showEditUserModal(u));
+      item.querySelector('.btn-delete-user').addEventListener('click', () => handleDeleteUser(u));
+      usersList.appendChild(item);
+    });
+  } catch (err) {
+    console.error('Error loading users:', err);
+    usersLoading.classList.add('hidden');
+  }
+}
+
+function showEditUserModal(user) {
+  editUserUid.value = user.uid;
+  editUserEmail.value = user.email || '';
+  editUserDisplayName.value = user.displayName || '';
+  editUserMessage.classList.add('hidden');
+  modalEditUser.classList.remove('hidden');
+}
+
+async function handleDeleteUser(user) {
+  if (!confirm(`Delete user "${user.email}"? This will:\n- Remove their claims\n- Unclaim any PIs/institutes they own\n- Remove them from admins if applicable\n\nThis cannot be undone.`)) return;
+
+  try {
+    await deleteUserAccount(user.uid);
+    await loadUsers();
+  } catch (err) {
+    console.error('Delete user error:', err);
+    alert('Error deleting user: ' + (err.message || err));
+  }
+}
+
+export function initEditUserForm() {
+  editUserForm.addEventListener('submit', async (e) => {
+    e.preventDefault();
+    editUserMessage.classList.add('hidden');
+
+    const uid = editUserUid.value;
+    const email = editUserEmail.value.trim();
+    const displayName = editUserDisplayName.value.trim();
+
+    if (!email) {
+      showMsg(editUserMessage, 'Email is required.', 'error');
+      return;
+    }
+
+    const submitBtn = editUserForm.querySelector('button[type="submit"]');
+    submitBtn.disabled = true;
+
+    try {
+      await updateUserAccount(uid, { email, displayName });
+      modalEditUser.classList.add('hidden');
+      await loadUsers();
+    } catch (err) {
+      console.error('Update user error:', err);
+      showMsg(editUserMessage, 'Error updating user: ' + (err.message || err), 'error');
+    } finally {
+      submitBtn.disabled = false;
+    }
+  });
 }
 
 // ========== HELPERS ==========

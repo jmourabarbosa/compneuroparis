@@ -2,7 +2,10 @@ import {
   collection, getDocs, getDoc, addDoc, updateDoc, deleteDoc, doc,
   query, where, orderBy, serverTimestamp, setDoc, deleteField
 } from 'https://www.gstatic.com/firebasejs/11.4.0/firebase-firestore.js';
+import { getFunctions, httpsCallable } from 'https://www.gstatic.com/firebasejs/11.4.0/firebase-functions.js';
 import { db } from './firebase-config.js';
+
+const functions = getFunctions();
 
 // ========== GROUPS ==========
 
@@ -389,5 +392,23 @@ export async function resolveMessage(id) {
     status: 'resolved',
     resolvedAt: serverTimestamp()
   });
+}
+
+// ========== USER MANAGEMENT (CALLABLE) ==========
+
+export async function listAllUsers() {
+  const fn = httpsCallable(functions, 'listUsers');
+  const result = await fn();
+  return result.data.users;
+}
+
+export async function deleteUserAccount(uid) {
+  const fn = httpsCallable(functions, 'deleteUser');
+  await fn({ uid });
+}
+
+export async function updateUserAccount(uid, data) {
+  const fn = httpsCallable(functions, 'updateUser');
+  await fn({ uid, ...data });
 }
 

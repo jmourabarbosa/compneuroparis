@@ -7,7 +7,8 @@ import {
   showEditModalForCreator,
   showEditInstituteModalForCreator, initEditInstituteForm,
   loadPendingInstitutes, loadApprovedInstitutes,
-  loadPendingClaims, loadMessages
+  loadPendingClaims, loadMessages,
+  initEditUserForm
 } from './ui-admin.js';
 import { fetchPendingSubmissions, fetchPendingClaims as dbFetchPendingClaims, fetchPendingInstitutes as dbFetchPendingInstitutes, fetchOpenReports, fetchOpenMessages as dbFetchOpenMessages } from './db.js';
 
@@ -325,6 +326,7 @@ initSubmissionActions();
 initEditForm();
 initEditInstituteForm();
 initAddAdmin();
+initEditUserForm();
 initPiDetail();
 initInstituteDetail();
 
