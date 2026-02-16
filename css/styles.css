@@ -656,8 +656,59 @@ img {
 .pi-detail-jobs-badge {
   display: inline-block;
   font-size: 0.85rem;
-  color: var(--color-jobs);
+  color: var(--color-danger);
   font-weight: 500;
+  cursor: pointer;
+  text-decoration: underline;
+  text-decoration-style: dotted;
+}
+
+.pi-detail-jobs-badge:hover {
+  color: #B91C1C;
+}
+
+.pi-detail-jobs {
+  margin-top: 1rem;
+}
+
+.pi-detail-jobs-list {
+  display: flex;
+  flex-direction: column;
+  gap: 0.5rem;
+  margin-top: 0.5rem;
+}
+
+.pi-job-item {
+  display: flex;
+  align-items: center;
+  gap: 0.75rem;
+  padding: 0.65rem 0.85rem;
+  background: var(--color-bg);
+  border-radius: var(--radius-sm);
+  border-left: 3px solid var(--color-danger);
+  font-size: 0.85rem;
+}
+
+.pi-job-item-info {
+  flex: 1;
+  min-width: 0;
+}
+
+.pi-job-item-title {
+  font-weight: 600;
+  color: var(--color-text);
+}
+
+.pi-job-item-meta {
+  font-size: 0.78rem;
+  color: var(--color-text-secondary);
+  margin-top: 0.15rem;
+}
+
+.pi-job-item-actions {
+  display: flex;
+  gap: 0.35rem;
+  flex-shrink: 0;
 }
 
 /* Active institute filter banner */

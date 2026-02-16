@@ -1,4 +1,4 @@
-import { fetchGroups, fetchApprovedInstitutes, fetchJobs, fetchJobsByPi, deleteJob, createClaim, fetchMyClaimForTarget, fetchApprovedClaimForTarget, revokeClaim, deleteGroup, deleteInstitute, createReport } from './db.js';
+import { fetchGroups, fetchApprovedInstitutes, fetchJobs, fetchJobsByPi, updateJob, deleteJob, createClaim, fetchMyClaimForTarget, fetchApprovedClaimForTarget, revokeClaim, deleteGroup, deleteInstitute, createReport } from './db.js';
 import { getCurrentUser, getIsAdmin, createAccount, login, isEmailVerified, resendVerification } from './auth.js';
 
 let allGroups = [];
@@ -325,7 +325,7 @@ function createCard(group) {
     : '<span class="card-unclaimed-badge">Unclaimed</span>';
 
   const hasJobs = allJobs.some(j => j.piId === group.id);
-  const jobBadgeHTML = hasJobs ? '<span class="card-job-badge">Job ad</span>' : '';
+  const jobBadgeHTML = hasJobs ? '<span class="card-job-badge">Hiring</span>' : '';
 
   card.innerHTML = `
     <div class="card-body">
@@ -354,7 +354,7 @@ async function openPiDetail(group) {
 
   // Populate modal fields
   const hasJobAds = allJobs.some(j => j.piId === group.id);
-  piDetailTitle.innerHTML = escapeHTML(group.name || 'PI Details') + (hasJobAds ? ' <span class="card-job-badge">Job ad</span>' : '');
+  piDetailTitle.innerHTML = escapeHTML(group.name || 'PI Details') + (hasJobAds ? ' <span class="card-job-badge">Hiring</span>' : '');
   piDetailPhoto.src = group.photoURL || 'assets/placeholder-lab.svg';
   piDetailPhoto.alt = group.name || '';
   const institutes = toArray(group.institutes || group.institute);
@@ -415,15 +415,76 @@ async function openPiDetail(group) {
     piDetailManagedBy.innerHTML = '<div class="unclaimed-warning">Not yet claimed — information was semi-automatically populated and may contain errors</div>';
   }
 
-  // Job count badge
+  // Job ads section
+  const piDetailJobs = document.getElementById('pi-detail-jobs');
+  piDetailJobs.classList.add('hidden');
+  piDetailJobs.innerHTML = '';
   try {
     const piJobs = await fetchJobsByPi(group.id);
     if (piJobs.length > 0) {
+      // Add clickable badge in managed-by area
       const jobLabel = piJobs.length === 1 ? '1 job ad' : `${piJobs.length} job ads`;
       const jobBadge = document.createElement('span');
       jobBadge.className = 'pi-detail-jobs-badge';
       jobBadge.textContent = ` · ${jobLabel}`;
+      jobBadge.title = 'Click to view job ads';
+      jobBadge.addEventListener('click', () => {
+        piDetailJobs.classList.toggle('hidden');
+      });
       piDetailManagedBy.querySelector('.managed-by-badge, .unclaimed-warning')?.appendChild(jobBadge);
+
+      // Build expandable jobs list
+      piDetailJobs.innerHTML = `<div class="pi-detail-jobs-list"></div>`;
+      const listEl = piDetailJobs.querySelector('.pi-detail-jobs-list');
+      const user = getCurrentUser();
+      const admin = getIsAdmin();
+
+      piJobs.forEach(job => {
+        let jobLink = job.link || '';
+        if (jobLink && !/^https?:\/\//i.test(jobLink)) jobLink = 'https://' + jobLink;
+
+        const canManage = user && (user.uid === job.postedBy || admin);
+
+        const item = document.createElement('div');
+        item.className = 'pi-job-item';
+        item.innerHTML = `
+          <div class="pi-job-item-info">
+            <div class="pi-job-item-title">
+              <a href="${escapeHTML(jobLink)}" target="_blank" rel="noopener noreferrer">${escapeHTML(job.title)}</a>
+            </div>
+            <div class="pi-job-item-meta">
+              <span class="job-position-badge">${escapeHTML(job.positionType)}</span>
+              ${job.createdAt?.toDate ? ' · ' + job.createdAt.toDate().toLocaleDateString('en-GB', { day: 'numeric', month: 'short', year: 'numeric' }) : ''}
+            </div>
+          </div>
+          ${canManage ? `<div class="pi-job-item-actions">
+            <button class="btn btn-outline-dark btn-sm btn-job-edit" title="Edit">Edit</button>
+            <button class="btn btn-danger btn-sm btn-job-delete" title="Delete">Delete</button>
+          </div>` : ''}
+        `;
+
+        if (canManage) {
+          item.querySelector('.btn-job-edit').addEventListener('click', () => {
+            startInlineJobEdit(item, job);
+          });
+          item.querySelector('.btn-job-delete').addEventListener('click', async () => {
+            if (!confirm('Delete this job ad?')) return;
+            try {
+              await deleteJob(job.id);
+              await loadPublicJobs();
+              // Refresh PI detail
+              openPiDetail(group);
+            } catch (err) {
+              console.error('Delete job error:', err);
+              alert('Error deleting job.');
+            }
+          });
+        }
+
+        listEl.appendChild(item);
+      });
+
+      piDetailJobs.classList.remove('hidden');
     }
   } catch (e) { /* ignore */ }
 
@@ -920,7 +981,7 @@ function createJobCard(job) {
         <h3 class="job-card-title">${escapeHTML(job.title)}</h3>
         ${deleteHTML}
       </div>
-      <div class="job-card-pi">${escapeHTML(job.piName || '')} <span class="card-job-badge">Job ad</span></div>
+      <div class="job-card-pi">${escapeHTML(job.piName || '')} <span class="card-job-badge">Hiring</span></div>
       <div class="job-card-meta">
         <span class="job-position-badge">${escapeHTML(job.positionType)}</span>
         ${dateStr ? `<span class="job-card-date">${dateStr}</span>` : ''}
@@ -949,6 +1010,61 @@ function createJobCard(job) {
   }
 
   return card;
+}
+
+function startInlineJobEdit(itemEl, job) {
+  let jobLink = job.link || '';
+  if (jobLink && !/^https?:\/\//i.test(jobLink)) jobLink = 'https://' + jobLink;
+
+  itemEl.innerHTML = `
+    <div class="pi-job-item-info" style="width:100%">
+      <div class="form-group" style="margin-bottom:0.5rem">
+        <input type="text" class="job-edit-title" value="${escapeHTML(job.title)}" placeholder="Job title" style="width:100%;padding:0.4rem 0.6rem;font-size:0.85rem;border:1.5px solid var(--color-border);border-radius:var(--radius-sm);font-family:var(--font)">
+      </div>
+      <div class="form-group" style="margin-bottom:0.5rem">
+        <select class="job-edit-type" style="width:100%;padding:0.4rem 0.6rem;font-size:0.85rem;border:1.5px solid var(--color-border);border-radius:var(--radius-sm);font-family:var(--font)">
+          <option value="PhD" ${job.positionType === 'PhD' ? 'selected' : ''}>PhD</option>
+          <option value="Postdoc" ${job.positionType === 'Postdoc' ? 'selected' : ''}>Postdoc</option>
+          <option value="Research Engineer" ${job.positionType === 'Research Engineer' ? 'selected' : ''}>Research Engineer</option>
+          <option value="Internship" ${job.positionType === 'Internship' ? 'selected' : ''}>Internship</option>
+          <option value="Other" ${job.positionType === 'Other' ? 'selected' : ''}>Other</option>
+        </select>
+      </div>
+      <div class="form-group" style="margin-bottom:0.5rem">
+        <input type="url" class="job-edit-link" value="${escapeHTML(jobLink)}" placeholder="https://..." style="width:100%;padding:0.4rem 0.6rem;font-size:0.85rem;border:1.5px solid var(--color-border);border-radius:var(--radius-sm);font-family:var(--font)">
+      </div>
+      <div style="display:flex;gap:0.35rem">
+        <button class="btn btn-primary btn-sm btn-job-save">Save</button>
+        <button class="btn btn-outline-dark btn-sm btn-job-cancel">Cancel</button>
+      </div>
+    </div>
+  `;
+
+  itemEl.querySelector('.btn-job-save').addEventListener('click', async () => {
+    const title = itemEl.querySelector('.job-edit-title').value.trim();
+    const positionType = itemEl.querySelector('.job-edit-type').value;
+    let link = itemEl.querySelector('.job-edit-link').value.trim();
+    if (!title || !link) { alert('Title and link are required.'); return; }
+    if (!/^https?:\/\//i.test(link)) link = 'https://' + link;
+
+    const saveBtn = itemEl.querySelector('.btn-job-save');
+    saveBtn.disabled = true;
+    saveBtn.textContent = 'Saving...';
+    try {
+      await updateJob(job.id, { title, positionType, link });
+      await loadPublicJobs();
+      openPiDetail(currentDetailGroup);
+    } catch (err) {
+      console.error('Update job error:', err);
+      alert('Error updating job.');
+      saveBtn.disabled = false;
+      saveBtn.textContent = 'Save';
+    }
+  });
+
+  itemEl.querySelector('.btn-job-cancel').addEventListener('click', () => {
+    openPiDetail(currentDetailGroup);
+  });
 }
 
 async function openInstituteDetail(inst) {
