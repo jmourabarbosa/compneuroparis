@@ -393,6 +393,9 @@ function showEditModal(group) {
     editPhotoCurrentDiv.classList.add('hidden');
   }
 
+  // Hiring checkbox
+  document.getElementById('edit-hiring-checkbox').checked = !!group.hiring;
+
   editMessage.classList.add('hidden');
   modalEdit.classList.remove('hidden');
 }
@@ -485,7 +488,8 @@ export function initEditForm() {
     });
 
     const photoURL = editPhotoURL.value.trim();
-    const updateData = { name, keywords, summary, links, photoURL, subfields, subfield: subfields[0], institutes: editSelectedInstitutes, institute: editSelectedInstitutes[0] || '' };
+    const hiring = document.getElementById('edit-hiring-checkbox').checked;
+    const updateData = { name, keywords, summary, links, photoURL, subfields, subfield: subfields[0], institutes: editSelectedInstitutes, institute: editSelectedInstitutes[0] || '', hiring };
 
     const submitBtn = editForm.querySelector('button[type="submit"]');
     submitBtn.disabled = true;
