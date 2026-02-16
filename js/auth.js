@@ -1,6 +1,7 @@
 import {
   signInWithEmailAndPassword, signOut, onAuthStateChanged,
-  createUserWithEmailAndPassword, sendPasswordResetEmail
+  createUserWithEmailAndPassword, sendPasswordResetEmail,
+  sendEmailVerification
 } from 'https://www.gstatic.com/firebasejs/11.4.0/firebase-auth.js';
 import { auth } from './firebase-config.js';
 import { isAdmin, addAdmin } from './db.js';
@@ -25,13 +26,14 @@ export async function login(email, password) {
 
 export async function createAccount(email, password) {
   const cred = await createUserWithEmailAndPassword(auth, email, password);
+  await sendEmailVerification(cred.user);
   return cred.user;
 }
 
 export async function resendVerification() {
-  // Verification email is sent by Cloud Function onUserCreated.
-  // This is a no-op kept for UI compatibility (resend button).
-  // Users who need to resend can use Firebase's built-in resend mechanism.
+  if (auth.currentUser && !auth.currentUser.emailVerified) {
+    await sendEmailVerification(auth.currentUser);
+  }
 }
 
 export function isEmailVerified() {

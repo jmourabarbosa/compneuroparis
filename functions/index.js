@@ -39,26 +39,6 @@ async function isCallerAdmin(uid) {
   return snap.exists;
 }
 
-// ========== AUTH: VERIFICATION EMAIL ==========
-
-exports.onUserCreated = functions.auth.user().onCreate(async (user) => {
-  if (!user.email) return;
-
-  try {
-    const link = await admin.auth().generateEmailVerificationLink(user.email);
-    await sendEmail(
-      user.email,
-      "Verify your email for Neuroscience in Paris",
-      `<p>Welcome to Neuroscience in Paris!</p>
-       <p>Please verify your email address by clicking the link below:</p>
-       <p><a href="${link}">Verify my email</a></p>
-       <p>If you didn't create this account, you can ignore this email.</p>`,
-    );
-  } catch (err) {
-    console.error("Failed to send verification email:", err);
-  }
-});
-
 // ========== SUBMISSIONS ==========
 
 exports.onSubmissionCreated = functions.firestore
