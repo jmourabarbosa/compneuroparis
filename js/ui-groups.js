@@ -21,6 +21,7 @@ SUBFIELDS.forEach(sf => {
     el: section,
     grid: section.querySelector('.groups-grid'),
     count: section.querySelector('.subfield-count'),
+    countSecondary: section.querySelector('.subfield-count-secondary'),
     header: section.querySelector('.subfield-header')
   };
 });
@@ -200,56 +201,94 @@ function renderGroups() {
     return true;
   });
 
-  // Partition by subfield — a PI can appear in multiple sections
-  const bySubfield = { computational: [], systems: [], human: [], molecular: [], developmental: [] };
+  // Partition by subfield into primary (first in array) and secondary
+  const primaryBySubfield = { computational: [], systems: [], human: [], molecular: [], developmental: [] };
+  const secondaryBySubfield = { computational: [], systems: [], human: [], molecular: [], developmental: [] };
   filtered.forEach(g => {
     const sfs = toArray(g.subfields || g.subfield);
-    const validSfs = sfs.filter(sf => bySubfield[sf]);
+    const validSfs = sfs.filter(sf => primaryBySubfield[sf]);
     if (validSfs.length === 0) validSfs.push('computational');
-    validSfs.forEach(sf => bySubfield[sf].push(g));
+    validSfs.forEach((sf, i) => {
+      if (i === 0 || sf === sfs[0]) {
+        primaryBySubfield[sf].push(g);
+      } else {
+        secondaryBySubfield[sf].push(g);
+      }
+    });
   });
 
-  // Sort each section: claimed first, primary subfield before secondary, then alphabetical
+  // Sort helper: claimed first, then alphabetical
+  const sortGroups = (arr) => arr.sort((a, b) => {
+    const aClaimed = a.claimedBy ? 0 : 1;
+    const bClaimed = b.claimedBy ? 0 : 1;
+    if (aClaimed !== bClaimed) return aClaimed - bClaimed;
+    return (a.name || '').localeCompare(b.name || '');
+  });
+
   for (const sf of SUBFIELDS) {
-    bySubfield[sf].sort((a, b) => {
-      const aClaimed = a.claimedBy ? 0 : 1;
-      const bClaimed = b.claimedBy ? 0 : 1;
-      if (aClaimed !== bClaimed) return aClaimed - bClaimed;
-      // Primary subfield (index 0) matches this section → 0, otherwise → 1
-      const aSfs = toArray(a.subfields || a.subfield);
-      const bSfs = toArray(b.subfields || b.subfield);
-      const aPrimary = (aSfs[0] || 'computational') === sf ? 0 : 1;
-      const bPrimary = (bSfs[0] || 'computational') === sf ? 0 : 1;
-      if (aPrimary !== bPrimary) return aPrimary - bPrimary;
-      return (a.name || '').localeCompare(b.name || '');
-    });
+    sortGroups(primaryBySubfield[sf]);
+    sortGroups(secondaryBySubfield[sf]);
   }
 
   let totalVisible = 0;
 
   const isSearching = searchText || activeKeyword || activeInstitute;
 
-  SUBFIELDS.forEach(sf => {
-    const { grid, count, el } = sections[sf];
-    grid.innerHTML = '';
-    const groups = bySubfield[sf];
-    count.textContent = groups.length;
+  const SUBFIELD_LABELS = { computational: 'Computational', systems: 'Systems', human: 'Human', molecular: 'Molecular', developmental: 'Developmental' };
 
-    if (isSearching && groups.length === 0) {
-      // Hide empty sections when searching
+  SUBFIELDS.forEach(sf => {
+    const { grid, count, countSecondary, el } = sections[sf];
+    grid.innerHTML = '';
+    // Remove any previous "also does" sub-section
+    const prevAlso = el.querySelector('.also-does-section');
+    if (prevAlso) prevAlso.remove();
+
+    const primary = primaryBySubfield[sf];
+    const secondary = secondaryBySubfield[sf];
+    const total = primary.length + secondary.length;
+
+    count.textContent = primary.length;
+    countSecondary.textContent = secondary.length > 0 ? `+${secondary.length}` : '';
+
+    if (isSearching && total === 0) {
       el.classList.add('section-hidden');
     } else {
       el.classList.remove('section-hidden');
-      if (groups.length === 0) {
+      if (primary.length === 0 && secondary.length === 0) {
         grid.innerHTML = '<p class="empty-state" style="padding:1rem">No PIs in this category.</p>';
       } else {
-        groups.forEach(g => grid.appendChild(createCard(g)));
-        totalVisible += groups.length;
+        primary.forEach(g => grid.appendChild(createCard(g)));
+        totalVisible += primary.length;
+      }
+
+      // Build "Also does X neuroscience" collapsible sub-section
+      if (secondary.length > 0) {
+        const alsoSection = document.createElement('div');
+        alsoSection.className = 'also-does-section collapsed';
+
+        const alsoToggle = document.createElement('button');
+        alsoToggle.className = 'also-does-toggle';
+        alsoToggle.innerHTML = `<svg class="also-does-arrow" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polyline points="6 9 12 15 18 9"/></svg>Also does ${SUBFIELD_LABELS[sf]} neuroscience <span class="subfield-count-secondary" style="margin-left:0.25rem">+${secondary.length}</span>`;
+        alsoToggle.addEventListener('click', () => {
+          alsoSection.classList.toggle('collapsed');
+        });
+
+        const alsoContent = document.createElement('div');
+        alsoContent.className = 'also-does-content';
+        const alsoGrid = document.createElement('div');
+        alsoGrid.className = 'groups-grid';
+        secondary.forEach(g => alsoGrid.appendChild(createCard(g)));
+        alsoContent.appendChild(alsoGrid);
+
+        alsoSection.appendChild(alsoToggle);
+        alsoSection.appendChild(alsoContent);
+        el.querySelector('.subfield-content').appendChild(alsoSection);
+        totalVisible += secondary.length;
       }
     }
 
     // Auto-expand sections with results when searching, collapse otherwise
-    if (isSearching && groups.length > 0) {
+    if (isSearching && total > 0) {
       el.classList.remove('collapsed');
       sections[sf].header.setAttribute('aria-expanded', 'true');
     } else {
