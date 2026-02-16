@@ -27,6 +27,9 @@
   --color-molecular: #DC2680;
   --color-molecular-light: #FDE8F0;
   --color-molecular-dark: #9D174D;
+  --color-developmental: #059669;
+  --color-developmental-light: #D1FAE5;
+  --color-developmental-dark: #065F46;
   --color-institutes: #374151;
   --color-institutes-light: #F3F4F6;
   --color-institutes-dark: #111827;
@@ -888,8 +891,8 @@ img {
   border-radius: 999px;
   font-size: 0.7rem;
   font-weight: 500;
-  background: var(--color-primary-light);
-  color: var(--color-primary-dark);
+  background: #f0f0f0;
+  color: #666;
 }
 
 .card-name-row {
