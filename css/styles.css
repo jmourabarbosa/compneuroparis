@@ -144,6 +144,27 @@ img {
   color: var(--color-text-secondary);
 }
 
+#btn-admin-panel {
+  position: relative;
+}
+
+.admin-notification-badge {
+  position: absolute;
+  top: -6px;
+  right: -6px;
+  background: #dc3545;
+  color: #fff;
+  font-size: 0.65rem;
+  font-weight: 700;
+  min-width: 18px;
+  height: 18px;
+  line-height: 18px;
+  text-align: center;
+  border-radius: 9px;
+  padding: 0 4px;
+  box-shadow: 0 1px 3px rgba(0,0,0,0.3);
+}
+
 /* ========== BUTTONS ========== */
 .btn {
   display: inline-flex;

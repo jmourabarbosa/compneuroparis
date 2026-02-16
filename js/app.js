@@ -9,6 +9,7 @@ import {
   loadPendingInstitutes, loadApprovedInstitutes,
   loadPendingClaims
 } from './ui-admin.js';
+import { fetchPendingSubmissions, fetchPendingClaims as dbFetchPendingClaims, fetchPendingInstitutes as dbFetchPendingInstitutes, fetchOpenReports } from './db.js';
 
 // ========== DOM REFS ==========
 const btnAdminLogin = document.getElementById('btn-admin-login');
@@ -46,6 +47,7 @@ function openModal(modal) {
 
 function closeModal(modal) {
   modal.classList.add('hidden');
+  if (modal.id === 'modal-admin') updateAdminBadge();
 }
 
 // Close modals on overlay click or close button
@@ -217,6 +219,27 @@ function updateGlobalVerifyBanner(user) {
 }
 
 // ========== AUTH STATE (3 states: admin, creator, anon) ==========
+async function updateAdminBadge() {
+  const badge = document.getElementById('admin-badge');
+  try {
+    const [submissions, claims, institutes, reports] = await Promise.all([
+      fetchPendingSubmissions(),
+      dbFetchPendingClaims(),
+      dbFetchPendingInstitutes(),
+      fetchOpenReports()
+    ]);
+    const total = submissions.length + claims.length + institutes.length + reports.length;
+    if (total > 0) {
+      badge.textContent = total;
+      badge.classList.remove('hidden');
+    } else {
+      badge.classList.add('hidden');
+    }
+  } catch (e) {
+    badge.classList.add('hidden');
+  }
+}
+
 onAuthChange((user, isAdmin) => {
   // Update submission auth UI
   updateSubmissionAuthUI(user);
@@ -230,6 +253,7 @@ onAuthChange((user, isAdmin) => {
     creatorBar.classList.add('hidden');
     adminEmail.textContent = user.email;
     closeModal(modalSignup);
+    updateAdminBadge();
   } else if (user) {
     // Creator state (logged in but not admin)
     btnAdminLogin.classList.add('hidden');
