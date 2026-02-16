@@ -1026,6 +1026,28 @@ img {
   font-weight: 600;
 }
 
+.btn-share {
+  background: none;
+  border: 1px solid var(--color-border);
+  border-radius: var(--radius-sm);
+  color: var(--color-text-light);
+  cursor: pointer;
+  padding: 4px 6px;
+  margin-left: auto;
+  margin-right: 8px;
+  display: flex;
+  align-items: center;
+  transition: color 0.15s, border-color 0.15s;
+}
+.btn-share:hover {
+  color: var(--color-primary);
+  border-color: var(--color-primary);
+}
+.btn-share-copied {
+  color: var(--color-success);
+  border-color: var(--color-success);
+}
+
 .modal-close {
   background: none;
   border: none;

@@ -334,6 +334,7 @@ function createCard(group) {
 
 async function openPiDetail(group) {
   currentDetailGroup = group;
+  history.replaceState(null, '', '#pi-' + group.id);
 
   // Populate modal fields
   piDetailTitle.textContent = group.name || 'PI Details';
@@ -557,6 +558,25 @@ async function handleClaimSubmit() {
 }
 
 export function initPiDetail() {
+  // Share button
+  document.getElementById('btn-pi-share').addEventListener('click', async () => {
+    const url = window.location.origin + window.location.pathname + '#pi-' + currentDetailGroup.id;
+    try {
+      await navigator.clipboard.writeText(url);
+      const btn = document.getElementById('btn-pi-share');
+      btn.classList.add('btn-share-copied');
+      setTimeout(() => btn.classList.remove('btn-share-copied'), 1500);
+    } catch (e) { /* ignore */ }
+  });
+
+  // Clear hash when modal closes
+  document.querySelector('[data-close-modal="modal-pi-detail"]').addEventListener('click', () => {
+    history.replaceState(null, '', window.location.pathname);
+  });
+  modalPiDetail.addEventListener('click', (e) => {
+    if (e.target === modalPiDetail) history.replaceState(null, '', window.location.pathname);
+  });
+
   btnClaimPi.addEventListener('click', () => {
     if (!currentDetailGroup) return;
     currentClaimTarget = { id: currentDetailGroup.id, name: currentDetailGroup.name, type: 'pi' };
@@ -779,6 +799,7 @@ function createInstituteCard(inst) {
 
 async function openInstituteDetail(inst) {
   currentDetailInstitute = inst;
+  history.replaceState(null, '', '#inst-' + inst.id);
 
   instDetailTitle.textContent = inst.name || 'Institute Details';
   instDetailLogo.src = inst.logoURL || 'assets/placeholder-lab.svg';
@@ -868,6 +889,24 @@ async function openInstituteDetail(inst) {
 }
 
 export function initInstituteDetail() {
+  // Share button
+  document.getElementById('btn-inst-share').addEventListener('click', async () => {
+    const url = window.location.origin + window.location.pathname + '#inst-' + currentDetailInstitute.id;
+    try {
+      await navigator.clipboard.writeText(url);
+      const btn = document.getElementById('btn-inst-share');
+      btn.classList.add('btn-share-copied');
+      setTimeout(() => btn.classList.remove('btn-share-copied'), 1500);
+    } catch (e) { /* ignore */ }
+  });
+
+  // Clear hash when modal closes
+  document.querySelector('[data-close-modal="modal-institute-detail"]').addEventListener('click', () => {
+    history.replaceState(null, '', window.location.pathname);
+  });
+  document.getElementById('modal-institute-detail').addEventListener('click', (e) => {
+    if (e.target.id === 'modal-institute-detail') history.replaceState(null, '', window.location.pathname);
+  });
   btnClaimInst.addEventListener('click', () => {
     if (!currentDetailInstitute) return;
     currentClaimTarget = { id: currentDetailInstitute.id, name: currentDetailInstitute.name, type: 'institute' };
@@ -946,6 +985,20 @@ export function initInstituteDetail() {
     modalInstDetail.classList.add('hidden');
     setInstituteFilter(currentDetailInstitute.name);
   });
+}
+
+export function handleDeepLink() {
+  const hash = window.location.hash;
+  if (!hash) return;
+  if (hash.startsWith('#pi-')) {
+    const id = hash.slice(4);
+    const group = allGroups.find(g => g.id === id);
+    if (group) openPiDetail(group);
+  } else if (hash.startsWith('#inst-')) {
+    const id = hash.slice(6);
+    const inst = allInstitutes.find(i => i.id === id);
+    if (inst) openInstituteDetail(inst);
+  }
 }
 
 export function initSections() {
