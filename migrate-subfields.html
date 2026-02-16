@@ -1,0 +1,182 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<title>Migrate PI Subfields</title>
+<style>
+  body { font-family: system-ui; max-width: 800px; margin: 40px auto; padding: 0 20px; background: #111; color: #eee; }
+  button { padding: 10px 24px; font-size: 16px; cursor: pointer; border: none; border-radius: 6px; }
+  #loginBtn { background: #4285f4; color: white; }
+  #migrateBtn { background: #34a853; color: white; font-size: 18px; padding: 14px 32px; }
+  #migrateBtn:disabled { background: #555; cursor: not-allowed; color: #999; }
+  #log { background: #1a1a1a; padding: 16px; border-radius: 8px; max-height: 600px; overflow-y: auto; font-family: monospace; font-size: 13px; white-space: pre-wrap; margin-top: 16px; }
+  .success { color: #34a853; }
+  .error { color: #ea4335; }
+  .info { color: #4285f4; }
+  .skip { color: #999; }
+  input { padding: 8px 12px; font-size: 14px; border-radius: 4px; border: 1px solid #444; background: #222; color: #eee; width: 240px; }
+  #authSection { margin-bottom: 24px; }
+</style>
+</head>
+<body>
+<h1>Migrate PI Subfields</h1>
+<p style="color:#aaa;">Adds "molecular" and "developmental" subfields to existing PIs in Firestore.</p>
+
+<div id="authSection">
+  <p id="authStatus">Not logged in</p>
+  <div id="loginForm">
+    <input type="email" id="email" placeholder="Admin email">
+    <input type="password" id="password" placeholder="Password">
+    <button id="loginBtn" onclick="doLogin()">Login</button>
+  </div>
+</div>
+
+<button id="migrateBtn" disabled onclick="runMigration()">Run Migration</button>
+<div id="log"></div>
+
+<script type="module">
+import { initializeApp } from 'https://www.gstatic.com/firebasejs/11.4.0/firebase-app.js';
+import { getAuth, signInWithEmailAndPassword, onAuthStateChanged } from 'https://www.gstatic.com/firebasejs/11.4.0/firebase-auth.js';
+import { getFirestore, collection, doc, updateDoc, serverTimestamp, query, where, getDocs } from 'https://www.gstatic.com/firebasejs/11.4.0/firebase-firestore.js';
+
+const firebaseConfig = {
+  apiKey: "AIzaSyCEUSVBEAPYfsoG00GKPqw_lHJQKelgVbk",
+  authDomain: "compneuroparis.firebaseapp.com",
+  projectId: "compneuroparis",
+  storageBucket: "compneuroparis.firebasestorage.app",
+  messagingSenderId: "768335946036",
+  appId: "1:768335946036:web:61184dde3b4b66c58bc561"
+};
+
+const app = initializeApp(firebaseConfig);
+const auth = getAuth(app);
+const db = getFirestore(app);
+
+const logEl = document.getElementById('log');
+function log(msg, cls = '') {
+  const span = document.createElement('span');
+  span.className = cls;
+  span.textContent = msg + '\n';
+  logEl.appendChild(span);
+  logEl.scrollTop = logEl.scrollHeight;
+}
+
+onAuthStateChanged(auth, user => {
+  if (user) {
+    document.getElementById('authStatus').textContent = `Logged in as ${user.email}`;
+    document.getElementById('loginForm').style.display = 'none';
+    document.getElementById('migrateBtn').disabled = false;
+  }
+});
+
+window.doLogin = async () => {
+  const email = document.getElementById('email').value;
+  const pw = document.getElementById('password').value;
+  try {
+    await signInWithEmailAndPassword(auth, email, pw);
+    log('Logged in!', 'success');
+  } catch (e) {
+    log('Login error: ' + e.message, 'error');
+  }
+};
+
+// ========== MIGRATION MAP ==========
+// Maps PI name → new subfields array
+const migrations = {
+  // --- seed.html PIs: move to molecular ---
+  "Thomas Bourgeron":       ["molecular", "human"],
+  "Aleksandra Deczkowska":  ["molecular"],
+  "Fani Koukouli":          ["molecular", "systems"],
+  "Roberto Toro":           ["developmental", "computational"],
+
+  // --- seed-new-pis.html PIs: move to molecular ---
+  "Cyrille Vaillend":       ["molecular"],
+  "Gilles Bonvento":        ["molecular"],
+  "Carole Escartin":        ["molecular"],
+  "Martial Ruat":           ["molecular", "developmental"],
+  "Mohammed Taouis":        ["molecular"],
+  "Jean-Pierre Levraud":    ["molecular"],
+  "Daniel Vasiliauskas":    ["molecular", "developmental"],
+  "Francois Rouyer":        ["molecular", "systems"],
+
+  // --- seed-new-pis.html PIs: move to developmental ---
+  "Kei Yamamoto":           ["developmental"],
+  "Sylvie Retaux":          ["developmental"],
+  "Sophie Creuzet":         ["developmental"],
+  "Muriel Perron":          ["developmental", "molecular"],
+  "Idoia Quintana-Urzainqui": ["developmental"],
+  "Glenda Comai":           ["developmental"],
+
+  // --- seed-cbrains.html PIs: add developmental ---
+  "Sonia Garel":            ["developmental", "molecular"],
+  "Ariel Di Nardo":         ["developmental", "molecular"],
+  "Fekrije Selimi":         ["developmental", "molecular"],
+  "Iris Salecker":          ["developmental", "molecular"],
+  "Nathalie Spassky":       ["developmental", "molecular"],
+  "Jean-Francois Brunet":   ["developmental", "molecular"],
+  "Cecile Charrier":        ["developmental", "molecular"],
+  "Xavier Morin":           ["developmental", "molecular"],
+  "Stephane Nedelec":       ["developmental", "molecular"],
+  "Bassem Hassan":          ["developmental", "molecular"],
+  "Alessandra Pierani":     ["developmental", "molecular"],
+  "Xavier Nicol":           ["developmental", "molecular"],
+  "Olivier Goureau":        ["developmental", "molecular"],
+  "Alain Chedotal":         ["developmental", "molecular"],
+  "Jean Livet":             ["developmental", "molecular"],
+  "Fiona Francis":          ["developmental", "molecular"],
+  "Julien Ferent":          ["developmental", "molecular"],
+  "Corentin Le Magueresse": ["developmental", "molecular"],
+  "Sara Bizzotto":          ["developmental", "molecular"],
+  "Vincent El Ghouzzi":     ["developmental", "molecular"],
+  "Pierre Gressens":        ["developmental", "molecular"],
+  "Raphael Etournay":       ["developmental", "molecular"],
+  "Jeanne Amiel":           ["developmental", "molecular"],
+  "Vincent Cantagrel":      ["developmental", "molecular"],
+};
+
+async function runMigration() {
+  document.getElementById('migrateBtn').disabled = true;
+  log('--- Starting Subfield Migration ---', 'info');
+  let updated = 0, notFound = 0, skipped = 0, errors = 0;
+
+  for (const [name, newSubfields] of Object.entries(migrations)) {
+    try {
+      const q = query(collection(db, 'groups'), where('name', '==', name));
+      const snap = await getDocs(q);
+      if (snap.empty) {
+        log(`  NOT FOUND: ${name}`, 'error');
+        notFound++;
+        continue;
+      }
+      const docSnap = snap.docs[0];
+      const data = docSnap.data();
+      const current = Array.isArray(data.subfields) ? data.subfields : (data.subfield ? [data.subfield] : []);
+
+      // Check if already correct
+      if (JSON.stringify(current) === JSON.stringify(newSubfields)) {
+        log(`  Skip (already correct): ${name} [${current.join(', ')}]`, 'skip');
+        skipped++;
+        continue;
+      }
+
+      await updateDoc(doc(db, 'groups', docSnap.id), {
+        subfields: newSubfields,
+        subfield: newSubfields[0],
+        updatedAt: serverTimestamp()
+      });
+      log(`  Updated: ${name}  [${current.join(', ')}] → [${newSubfields.join(', ')}]`, 'success');
+      updated++;
+    } catch (e) {
+      log(`  ERROR (${name}): ${e.message}`, 'error');
+      errors++;
+    }
+  }
+
+  log(`\nMigration complete! Updated ${updated}, skipped ${skipped}, not found ${notFound}, errors ${errors}.`, 'info');
+  document.getElementById('migrateBtn').disabled = false;
+}
+
+window.runMigration = runMigration;
+</script>
+</body>
+</html>
