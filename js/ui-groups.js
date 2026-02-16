@@ -580,6 +580,7 @@ export function initPiDetail() {
   btnClaimPi.addEventListener('click', () => {
     if (!currentDetailGroup) return;
     currentClaimTarget = { id: currentDetailGroup.id, name: currentDetailGroup.name, type: 'pi' };
+    modalPiDetail.classList.add('hidden');
     openClaimModal();
   });
   btnPiDetailEdit.addEventListener('click', () => {
@@ -910,6 +911,7 @@ export function initInstituteDetail() {
   btnClaimInst.addEventListener('click', () => {
     if (!currentDetailInstitute) return;
     currentClaimTarget = { id: currentDetailInstitute.id, name: currentDetailInstitute.name, type: 'institute' };
+    modalInstDetail.classList.add('hidden');
     openClaimModal();
   });
 
