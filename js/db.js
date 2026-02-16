@@ -412,3 +412,8 @@ export async function updateUserAccount(uid, data) {
   await fn({ uid, ...data });
 }
 
+export async function verifyUserAccount(uid) {
+  const fn = httpsCallable(functions, 'verifyUser');
+  await fn({ uid });
+}
+

@@ -7,7 +7,7 @@ import {
   fetchPendingClaims, approveClaim, rejectClaim,
   fetchOpenReports, resolveReport,
   fetchOpenMessages, resolveMessage,
-  listAllUsers, deleteUserAccount, updateUserAccount
+  listAllUsers, deleteUserAccount, updateUserAccount, verifyUserAccount
 } from './db.js';
 import { getCurrentUser, createAdminUser } from './auth.js';
 import { loadGroups, loadPublicInstitutes } from './ui-groups.js';
@@ -1006,17 +1006,35 @@ export async function loadUsers() {
       const item = document.createElement('div');
       item.className = 'admin-item';
       const created = u.createdAt ? new Date(u.createdAt).toLocaleDateString() : '';
+      const verifiedLabel = u.emailVerified ? '' : ' (unverified)';
+      const verifyBtn = u.emailVerified ? '' : `<button class="btn btn-success btn-sm btn-verify-user" aria-label="Verify ${escapeHTML(u.email)}">Verify</button>`;
       item.innerHTML = `
         <div class="admin-item-info">
-          <div class="admin-item-name">${escapeHTML(u.email)}${u.displayName ? ` (${escapeHTML(u.displayName)})` : ''}</div>
+          <div class="admin-item-name">${escapeHTML(u.email)}${u.displayName ? ` (${escapeHTML(u.displayName)})` : ''}${verifiedLabel}</div>
           <div class="admin-item-meta">UID: ${escapeHTML(u.uid)}${created ? ` | Joined: ${created}` : ''}${u.disabled ? ' | Disabled' : ''}</div>
         </div>
         <div class="admin-item-actions">
+          ${verifyBtn}
           <button class="btn btn-primary btn-sm btn-edit-user" aria-label="Edit ${escapeHTML(u.email)}">Edit</button>
           <button class="btn btn-danger btn-sm btn-delete-user" aria-label="Delete ${escapeHTML(u.email)}">Delete</button>
         </div>
       `;
 
+      const verifyEl = item.querySelector('.btn-verify-user');
+      if (verifyEl) {
+        verifyEl.addEventListener('click', async (e) => {
+          const btn = e.currentTarget;
+          btn.disabled = true;
+          try {
+            await verifyUserAccount(u.uid);
+            await loadUsers();
+          } catch (err) {
+            console.error('Verify user error:', err);
+            alert('Error verifying user: ' + (err.message || err));
+            btn.disabled = false;
+          }
+        });
+      }
       item.querySelector('.btn-edit-user').addEventListener('click', () => showEditUserModal(u));
       item.querySelector('.btn-delete-user').addEventListener('click', () => handleDeleteUser(u));
       usersList.appendChild(item);

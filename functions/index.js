@@ -287,6 +287,7 @@ exports.listUsers = functions.https.onCall(async (data, context) => {
       displayName: u.displayName || "",
       createdAt: u.metadata.creationTime || "",
       disabled: u.disabled,
+      emailVerified: u.emailVerified,
     });
   });
 
@@ -299,6 +300,7 @@ exports.listUsers = functions.https.onCall(async (data, context) => {
         displayName: u.displayName || "",
         createdAt: u.metadata.creationTime || "",
         disabled: u.disabled,
+        emailVerified: u.emailVerified,
       });
     });
   }
@@ -405,5 +407,24 @@ exports.updateUser = functions.https.onCall(async (data, context) => {
     }
   }
 
+  return { success: true };
+});
+
+// ========== CALLABLE: VERIFY USER ==========
+
+exports.verifyUser = functions.https.onCall(async (data, context) => {
+  if (!context.auth) {
+    throw new functions.https.HttpsError("unauthenticated", "Must be logged in.");
+  }
+  if (!(await isCallerAdmin(context.auth.uid))) {
+    throw new functions.https.HttpsError("permission-denied", "Admin access required.");
+  }
+
+  const uid = data.uid;
+  if (!uid) {
+    throw new functions.https.HttpsError("invalid-argument", "uid is required.");
+  }
+
+  await admin.auth().updateUser(uid, { emailVerified: true });
   return { success: true };
 });
