@@ -121,6 +121,17 @@
         <div id="institutes-public-list" class="institutes-grid"></div>
       </div>
     </div>
+
+    <div class="subfield-section collapsed" data-subfield="jobs">
+      <button class="subfield-header" aria-expanded="false">
+        <h2>Jobs</h2>
+        <span class="subfield-count" id="jobs-public-count">0</span>
+        <svg class="subfield-arrow" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><polyline points="6 9 12 15 18 9"/></svg>
+      </button>
+      <div class="subfield-content">
+        <div id="jobs-public-list" class="jobs-grid"></div>
+      </div>
+    </div>
   </main>
 
   <!-- ========== ADD YOUR GROUP ========== -->
@@ -129,7 +140,42 @@
       <div class="submit-buttons">
         <button id="btn-show-form" class="btn btn-primary btn-add-group">Add New PI</button>
         <button id="btn-show-institute-form" class="btn btn-outline btn-add-group">Add New Institution</button>
+        <button id="btn-show-job-form" class="btn btn-outline btn-add-group">Add New Job</button>
         <button id="btn-show-contact" class="btn btn-outline btn-add-group">Contact Admins</button>
+      </div>
+      <div id="job-form-wrapper" class="hidden">
+        <h2>Post a Job Ad</h2>
+        <p class="submit-description">Post a job opening linked to a PI page you manage. Only users who have claimed a PI page can post jobs.</p>
+        <div id="job-form-auth-warning" class="form-message error hidden" role="alert"></div>
+        <form id="job-form" class="submission-form" novalidate>
+          <div class="form-group">
+            <label for="job-pi-select">PI <span class="required">*</span></label>
+            <select id="job-pi-select">
+              <option value="" disabled selected>Select a PI you manage...</option>
+            </select>
+          </div>
+          <div class="form-group">
+            <label for="job-position-type">Position Type <span class="required">*</span></label>
+            <select id="job-position-type">
+              <option value="" disabled selected>Select position type...</option>
+              <option value="PhD">PhD</option>
+              <option value="Postdoc">Postdoc</option>
+              <option value="Research Engineer">Research Engineer</option>
+              <option value="Internship">Internship</option>
+              <option value="Other">Other</option>
+            </select>
+          </div>
+          <div class="form-group">
+            <label for="job-title">Job Title <span class="required">*</span></label>
+            <input type="text" id="job-title" placeholder="e.g. Postdoc in computational neuroscience" required>
+          </div>
+          <div class="form-group">
+            <label for="job-link">Link to Ad <span class="required">*</span></label>
+            <input type="url" id="job-link" placeholder="https://..." required>
+          </div>
+          <div id="job-form-message" class="form-message hidden" role="alert"></div>
+          <button type="submit" id="btn-job-submit" class="btn btn-primary">Post Job</button>
+        </form>
       </div>
       <div id="contact-form-wrapper" class="hidden">
         <h2>Contact Admins</h2>

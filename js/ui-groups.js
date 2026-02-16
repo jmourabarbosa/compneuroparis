@@ -1,8 +1,9 @@
-import { fetchGroups, fetchApprovedInstitutes, createClaim, fetchMyClaimForTarget, fetchApprovedClaimForTarget, revokeClaim, deleteGroup, deleteInstitute, createReport } from './db.js';
+import { fetchGroups, fetchApprovedInstitutes, fetchJobs, fetchJobsByPi, deleteJob, createClaim, fetchMyClaimForTarget, fetchApprovedClaimForTarget, revokeClaim, deleteGroup, deleteInstitute, createReport } from './db.js';
 import { getCurrentUser, getIsAdmin, createAccount, login, isEmailVerified, resendVerification } from './auth.js';
 
 let allGroups = [];
 let allInstitutes = [];
+let allJobs = [];
 let activeKeyword = null;
 let searchText = '';
 let activeInstitute = null;
@@ -132,6 +133,7 @@ export function filterGroups() {
   }
   renderGroups();
   renderInstitutes();
+  renderJobs();
 }
 
 // Levenshtein edit distance
@@ -397,6 +399,18 @@ async function openPiDetail(group) {
   } else {
     piDetailManagedBy.innerHTML = '<div class="unclaimed-warning">Not yet claimed — information was semi-automatically populated and may contain errors</div>';
   }
+
+  // Job count badge
+  try {
+    const piJobs = await fetchJobsByPi(group.id);
+    if (piJobs.length > 0) {
+      const jobLabel = piJobs.length === 1 ? '1 job ad' : `${piJobs.length} job ads`;
+      const jobBadge = document.createElement('span');
+      jobBadge.className = 'pi-detail-jobs-badge';
+      jobBadge.textContent = ` · ${jobLabel}`;
+      piDetailManagedBy.querySelector('.managed-by-badge, .unclaimed-warning')?.appendChild(jobBadge);
+    }
+  } catch (e) { /* ignore */ }
 
   // Show edit button for admins, creators, or claimedBy users
   if (user && (isAdmin || isCreator || isClaimer)) {
@@ -798,6 +812,116 @@ function createInstituteCard(inst) {
   return card;
 }
 
+// Jobs public section
+const jobsSection = document.querySelector('.subfield-section[data-subfield="jobs"]');
+const jobsPublicList = document.getElementById('jobs-public-list');
+const jobsPublicCount = document.getElementById('jobs-public-count');
+
+export async function loadPublicJobs() {
+  try {
+    allJobs = await fetchJobs();
+  } catch (err) {
+    console.error('Error loading public jobs:', err);
+    allJobs = [];
+  }
+  renderJobs();
+}
+
+function renderJobs() {
+  jobsPublicList.innerHTML = '';
+
+  const isSearching = !!searchText;
+
+  const filtered = allJobs.filter(job => {
+    if (!searchText) return true;
+    const haystack = [
+      job.piName || '',
+      job.title || '',
+      job.positionType || ''
+    ].join(' ').toLowerCase();
+    return haystack.includes(searchText);
+  });
+
+  jobsPublicCount.textContent = filtered.length;
+
+  if (isSearching && filtered.length === 0) {
+    jobsSection.classList.add('section-hidden');
+    return;
+  }
+
+  jobsSection.classList.remove('section-hidden');
+
+  if (filtered.length === 0) {
+    jobsPublicList.innerHTML = '<p class="empty-state" style="padding:1rem">No job ads yet.</p>';
+    return;
+  }
+
+  filtered.forEach(job => {
+    jobsPublicList.appendChild(createJobCard(job));
+  });
+
+  // Auto-expand jobs section when searching with results
+  const jobsHeader = jobsSection.querySelector('.subfield-header');
+  if (isSearching && filtered.length > 0) {
+    jobsSection.classList.remove('collapsed');
+    jobsHeader.setAttribute('aria-expanded', 'true');
+  } else if (!isSearching) {
+    jobsSection.classList.add('collapsed');
+    jobsHeader.setAttribute('aria-expanded', 'false');
+  }
+}
+
+function createJobCard(job) {
+  const card = document.createElement('article');
+  card.className = 'job-card';
+
+  const dateStr = job.createdAt?.toDate
+    ? job.createdAt.toDate().toLocaleDateString('en-GB', { day: 'numeric', month: 'short', year: 'numeric' })
+    : '';
+
+  const user = getCurrentUser();
+  const canDelete = user && (user.uid === job.postedBy || getIsAdmin());
+  const deleteHTML = canDelete
+    ? `<button class="job-card-delete" data-job-id="${escapeHTML(job.id)}" title="Delete this job ad">&times;</button>`
+    : '';
+
+  card.innerHTML = `
+    <div class="card-body">
+      <div class="card-name-row">
+        <h3 class="job-card-title">${escapeHTML(job.title)}</h3>
+        ${deleteHTML}
+      </div>
+      <div class="job-card-pi">${escapeHTML(job.piName || '')}</div>
+      <div class="job-card-meta">
+        <span class="job-position-badge">${escapeHTML(job.positionType)}</span>
+        ${dateStr ? `<span class="job-card-date">${dateStr}</span>` : ''}
+      </div>
+      <div class="job-card-link">
+        <a href="${escapeHTML(job.link)}" target="_blank" rel="noopener noreferrer">View job ad</a>
+      </div>
+    </div>
+  `;
+
+  const delBtn = card.querySelector('.job-card-delete');
+  if (delBtn) {
+    delBtn.addEventListener('click', async (e) => {
+      e.stopPropagation();
+      if (!confirm('Delete this job ad?')) return;
+      delBtn.disabled = true;
+      try {
+        await deleteJob(job.id);
+        await loadPublicJobs();
+      } catch (err) {
+        console.error('Delete job error:', err);
+        alert('Error deleting job.');
+        delBtn.disabled = false;
+      }
+    });
+  }
+
+  return card;
+}
+
 async function openInstituteDetail(inst) {
   currentDetailInstitute = inst;
   history.replaceState(null, '', '#inst-' + inst.id);
@@ -1017,6 +1141,13 @@ export function initSections() {
   instHeader.addEventListener('click', () => {
     const isCollapsed = institutesSection.classList.toggle('collapsed');
     instHeader.setAttribute('aria-expanded', !isCollapsed);
+  });
+
+  // Jobs section toggle
+  const jobsHeader = jobsSection.querySelector('.subfield-header');
+  jobsHeader.addEventListener('click', () => {
+    const isCollapsed = jobsSection.classList.toggle('collapsed');
+    jobsHeader.setAttribute('aria-expanded', !isCollapsed);
   });
 
   // Institute filter clear

@@ -406,6 +406,38 @@ export async function fetchInstitutesClaimedBy(uid) {
   return snapshot.docs.map(d => ({ id: d.id, ...d.data() }));
 }
 
+// ========== JOBS ==========
+
+export async function createJob({ piId, piName, positionType, title, link, postedBy, postedByEmail }) {
+  const docRef = await addDoc(collection(db, 'jobs'), {
+    piId,
+    piName,
+    positionType,
+    title,
+    link,
+    postedBy,
+    postedByEmail,
+    createdAt: serverTimestamp()
+  });
+  return docRef.id;
+}
+
+export async function fetchJobs() {
+  const q = query(collection(db, 'jobs'), orderBy('createdAt', 'desc'));
+  const snapshot = await getDocs(q);
+  return snapshot.docs.map(d => ({ id: d.id, ...d.data() }));
+}
+
+export async function fetchJobsByPi(piId) {
+  const q = query(collection(db, 'jobs'), where('piId', '==', piId));
+  const snapshot = await getDocs(q);
+  return snapshot.docs.map(d => ({ id: d.id, ...d.data() }));
+}
+
+export async function deleteJob(id) {
+  await deleteDoc(doc(db, 'jobs', id));
+}
+
 // ========== USER MANAGEMENT (CALLABLE) ==========
 
 export async function listAllUsers() {

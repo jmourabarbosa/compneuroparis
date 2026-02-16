@@ -1,5 +1,5 @@
-import { loadGroups, initSearch, initSections, loadPublicInstitutes, initPiDetail, initInstituteDetail, handleDeepLink } from './ui-groups.js';
-import { initForm, updateSubmissionAuthUI } from './ui-form.js';
+import { loadGroups, initSearch, initSections, loadPublicInstitutes, loadPublicJobs, initPiDetail, initInstituteDetail, handleDeepLink } from './ui-groups.js';
+import { initForm, initJobForm, updateSubmissionAuthUI } from './ui-form.js';
 import { onAuthChange, login, logout, resetPassword, createAccount, isEmailVerified, resendVerification, authReady } from './auth.js';
 import {
   initTabs, loadPending, loadManageGroups, loadAdmins,
@@ -333,6 +333,7 @@ initAddAdmin();
 initEditUserForm();
 initPiDetail();
 initInstituteDetail();
+initJobForm();
 
-// Load groups and institutes (public data), then handle deep links
-Promise.all([loadGroups(), loadPublicInstitutes()]).then(() => handleDeepLink());
+// Load groups, institutes, and jobs (public data), then handle deep links
+Promise.all([loadGroups(), loadPublicInstitutes(), loadPublicJobs()]).then(() => handleDeepLink());
