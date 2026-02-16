@@ -8,7 +8,7 @@
   button { padding: 10px 24px; font-size: 16px; cursor: pointer; border: none; border-radius: 6px; }
   #loginBtn { background: #4285f4; color: white; }
   #seedBtn { background: #34a853; color: white; font-size: 18px; padding: 14px 32px; }
-  #seedBtn:disabled { background: #555; cursor: not-allowed; }
+  #seedBtn:disabled, #updateBtn:disabled { background: #555; cursor: not-allowed; color: #999; }
   #log { background: #1a1a1a; padding: 16px; border-radius: 8px; max-height: 500px; overflow-y: auto; font-family: monospace; font-size: 13px; white-space: pre-wrap; margin-top: 16px; }
   .success { color: #34a853; }
   .error { color: #ea4335; }
@@ -31,12 +31,13 @@
 </div>
 
 <button id="seedBtn" disabled onclick="runSeed()">Seed All PIs</button>
+<button id="updateBtn" disabled onclick="runUpdate()" style="background:#f59e0b;color:#111;font-size:18px;padding:14px 32px;margin-left:12px;">Update Existing PIs</button>
 <div id="log"></div>
 
 <script type="module">
 import { initializeApp } from 'https://www.gstatic.com/firebasejs/11.4.0/firebase-app.js';
 import { getAuth, signInWithEmailAndPassword, onAuthStateChanged, sendPasswordResetEmail } from 'https://www.gstatic.com/firebasejs/11.4.0/firebase-auth.js';
-import { getFirestore, collection, addDoc, serverTimestamp, query, where, getDocs } from 'https://www.gstatic.com/firebasejs/11.4.0/firebase-firestore.js';
+import { getFirestore, collection, addDoc, updateDoc, doc, serverTimestamp, query, where, getDocs } from 'https://www.gstatic.com/firebasejs/11.4.0/firebase-firestore.js';
 
 const firebaseConfig = {
   apiKey: "AIzaSyCEUSVBEAPYfsoG00GKPqw_lHJQKelgVbk",
@@ -68,6 +69,7 @@ onAuthStateChanged(auth, user => {
     document.getElementById('authStatus').textContent = `Logged in as ${user.email}`;
     document.getElementById('loginForm').style.display = 'none';
     document.getElementById('seedBtn').disabled = false;
+    document.getElementById('updateBtn').disabled = false;
   }
 });
 
@@ -252,8 +254,36 @@ async function seedPIs() {
   log(`\nDone! Created ${created}, skipped ${skipped} (already existed).`, 'info');
 }
 
+async function updatePIs() {
+  log('--- Updating Existing PIs ---', 'info');
+  let updated = 0, notFound = 0;
+  for (const pi of pis) {
+    const q = query(collection(db, 'groups'), where('name', '==', pi.name));
+    const snap = await getDocs(q);
+    if (snap.empty) {
+      log(`  Not found: ${pi.name}`, 'error');
+      notFound++;
+      continue;
+    }
+    const docRef = doc(db, 'groups', snap.docs[0].id);
+    await updateDoc(docRef, {
+      summary: pi.summary,
+      keywords: pi.keywords,
+      subfields: pi.subfields,
+      subfield: pi.subfields[0],
+      photoURL: pi.photoURL || '',
+      links: [{ label: 'Website', url: pi.website }],
+      updatedAt: serverTimestamp()
+    });
+    log(`  Updated: ${pi.name}`, 'success');
+    updated++;
+  }
+  log(`\nDone! Updated ${updated}, not found ${notFound}.`, 'info');
+}
+
 window.runSeed = async () => {
   document.getElementById('seedBtn').disabled = true;
+  document.getElementById('updateBtn').disabled = true;
   try {
     await seedInstitutes();
     await seedPIs();
@@ -261,6 +291,19 @@ window.runSeed = async () => {
     log('ERROR: ' + e.message, 'error');
   }
   document.getElementById('seedBtn').disabled = false;
+  document.getElementById('updateBtn').disabled = false;
+};
+
+window.runUpdate = async () => {
+  document.getElementById('seedBtn').disabled = true;
+  document.getElementById('updateBtn').disabled = true;
+  try {
+    await updatePIs();
+  } catch (e) {
+    log('ERROR: ' + e.message, 'error');
+  }
+  document.getElementById('seedBtn').disabled = false;
+  document.getElementById('updateBtn').disabled = false;
 };
 </script>
 </body>
