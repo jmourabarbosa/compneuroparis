@@ -1590,6 +1590,23 @@ img {
   align-items: center;
 }
 
+.hiring-toggle {
+  display: flex;
+  align-items: center;
+  gap: 0.4rem;
+  margin-top: 0.75rem;
+  font-size: 0.85rem;
+  color: var(--color-text-secondary);
+  cursor: pointer;
+}
+
+.hiring-toggle input[type="checkbox"] {
+  accent-color: var(--color-accent, #dc2626);
+  width: 16px;
+  height: 16px;
+  cursor: pointer;
+}
+
 .pi-detail-claim-section {
   margin-top: 1.25rem;
   padding-top: 1.25rem;

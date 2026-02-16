@@ -178,8 +178,8 @@
             <input type="text" id="job-keywords" placeholder="e.g. EEG, fMRI, machine learning">
           </div>
           <div class="form-group">
-            <label for="job-link">Link to Ad <span class="required">*</span></label>
-            <input type="url" id="job-link" placeholder="https://..." required>
+            <label for="job-link">Link to Ad <span class="hint">(optional)</span></label>
+            <input type="url" id="job-link" placeholder="https://...">
           </div>
           <div id="job-form-message" class="form-message hidden" role="alert"></div>
           <button type="submit" id="btn-job-submit" class="btn btn-primary">Post Job</button>
@@ -634,6 +634,10 @@
           <button id="btn-pi-detail-edit" class="btn btn-primary btn-sm">Edit</button>
           <button id="btn-pi-detail-delete" class="btn btn-danger btn-sm hidden">Delete</button>
         </div>
+        <label id="pi-detail-hiring-toggle" class="hiring-toggle hidden">
+          <input type="checkbox" id="pi-detail-hiring-checkbox">
+          <span>Show as "Hiring"</span>
+        </label>
         <div id="pi-detail-managed-by"></div>
         <div id="pi-detail-jobs" class="pi-detail-jobs hidden"></div>
         <div id="pi-detail-claim-section" class="pi-detail-claim-section hidden">
@@ -698,7 +702,7 @@
             <input type="text" id="job-edit-keywords-input" placeholder="e.g. EEG, fMRI, machine learning">
           </div>
           <div class="form-group">
-            <label for="job-edit-link-input">Link to Ad <span class="required">*</span></label>
+            <label for="job-edit-link-input">Link to Ad <span class="hint">(optional)</span></label>
             <input type="url" id="job-edit-link-input" placeholder="https://...">
           </div>
           <div id="job-edit-message" class="form-message hidden" role="alert"></div>

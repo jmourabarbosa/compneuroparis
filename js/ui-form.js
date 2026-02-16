@@ -719,13 +719,13 @@ async function handleJobSubmit(e) {
   const keywords = keywordsRaw ? keywordsRaw.split(',').map(k => k.trim()).filter(Boolean) : [];
   let link = document.getElementById('job-link').value.trim();
 
-  if (!piId || !positionType || !title || !link) {
+  if (!piId || !positionType || !title) {
     showMessage(jobFormMessage, 'Please fill in all required fields.', 'error');
     return;
   }
 
   // Ensure link has a protocol
-  if (!/^https?:\/\//i.test(link)) {
+  if (link && !/^https?:\/\//i.test(link)) {
     link = 'https://' + link;
   }
 

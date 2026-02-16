@@ -1,4 +1,4 @@
-import { fetchGroups, fetchApprovedInstitutes, fetchJobs, fetchJobsByPi, updateJob, deleteJob, createClaim, fetchMyClaimForTarget, fetchApprovedClaimForTarget, revokeClaim, deleteGroup, deleteInstitute, createReport } from './db.js';
+import { fetchGroups, fetchApprovedInstitutes, fetchJobs, fetchJobsByPi, updateJob, deleteJob, updateGroup, createClaim, fetchMyClaimForTarget, fetchApprovedClaimForTarget, revokeClaim, deleteGroup, deleteInstitute, createReport } from './db.js';
 import { getCurrentUser, getIsAdmin, createAccount, login, isEmailVerified, resendVerification } from './auth.js';
 
 let allGroups = [];
@@ -330,8 +330,8 @@ function createCard(group) {
     ? '<span class="card-managed-badge">Managed by PI</span>'
     : '<span class="card-unclaimed-badge">Unclaimed</span>';
 
-  const hasJobs = allJobs.some(j => j.piId === group.id);
-  const jobBadgeHTML = hasJobs ? '<span class="card-job-badge">Hiring</span>' : '';
+  const isHiring = group.hiring || allJobs.some(j => j.piId === group.id);
+  const jobBadgeHTML = isHiring ? '<span class="card-job-badge">Hiring</span>' : '';
 
   card.innerHTML = `
     <div class="card-body">
@@ -359,8 +359,8 @@ async function openPiDetail(group) {
   history.replaceState(null, '', '#pi-' + group.id);
 
   // Populate modal fields
-  const hasJobAds = allJobs.some(j => j.piId === group.id);
-  piDetailTitle.innerHTML = escapeHTML(group.name || 'PI Details') + (hasJobAds ? ' <span class="card-job-badge">Hiring</span>' : '');
+  const isHiringDetail = group.hiring || allJobs.some(j => j.piId === group.id);
+  piDetailTitle.innerHTML = escapeHTML(group.name || 'PI Details') + (isHiringDetail ? ' <span class="card-job-badge">Hiring</span>' : '');
   piDetailPhoto.src = group.photoURL || 'assets/placeholder-lab.svg';
   piDetailPhoto.alt = group.name || '';
   const institutes = toArray(group.institutes || group.institute);
@@ -475,6 +475,16 @@ async function openPiDetail(group) {
   }
   // Show delete button only for admins
   btnPiDetailDelete.classList.toggle('hidden', !isAdmin);
+
+  // Hiring toggle (visible to claimer or admin)
+  const hiringToggle = document.getElementById('pi-detail-hiring-toggle');
+  const hiringCheckbox = document.getElementById('pi-detail-hiring-checkbox');
+  if (user && (isAdmin || isClaimer)) {
+    hiringCheckbox.checked = !!group.hiring;
+    hiringToggle.classList.remove('hidden');
+  } else {
+    hiringToggle.classList.add('hidden');
+  }
 
   // Always show claim button initially (except for current claimer)
   if (user && isClaimer) {
@@ -646,6 +656,30 @@ export function initPiDetail() {
   });
   modalPiDetail.addEventListener('click', (e) => {
     if (e.target === modalPiDetail) history.replaceState(null, '', window.location.pathname);
+  });
+
+  // Hiring toggle
+  document.getElementById('pi-detail-hiring-checkbox').addEventListener('change', async (e) => {
+    if (!currentDetailGroup) return;
+    const cb = e.target;
+    cb.disabled = true;
+    try {
+      await updateGroup(currentDetailGroup.id, { hiring: cb.checked });
+      currentDetailGroup.hiring = cb.checked;
+      // Update the local allGroups cache
+      const cached = allGroups.find(g => g.id === currentDetailGroup.id);
+      if (cached) cached.hiring = cb.checked;
+      // Update title badge
+      const isHiringNow = cb.checked || allJobs.some(j => j.piId === currentDetailGroup.id);
+      piDetailTitle.innerHTML = escapeHTML(currentDetailGroup.name || 'PI Details') + (isHiringNow ? ' <span class="card-job-badge">Hiring</span>' : '');
+      // Re-render cards
+      renderGroups();
+    } catch (err) {
+      console.error('Error toggling hiring:', err);
+      cb.checked = !cb.checked;
+    } finally {
+      cb.disabled = false;
+    }
   });
 
   btnClaimPi.addEventListener('click', () => {
@@ -1102,13 +1136,13 @@ export function initJobDetail() {
     const keywordsRaw = document.getElementById('job-edit-keywords-input').value.trim();
     const keywords = keywordsRaw ? keywordsRaw.split(',').map(k => k.trim()).filter(Boolean) : [];
     let link = document.getElementById('job-edit-link-input').value.trim();
-    if (!title || !link) {
-      editMsg.textContent = 'Title and link are required.';
+    if (!title) {
+      editMsg.textContent = 'Title is required.';
       editMsg.className = 'form-message error';
       editMsg.classList.remove('hidden');
       return;
     }
-    if (!/^https?:\/\//i.test(link)) link = 'https://' + link;
+    if (link && !/^https?:\/\//i.test(link)) link = 'https://' + link;
 
     const saveBtn = document.getElementById('btn-job-edit-save');
     saveBtn.disabled = true;
