@@ -1,0 +1,1719 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<title>Seed C-BRAINS PIs</title>
+<style>
+  body { font-family: system-ui; max-width: 800px; margin: 40px auto; padding: 0 20px; background: #111; color: #eee; }
+  button { padding: 10px 24px; font-size: 16px; cursor: pointer; border: none; border-radius: 6px; }
+  #loginBtn { background: #4285f4; color: white; }
+  #seedBtn { background: #34a853; color: white; font-size: 18px; padding: 14px 32px; }
+  #seedBtn:disabled { background: #555; cursor: not-allowed; color: #999; }
+  #log { background: #1a1a1a; padding: 16px; border-radius: 8px; max-height: 600px; overflow-y: auto; font-family: monospace; font-size: 13px; white-space: pre-wrap; margin-top: 16px; }
+  .success { color: #34a853; }
+  .error { color: #ea4335; }
+  .info { color: #4285f4; }
+  input { padding: 8px 12px; font-size: 14px; border-radius: 4px; border: 1px solid #444; background: #222; color: #eee; width: 240px; }
+  #authSection { margin-bottom: 24px; }
+</style>
+</head>
+<body>
+<h1>Seed C-BRAINS Network PIs (Feb 2026)</h1>
+<p style="color:#aaa;">~149 PIs from DIM C-BRAINS network. Skips existing, updates photos on existing PIs without one.</p>
+
+<div id="authSection">
+  <p id="authStatus">Not logged in</p>
+  <div id="loginForm">
+    <input type="email" id="email" placeholder="Admin email">
+    <input type="password" id="password" placeholder="Password">
+    <button id="loginBtn" onclick="doLogin()">Login</button>
+  </div>
+</div>
+
+<button id="seedBtn" disabled onclick="runSeed()">Seed C-BRAINS PIs</button>
+<div id="log"></div>
+
+<script type="module">
+import { initializeApp } from 'https://www.gstatic.com/firebasejs/11.4.0/firebase-app.js';
+import { getAuth, signInWithEmailAndPassword, onAuthStateChanged } from 'https://www.gstatic.com/firebasejs/11.4.0/firebase-auth.js';
+import { getFirestore, collection, addDoc, updateDoc, doc, serverTimestamp, query, where, getDocs } from 'https://www.gstatic.com/firebasejs/11.4.0/firebase-firestore.js';
+
+const firebaseConfig = {
+  apiKey: "AIzaSyCEUSVBEAPYfsoG00GKPqw_lHJQKelgVbk",
+  authDomain: "compneuroparis.firebaseapp.com",
+  projectId: "compneuroparis",
+  storageBucket: "compneuroparis.firebasestorage.app",
+  messagingSenderId: "768335946036",
+  appId: "1:768335946036:web:61184dde3b4b66c58bc561"
+};
+
+const app = initializeApp(firebaseConfig);
+const auth = getAuth(app);
+const db = getFirestore(app);
+
+const logEl = document.getElementById('log');
+function log(msg, cls = '') {
+  const span = document.createElement('span');
+  span.className = cls;
+  span.textContent = msg + '\n';
+  logEl.appendChild(span);
+  logEl.scrollTop = logEl.scrollHeight;
+}
+
+let currentUser = null;
+
+onAuthStateChanged(auth, user => {
+  currentUser = user;
+  if (user) {
+    document.getElementById('authStatus').textContent = `Logged in as ${user.email}`;
+    document.getElementById('loginForm').style.display = 'none';
+    document.getElementById('seedBtn').disabled = false;
+  }
+});
+
+window.doLogin = async () => {
+  const email = document.getElementById('email').value;
+  const pw = document.getElementById('password').value;
+  try {
+    await signInWithEmailAndPassword(auth, email, pw);
+    log('Logged in!', 'success');
+  } catch (e) {
+    log('Login error: ' + e.message, 'error');
+  }
+};
+
+// ========== NEW INSTITUTES ==========
+const newInstitutes = [
+  { name: "IMAGINE - Universite Paris Cite", website: "https://www.institutimagine.org", logoURL: "" },
+  { name: "NeuroDiderot - Universite Paris Cite", website: "https://neurodiderot.u-paris.fr", logoURL: "" },
+  { name: "MIRCen - CEA", website: "https://jacob.cea.fr/drf/ifas/Pages/MIRCen.aspx", logoURL: "" },
+  { name: "BFA - Universite Paris Cite", website: "https://bfa.u-pariscite.fr", logoURL: "" },
+  { name: "EDC - Universite Paris Cite", website: "https://epigenetics.u-paris.fr", logoURL: "" },
+  { name: "Institut Jacques Monod", website: "https://www.ijm.fr", logoURL: "" },
+  { name: "S2CH - CNRS", website: "", logoURL: "" },
+  { name: "EPN-R", website: "", logoURL: "" },
+];
+
+// ========== PI DATA ==========
+const pis = [
+
+  // ===== COLLEGE DE FRANCE (CIRB) — 8 PIs =====
+
+  {
+    name: "Isabelle Brunet",
+    keywords: ["neurovascular development", "endothelial cells", "axon guidance molecules", "blood-brain barrier", "molecular signaling"],
+    summary: "Studies how axon guidance molecules regulate vascular development in the nervous system, investigating molecular crosstalk between neurons and blood vessels during brain formation.",
+    photoURL: "",
+    subfields: ["molecular"],
+    institutes: ["College de France"],
+    links: [{ label: "C-BRAINS", url: "https://dim-cbrains.fr/fr/network/302/team" }]
+  },
+  {
+    name: "Laurent Venance",
+    keywords: ["synaptic plasticity", "basal ganglia", "spike-timing dependent plasticity", "corticostriatal circuits", "reinforcement learning"],
+    summary: "Investigates synaptic plasticity rules at corticostriatal synapses, focusing on how spike-timing dependent plasticity and neuromodulation shape information processing in basal ganglia circuits underlying decision-making and habit formation.",
+    photoURL: "",
+    subfields: ["systems"],
+    institutes: ["College de France"],
+    links: [
+      { label: "C-BRAINS", url: "https://dim-cbrains.fr/fr/network/62/team" },
+      { label: "College de France", url: "https://www.college-de-france.fr/fr/chaire/laurent-venance-plasticite-synaptique-et-reseaux-neuronaux-chaire-statutaire" }
+    ]
+  },
+  {
+    name: "Nathalie Rouach",
+    keywords: ["astrocyte networks", "gap junctions", "astroglial connexins", "neuroglial interactions", "brain energy metabolism"],
+    summary: "Studies how astrocyte networks communicate via gap junctions and modulate neuronal activity, investigating the role of astroglial connexins in brain energy metabolism, synaptic transmission, and neurological diseases.",
+    photoURL: "",
+    subfields: ["molecular", "systems"],
+    institutes: ["College de France"],
+    links: [
+      { label: "C-BRAINS", url: "https://dim-cbrains.fr/fr/network/146/team" },
+      { label: "College de France", url: "https://www.college-de-france.fr/fr/personne/nathalie-rouach" }
+    ]
+  },
+  {
+    name: "Sonia Garel",
+    keywords: ["microglia", "brain development", "neuroimmune interactions", "cortical circuit assembly", "interneuron migration"],
+    summary: "Studies the roles of microglia and immune cells in brain development, investigating how neuroimmune interactions shape cortical circuit assembly and neuronal migration during embryonic and postnatal development.",
+    photoURL: "",
+    subfields: ["molecular", "systems"],
+    institutes: ["College de France", "IBENS - ENS"],
+    links: [
+      { label: "C-BRAINS", url: "https://dim-cbrains.fr/fr/network/260/team" },
+      { label: "College de France", url: "https://www.college-de-france.fr/fr/personne/sonia-garel" }
+    ]
+  },
+  {
+    name: "Martine Cohen-Salmon",
+    keywords: ["gliovascular unit", "connexins", "blood-brain barrier", "astrocyte endfeet", "cerebrovascular physiology"],
+    summary: "Investigates the molecular physiology of the gliovascular unit, focusing on how astrocyte endfeet and connexin channels regulate blood-brain barrier function and cerebrovascular homeostasis.",
+    photoURL: "",
+    subfields: ["molecular"],
+    institutes: ["College de France"],
+    links: [
+      { label: "C-BRAINS", url: "https://dim-cbrains.fr/fr/network/308/team" },
+      { label: "College de France", url: "https://www.college-de-france.fr/fr/personne/martine-cohen-salmon" }
+    ]
+  },
+  {
+    name: "Ariel Di Nardo",
+    keywords: ["mTOR signaling", "cortical plasticity", "neuropharmacology", "tuberous sclerosis", "critical periods"],
+    summary: "Studies molecular mechanisms of cortical plasticity and neuropharmacology, investigating how mTOR signaling pathways regulate critical period plasticity and contribute to neurodevelopmental disorders like tuberous sclerosis.",
+    photoURL: "",
+    subfields: ["molecular"],
+    institutes: ["College de France"],
+    links: [{ label: "C-BRAINS", url: "https://dim-cbrains.fr/fr/network/53/team" }]
+  },
+  {
+    name: "Fekrije Selimi",
+    keywords: ["synaptogenesis", "Purkinje cells", "cerebellum", "synaptic specificity", "Cbln1 signaling"],
+    summary: "Investigates molecular mechanisms controlling synapse formation and specificity in the cerebellum, studying how molecules like Cbln1 regulate the establishment and maintenance of specific synaptic connections on Purkinje cells.",
+    photoURL: "",
+    subfields: ["molecular"],
+    institutes: ["College de France"],
+    links: [
+      { label: "C-BRAINS", url: "https://dim-cbrains.fr/fr/network/131/team" },
+      { label: "College de France", url: "https://www.college-de-france.fr/fr/personne/fekrije-selimi" }
+    ]
+  },
+  {
+    name: "Michael Zugaro",
+    keywords: ["hippocampal oscillations", "memory consolidation", "sharp-wave ripples", "place cells", "sleep and memory"],
+    summary: "Studies how hippocampal oscillations during sleep, particularly sharp-wave ripples, support memory consolidation and spatial representation through coordinated replay of neural activity patterns.",
+    photoURL: "",
+    subfields: ["systems"],
+    institutes: ["College de France"],
+    links: [
+      { label: "C-BRAINS", url: "https://dim-cbrains.fr/fr/network/15/team" },
+      { label: "College de France", url: "https://www.college-de-france.fr/fr/personne/michael-zugaro" }
+    ]
+  },
+
+  // ===== ENS - ECOLE NORMALE SUPERIEURE (DEC) — 4 PIs =====
+
+  {
+    name: "Anne-Catherine Bachoud-Levi",
+    keywords: ["Huntington's disease", "language processing", "cell therapy", "neuropsychology", "clinical trials"],
+    summary: "Studies language and cognitive deficits in Huntington's disease and develops cell therapy approaches for neurodegenerative disorders, combining neuropsychological assessment with innovative therapeutic strategies.",
+    photoURL: "",
+    subfields: ["human"],
+    institutes: ["ENS - Ecole Normale Superieure"],
+    links: [{ label: "C-BRAINS", url: "https://dim-cbrains.fr/fr/network/153/team" }]
+  },
+  {
+    name: "Roberto Casati",
+    keywords: ["philosophy of perception", "spatial cognition", "object representation", "cognitive science", "visual perception"],
+    summary: "Philosopher of mind studying perception and spatial cognition, investigating how humans represent objects, shadows, and spatial properties through an interdisciplinary lens combining philosophy and cognitive science.",
+    photoURL: "",
+    subfields: ["human"],
+    institutes: ["ENS - Ecole Normale Superieure"],
+    links: [
+      { label: "C-BRAINS", url: "https://dim-cbrains.fr/fr/network/417/team" },
+      { label: "Institut Jean Nicod", url: "https://www.institutnicod.org" }
+    ]
+  },
+  {
+    name: "Jerome Sackur",
+    keywords: ["consciousness", "introspection", "metacognition", "visual attention", "subliminal perception"],
+    summary: "Studies the cognitive and neural mechanisms of consciousness and introspection, investigating how humans become aware of their own mental processes and the limits of conscious perception.",
+    photoURL: "",
+    subfields: ["human", "computational"],
+    institutes: ["ENS - Ecole Normale Superieure"],
+    links: [
+      { label: "C-BRAINS", url: "https://dim-cbrains.fr/fr/network/416/team" },
+      { label: "LSCP", url: "https://lscp.dec.ens.fr" }
+    ]
+  },
+  {
+    name: "Vincent De Gardelle",
+    keywords: ["value-based decision-making", "confidence", "perceptual decisions", "multi-attribute choice", "economic decisions"],
+    summary: "Studies how humans make value-based decisions, focusing on the role of confidence and comparison processes in perceptual and economic decisions, using behavioral experiments and computational modeling.",
+    photoURL: "",
+    subfields: ["human", "computational"],
+    institutes: ["ENS - Ecole Normale Superieure"],
+    links: [{ label: "C-BRAINS", url: "https://dim-cbrains.fr/fr/network/420/team" }]
+  },
+
+  // ===== ESPCI PARIS — 3 PIs =====
+
+  {
+    name: "Thomas Preat",
+    keywords: ["Drosophila memory", "mushroom body", "long-term memory", "energy metabolism", "aversive learning"],
+    summary: "Studies the neural circuits and molecular mechanisms of memory formation in Drosophila, focusing on how the mushroom body orchestrates long-term memory through specific neuronal populations and metabolic pathways.",
+    photoURL: "",
+    subfields: ["systems"],
+    institutes: ["ESPCI Paris"],
+    links: [
+      { label: "C-BRAINS", url: "https://dim-cbrains.fr/fr/network/67/team" },
+      { label: "ESPCI Lab", url: "https://www.bio.espci.fr/Energy-Memory" }
+    ]
+  },
+  {
+    name: "Raouf Issa",
+    keywords: ["cortical circuits", "barrel cortex", "sensory processing", "neural coding", "mouse models"],
+    summary: "Studies cortical circuits underlying sensory processing, investigating how neural populations encode tactile information in the barrel cortex using electrophysiology and imaging in mice.",
+    photoURL: "",
+    subfields: ["systems"],
+    institutes: ["ESPCI Paris"],
+    links: [{ label: "C-BRAINS", url: "https://dim-cbrains.fr/fr/network/300/team" }]
+  },
+  {
+    name: "Sabine Levi",
+    keywords: ["inhibitory synapses", "gephyrin scaffold", "GABA receptors", "glycine receptors", "synapse dynamics"],
+    summary: "Studies the molecular mechanisms governing inhibitory synapse formation and plasticity, focusing on how scaffolding proteins like gephyrin regulate GABA and glycine receptor clustering and dynamics at postsynaptic sites.",
+    photoURL: "",
+    subfields: ["molecular"],
+    institutes: ["ESPCI Paris"],
+    links: [
+      { label: "C-BRAINS", url: "https://dim-cbrains.fr/fr/network/354/team" },
+      { label: "ESPCI Lab", url: "https://www.bio.espci.fr/Inhibitory-synapse-dynamics" }
+    ]
+  },
+
+  // ===== EDC - UNIVERSITE PARIS CITE — 1 PI =====
+
+  {
+    name: "Valerie Mezger",
+    keywords: ["heat shock factors", "epigenetics", "stress response", "neurodevelopment", "chromatin regulation"],
+    summary: "Studies how heat shock transcription factors regulate gene expression and chromatin organization during brain development and stress, investigating epigenetic mechanisms underlying neurodevelopmental disorders.",
+    photoURL: "",
+    subfields: ["molecular"],
+    institutes: ["EDC - Universite Paris Cite"],
+    links: [
+      { label: "C-BRAINS", url: "https://dim-cbrains.fr/fr/network/497/team" },
+      { label: "Lab Website", url: "https://epigenetics.u-paris.fr/mezger-group" }
+    ]
+  },
+
+  // ===== IBENS - ENS — 11 PIs =====
+
+  {
+    name: "Pierre Paoletti",
+    keywords: ["NMDA receptors", "glutamate receptors", "ion channel structure", "allosteric modulation", "synaptic signaling"],
+    summary: "Studies the structure and function of NMDA glutamate receptors, investigating their allosteric modulation mechanisms and developing subunit-selective pharmacological tools to understand synaptic signaling in health and disease.",
+    photoURL: "",
+    subfields: ["molecular"],
+    institutes: ["IBENS - ENS"],
+    links: [
+      { label: "C-BRAINS", url: "https://dim-cbrains.fr/fr/network/307/team" },
+      { label: "IBENS", url: "https://www.ibens.bio.ens.psl.eu/spip.php?rubrique24" }
+    ]
+  },
+  {
+    name: "Boris Barbour",
+    keywords: ["cerebellum", "granule cells", "feedforward inhibition", "network models", "synaptic integration"],
+    summary: "Combines experimental and computational approaches to study cerebellar circuit function, investigating how granule cells and feedforward inhibition shape information processing in the cerebellar cortex.",
+    photoURL: "",
+    subfields: ["computational", "systems"],
+    institutes: ["IBENS - ENS"],
+    links: [
+      { label: "C-BRAINS", url: "https://dim-cbrains.fr/fr/network/4/team" },
+      { label: "IBENS", url: "https://www.ibens.bio.ens.psl.eu/spip.php?mot4" }
+    ]
+  },
+  {
+    name: "Iris Salecker",
+    keywords: ["visual system development", "Drosophila", "neural circuit assembly", "optic lobe", "neuronal wiring"],
+    summary: "Studies how visual system circuits are assembled during development in Drosophila, investigating the genetic and cellular mechanisms that control neural wiring specificity in the optic lobe.",
+    photoURL: "",
+    subfields: ["molecular", "systems"],
+    institutes: ["IBENS - ENS"],
+    links: [{ label: "C-BRAINS", url: "https://dim-cbrains.fr/fr/network/452/team" }]
+  },
+  {
+    name: "Nathalie Spassky",
+    keywords: ["cilia", "ependymal cells", "cerebrospinal fluid", "neurogenesis", "brain ventricles"],
+    summary: "Studies the role of motile cilia and ependymal cells in brain physiology, investigating how cilia-driven cerebrospinal fluid flow and ventricular signaling contribute to neurogenesis and brain homeostasis.",
+    photoURL: "",
+    subfields: ["molecular"],
+    institutes: ["IBENS - ENS"],
+    links: [
+      { label: "C-BRAINS", url: "https://dim-cbrains.fr/fr/network/180/team" },
+      { label: "IBENS", url: "https://www.ibens.bio.ens.psl.eu/spip.php?rubrique6" }
+    ]
+  },
+  {
+    name: "Jean-Francois Brunet",
+    keywords: ["autonomic nervous system", "neuronal specification", "transcription factors", "Phox2b", "hindbrain development"],
+    summary: "Studies the genetic programs controlling the specification of autonomic and visceral neurons, focusing on the role of Phox2b transcription factor in defining neuronal identity in the hindbrain and peripheral nervous system.",
+    photoURL: "",
+    subfields: ["molecular"],
+    institutes: ["IBENS - ENS"],
+    links: [
+      { label: "C-BRAINS", url: "https://dim-cbrains.fr/fr/network/450/team" },
+      { label: "IBENS", url: "https://www.ibens.bio.ens.psl.eu/spip.php?rubrique12" }
+    ]
+  },
+  {
+    name: "Cecile Charrier",
+    keywords: ["synapse development", "human-specific genes", "SRGAP2", "cortical evolution", "dendritic spines"],
+    summary: "Studies how human-specific gene duplications like SRGAP2 have shaped synapse development and cortical circuit connectivity, investigating the molecular mechanisms underlying the evolutionary expansion of human cognitive abilities.",
+    photoURL: "",
+    subfields: ["molecular"],
+    institutes: ["IBENS - ENS"],
+    links: [
+      { label: "C-BRAINS", url: "https://dim-cbrains.fr/fr/network/448/team" },
+      { label: "IBENS", url: "https://www.ibens.bio.ens.psl.eu/spip.php?rubrique87" }
+    ]
+  },
+  {
+    name: "Xavier Morin",
+    keywords: ["cell division", "mitotic spindle", "neural progenitors", "cortical neurogenesis", "polarity"],
+    summary: "Studies how the orientation of cell division in neural progenitors controls the balance between proliferation and differentiation during cortical neurogenesis, investigating mitotic spindle positioning mechanisms.",
+    photoURL: "",
+    subfields: ["molecular"],
+    institutes: ["IBENS - ENS"],
+    links: [{ label: "C-BRAINS", url: "https://dim-cbrains.fr/fr/network/451/team" }]
+  },
+  {
+    name: "Laurent Bourdieu",
+    keywords: ["two-photon imaging", "cortical dynamics", "barrel cortex", "optical methods", "neural circuits"],
+    summary: "Develops advanced optical imaging techniques for studying cortical circuit dynamics, using two-photon microscopy to investigate sensory processing and neural population activity in the barrel cortex.",
+    photoURL: "",
+    subfields: ["systems", "computational"],
+    institutes: ["IBENS - ENS"],
+    links: [
+      { label: "C-BRAINS", url: "https://dim-cbrains.fr/fr/network/63/team" },
+      { label: "IBENS", url: "https://www.ibens.bio.ens.psl.eu/spip.php?rubrique35" }
+    ]
+  },
+  {
+    name: "German Sumbre",
+    keywords: ["zebrafish", "spontaneous activity", "motor circuits", "sensorimotor integration", "larval behavior"],
+    summary: "Studies neural circuit function and sensorimotor integration in zebrafish larvae, using calcium imaging and optogenetics to understand how spontaneous neural activity patterns shape circuit development and behavior.",
+    photoURL: "",
+    subfields: ["systems", "computational"],
+    institutes: ["IBENS - ENS"],
+    links: [
+      { label: "C-BRAINS", url: "https://dim-cbrains.fr/fr/network/64/team" },
+      { label: "IBENS", url: "https://www.ibens.ens.fr/spip.php?rubrique1" }
+    ]
+  },
+  {
+    name: "David Holcman",
+    keywords: ["stochastic processes", "computational neuroscience", "diffusion modeling", "dendritic spines", "narrow escape theory"],
+    summary: "Develops mathematical and computational methods based on stochastic processes and diffusion theory to study cellular neuroscience questions, including synaptic receptor trafficking, dendritic spine dynamics, and nuclear organization.",
+    photoURL: "",
+    subfields: ["computational"],
+    institutes: ["IBENS - ENS"],
+    links: [
+      { label: "C-BRAINS", url: "https://dim-cbrains.fr/fr/network/399/team" },
+      { label: "IBENS", url: "https://www.ibens.bio.ens.psl.eu/spip.php?rubrique40" }
+    ]
+  },
+  {
+    name: "Clement Lena",
+    keywords: ["cerebellum", "motor learning", "cerebellar cortex", "Purkinje cells", "sensorimotor adaptation"],
+    summary: "Studies the neural mechanisms of motor learning in the cerebellum, investigating how cerebellar cortex circuits process sensory information and generate adaptive motor outputs.",
+    photoURL: "",
+    subfields: ["systems"],
+    institutes: ["IBENS - ENS"],
+    links: [
+      { label: "C-BRAINS", url: "https://dim-cbrains.fr/fr/network/301/team" },
+      { label: "IBENS", url: "https://www.ibens.bio.ens.psl.eu/spip.php?rubrique53" }
+    ]
+  },
+
+  // ===== INSTITUT JACQUES MONOD — 1 PI =====
+
+  {
+    name: "Stephane Nedelec",
+    keywords: ["motor neurons", "stem cell differentiation", "spinal cord", "ALS", "iPSC models"],
+    summary: "Studies motor neuron differentiation from stem cells and iPSCs to model neurodegenerative diseases like ALS, investigating the molecular programs controlling spinal motor neuron identity and survival.",
+    photoURL: "",
+    subfields: ["molecular"],
+    institutes: ["Institut Jacques Monod"],
+    links: [
+      { label: "C-BRAINS", url: "https://dim-cbrains.fr/fr/network/17/team" },
+      { label: "IJM", url: "https://www.ijm.fr/recherche/equipes/ribes-nedelec-lab/" }
+    ]
+  },
+
+  // ===== INSTITUT PASTEUR — 1 PI =====
+
+  {
+    name: "Pierre-Jean Corringer",
+    keywords: ["pentameric ligand-gated ion channels", "nicotinic receptors", "structural biology", "allosteric transitions", "channel gating"],
+    summary: "Studies the structure and function of pentameric ligand-gated ion channels including nicotinic acetylcholine receptors, using structural biology and electrophysiology to understand allosteric transitions and pharmacological modulation.",
+    photoURL: "",
+    subfields: ["molecular"],
+    institutes: ["Institut Pasteur"],
+    links: [{ label: "Institut Pasteur", url: "https://research.pasteur.fr/en/team/channel-receptors/" }]
+  },
+
+  // ===== PARIS BRAIN INSTITUTE (ICM) — 16 PIs =====
+
+  {
+    name: "Marie-Claude Potier",
+    keywords: ["Alzheimer's disease", "amyloid precursor protein", "cholesterol", "Down syndrome", "lipid rafts"],
+    summary: "Studies the molecular mechanisms of Alzheimer's disease, focusing on amyloid precursor protein processing, cholesterol metabolism in lipid rafts, and the link between Down syndrome and early-onset Alzheimer's.",
+    photoURL: "",
+    subfields: ["molecular"],
+    institutes: ["Paris Brain Institute (ICM)"],
+    links: [{ label: "ICM", url: "https://institutducerveau.org/en/research/teams/alzheimer-prions" }]
+  },
+  {
+    name: "Philippe Fossati",
+    keywords: ["depression", "self-referential processing", "emotional memory", "fMRI", "mood disorders"],
+    summary: "Studies the neural basis of self-referential processing and emotional regulation in mood disorders, using fMRI to investigate how depression alters the brain's processing of emotional memories and self-related information.",
+    photoURL: "",
+    subfields: ["human"],
+    institutes: ["Paris Brain Institute (ICM)"],
+    links: [
+      { label: "C-BRAINS", url: "https://dim-cbrains.fr/fr/network/474/team" },
+      { label: "ICM", url: "https://institutducerveau.org/en/research/teams/bend-team" }
+    ]
+  },
+  {
+    name: "Bassem Hassan",
+    keywords: ["neural stem cells", "brain development", "neuronal diversity", "Drosophila", "temporal patterning"],
+    summary: "Studies how neural stem cells generate diverse neuronal types during brain development, investigating temporal patterning mechanisms in Drosophila and mammalian systems that control neuronal fate and circuit assembly.",
+    photoURL: "",
+    subfields: ["molecular"],
+    institutes: ["Paris Brain Institute (ICM)"],
+    links: [
+      { label: "C-BRAINS", url: "https://dim-cbrains.fr/fr/network/58/team" },
+      { label: "ICM", url: "https://institutducerveau.org/en/research/teams/braindev" }
+    ]
+  },
+  {
+    name: "Mehdi Touat",
+    keywords: ["glioma", "brain tumors", "tumor immunology", "genomics", "precision oncology"],
+    summary: "Studies the genomics and immunology of brain tumors, developing precision medicine approaches for gliomas by integrating tumor genomic profiling with immune microenvironment characterization.",
+    photoURL: "",
+    subfields: ["molecular"],
+    institutes: ["Paris Brain Institute (ICM)"],
+    links: [
+      { label: "C-BRAINS", url: "https://dim-cbrains.fr/fr/network/482/team" },
+      { label: "ICM", url: "https://institutducerveau.org/en/research/teams/bright" }
+    ]
+  },
+  {
+    name: "Severine Boillee",
+    keywords: ["ALS", "motor neuron degeneration", "neuroinflammation", "microglia", "non-cell-autonomous mechanisms"],
+    summary: "Studies the mechanisms of motor neuron degeneration in amyotrophic lateral sclerosis, focusing on non-cell-autonomous contributions of microglia and other glial cells to disease progression.",
+    photoURL: "",
+    subfields: ["molecular"],
+    institutes: ["Paris Brain Institute (ICM)"],
+    links: [
+      { label: "C-BRAINS", url: "https://dim-cbrains.fr/fr/network/243/team" },
+      { label: "ICM", url: "https://parisbraininstitute.org/en/research/teams/decodals" }
+    ]
+  },
+  {
+    name: "Jean-Christophe Poncer",
+    keywords: ["inhibitory synapses", "GABAergic transmission", "epilepsy", "synaptic plasticity", "excitation-inhibition balance"],
+    summary: "Studies the molecular mechanisms of inhibitory synaptic transmission and plasticity, investigating how alterations in GABAergic signaling and excitation-inhibition balance contribute to epilepsy.",
+    photoURL: "",
+    subfields: ["molecular", "systems"],
+    institutes: ["Paris Brain Institute (ICM)"],
+    links: [{ label: "ICM", url: "https://parisbraininstitute.org/en/research/teams/epic" }]
+  },
+  {
+    name: "Richard Levy",
+    keywords: ["frontal lobe", "executive functions", "behavioral neurology", "apathy", "frontotemporal dementia"],
+    summary: "Studies the neural basis of executive functions and motivation, investigating how frontal lobe damage leads to behavioral disorders like apathy and dysexecutive syndrome in frontotemporal dementia and other conditions.",
+    photoURL: "",
+    subfields: ["human"],
+    institutes: ["Paris Brain Institute (ICM)"],
+    links: [
+      { label: "C-BRAINS", url: "https://dim-cbrains.fr/fr/network/476/team" },
+      { label: "ICM", url: "https://institutducerveau.org/en/research/teams/frontlab" }
+    ]
+  },
+  {
+    name: "Hugues Chabriat",
+    keywords: ["CADASIL", "cerebral small vessel disease", "white matter lesions", "stroke genetics", "vascular cognitive impairment"],
+    summary: "Studies cerebral small vessel disease, particularly CADASIL, investigating genetic and imaging markers of disease progression and cognitive decline in hereditary and sporadic cerebrovascular conditions.",
+    photoURL: "",
+    subfields: ["molecular", "human"],
+    institutes: ["Paris Brain Institute (ICM)"],
+    links: [
+      { label: "C-BRAINS", url: "https://dim-cbrains.fr/fr/network/469/team" },
+      { label: "ICM", url: "https://institutducerveau.org/en/research/teams/genovasc" }
+    ]
+  },
+  {
+    name: "Fanny Mochel",
+    keywords: ["neurometabolic diseases", "brain energy metabolism", "leukodystrophies", "inborn errors of metabolism", "biomarkers"],
+    summary: "Studies neurometabolic diseases and brain energy metabolism disorders, developing biomarkers and therapeutic approaches for leukodystrophies and other inborn errors of metabolism affecting the nervous system.",
+    photoURL: "",
+    subfields: ["molecular"],
+    institutes: ["Paris Brain Institute (ICM)"],
+    links: [
+      { label: "C-BRAINS", url: "https://dim-cbrains.fr/fr/network/477/team" },
+      { label: "ICM", url: "https://institutducerveau.org/en/research/teams/mind" }
+    ]
+  },
+  {
+    name: "Stephanie Baulac",
+    keywords: ["epilepsy genetics", "mTOR pathway", "focal cortical dysplasia", "somatic mutations", "brain mosaicism"],
+    summary: "Studies the genetic basis of focal epilepsies, discovering somatic mutations in the mTOR pathway as a cause of focal cortical dysplasia and investigating brain mosaicism as a mechanism of neurological disease.",
+    photoURL: "",
+    subfields: ["molecular"],
+    institutes: ["Paris Brain Institute (ICM)"],
+    links: [
+      { label: "C-BRAINS", url: "https://dim-cbrains.fr/fr/network/464/team" },
+      { label: "ICM", url: "https://parisbraininstitute.org/en/research/teams/mosaic" }
+    ]
+  },
+  {
+    name: "Emmanuel Flamand-Roze",
+    keywords: ["movement disorders", "basal ganglia", "hyperkinetic disorders", "Tourette syndrome", "clinical neurology"],
+    summary: "Studies movement disorders and their neural substrates, investigating the pathophysiology of hyperkinetic disorders including Tourette syndrome and dystonia through clinical and translational approaches.",
+    photoURL: "",
+    subfields: ["human"],
+    institutes: ["Paris Brain Institute (ICM)"],
+    links: [{ label: "ICM", url: "https://institutducerveau.org/en/research/teams/movit" }]
+  },
+  {
+    name: "Philippe Ravassard",
+    keywords: ["gene therapy", "Parkinson's disease", "dopaminergic neurons", "viral vectors", "optogenetics"],
+    summary: "Develops gene therapy and viral vector approaches for Parkinson's disease, engineering tools to manipulate dopaminergic neuron function and investigating optogenetic strategies for circuit-level interventions.",
+    photoURL: "",
+    subfields: ["molecular", "systems"],
+    institutes: ["Paris Brain Institute (ICM)"],
+    links: [
+      { label: "C-BRAINS", url: "https://dim-cbrains.fr/fr/network/212/team" },
+      { label: "ICM", url: "https://parisbraininstitute.org/en/research/teams/mpp" }
+    ]
+  },
+  {
+    name: "Alexandra Durr",
+    keywords: ["spinocerebellar ataxias", "neurogenetics", "repeat expansions", "genetic counseling", "neurodegenerative diseases"],
+    summary: "Studies genetic neurodegenerative diseases, particularly spinocerebellar ataxias and repeat expansion disorders, combining genetic characterization with clinical phenotyping to understand genotype-phenotype correlations.",
+    photoURL: "",
+    subfields: ["molecular", "human"],
+    institutes: ["Paris Brain Institute (ICM)"],
+    links: [
+      { label: "C-BRAINS", url: "https://dim-cbrains.fr/fr/network/472/team" },
+      { label: "ICM", url: "https://institutducerveau.org/en/research/teams/neurogen" }
+    ]
+  },
+  {
+    name: "Matthieu Peyre",
+    keywords: ["meningiomas", "neurofibromatosis", "brain tumor genetics", "schwannomas", "tumor microenvironment"],
+    summary: "Studies the genetics and biology of meningiomas and neurofibromatosis-associated tumors, investigating the tumor microenvironment and molecular pathways driving brain tumor formation and progression.",
+    photoURL: "",
+    subfields: ["molecular"],
+    institutes: ["Paris Brain Institute (ICM)"],
+    links: [
+      { label: "C-BRAINS", url: "https://dim-cbrains.fr/fr/network/478/team" },
+      { label: "ICM", url: "https://institutducerveau.org/en/research/teams/nova" }
+    ]
+  },
+  {
+    name: "Jaime De Juan-Sanz",
+    keywords: ["presynaptic mechanisms", "synaptic vesicle recycling", "neurotransmitter release", "endocytosis", "synaptic energetics"],
+    summary: "Studies the molecular mechanisms of synaptic vesicle recycling and neurotransmitter release at presynaptic terminals, investigating how energy metabolism fuels synaptic transmission and how defects contribute to neurological disease.",
+    photoURL: "",
+    subfields: ["molecular"],
+    institutes: ["Paris Brain Institute (ICM)"],
+    links: [{ label: "ICM", url: "https://institutducerveau.org/en/research/teams/presyn" }]
+  },
+  {
+    name: "Bruno Stankoff",
+    keywords: ["multiple sclerosis", "myelin imaging", "remyelination", "PET imaging", "neurodegeneration"],
+    summary: "Studies multiple sclerosis pathophysiology using advanced PET and MRI imaging to visualize myelin dynamics, investigating mechanisms of demyelination and remyelination to develop neuroprotective strategies.",
+    photoURL: "",
+    subfields: ["molecular", "human"],
+    institutes: ["Paris Brain Institute (ICM)"],
+    links: [
+      { label: "C-BRAINS", url: "https://dim-cbrains.fr/fr/network/481/team" },
+      { label: "ICM", url: "https://institutducerveau.org/en/research/teams/regain-ms" }
+    ]
+  },
+
+  // ===== INSTITUT DE LA VISION — 14 PIs =====
+
+  {
+    name: "Denis Sheynikhovich",
+    keywords: ["computational modeling", "spatial navigation", "hippocampus", "reinforcement learning", "place cells"],
+    summary: "Develops computational models of spatial navigation and hippocampal function, studying how place cells and reinforcement learning mechanisms support spatial memory and goal-directed behavior.",
+    photoURL: "",
+    subfields: ["computational"],
+    institutes: ["Institut de la Vision"],
+    links: [{ label: "C-BRAINS", url: "https://dim-cbrains.fr/fr/network/313/team" }]
+  },
+  {
+    name: "Xavier Nicol",
+    keywords: ["axon guidance", "retinal topography", "ephrin signaling", "sensory map formation", "cyclic nucleotides"],
+    summary: "Studies the molecular mechanisms of sensory map formation, investigating how axon guidance molecules and cyclic nucleotide signaling establish the precise topographic connections between the retina and brain.",
+    photoURL: "",
+    subfields: ["molecular"],
+    institutes: ["Institut de la Vision"],
+    links: [{ label: "C-BRAINS", url: "https://dim-cbrains.fr/fr/network/57/team" }]
+  },
+  {
+    name: "Filippo Del Bene",
+    keywords: ["zebrafish", "visual circuits", "pretectum", "prey capture", "optogenetics"],
+    summary: "Studies the neural circuits underlying visually-guided behavior in zebrafish, using optogenetics and calcium imaging to dissect how the pretectum and other visual areas process motion and drive prey capture behavior.",
+    photoURL: "",
+    subfields: ["systems"],
+    institutes: ["Institut de la Vision"],
+    links: [
+      { label: "C-BRAINS", url: "https://dim-cbrains.fr/fr/network/59/team" },
+      { label: "Institut de la Vision", url: "https://www.institut-vision.org/en/research/visual-system-development" }
+    ]
+  },
+  {
+    name: "Olivier Goureau",
+    keywords: ["retinal organoids", "photoreceptor differentiation", "iPSC", "cell therapy", "retinal degeneration"],
+    summary: "Develops retinal organoid technology from human iPSCs for cell therapy of retinal degenerative diseases, studying photoreceptor differentiation and transplantation to restore vision.",
+    photoURL: "",
+    subfields: ["molecular"],
+    institutes: ["Institut de la Vision"],
+    links: [{ label: "C-BRAINS", url: "https://dim-cbrains.fr/fr/network/60/team" }]
+  },
+  {
+    name: "Alain Chedotal",
+    keywords: ["axon guidance", "Robo-Slit signaling", "commissural neurons", "tissue clearing", "3D brain mapping"],
+    summary: "Studies axon guidance mechanisms and neural wiring, pioneering tissue clearing techniques for 3D brain mapping and investigating how Robo-Slit signaling controls commissural axon pathfinding during development.",
+    photoURL: "",
+    subfields: ["molecular"],
+    institutes: ["Institut de la Vision"],
+    links: [{ label: "C-BRAINS", url: "https://dim-cbrains.fr/fr/network/61/team" }]
+  },
+  {
+    name: "Isabelle Audo",
+    keywords: ["inherited retinal diseases", "gene identification", "retinitis pigmentosa", "cone-rod dystrophy", "clinical genetics"],
+    summary: "Identifies genes responsible for inherited retinal diseases including retinitis pigmentosa and cone-rod dystrophy, combining clinical phenotyping with genomic approaches to understand and treat visual disorders.",
+    photoURL: "",
+    subfields: ["molecular"],
+    institutes: ["Institut de la Vision"],
+    links: [{ label: "C-BRAINS", url: "https://dim-cbrains.fr/fr/network/95/team" }]
+  },
+  {
+    name: "Kate Grieve",
+    keywords: ["adaptive optics", "OCT imaging", "retinal imaging", "photoreceptor mapping", "clinical ophthalmology"],
+    summary: "Develops adaptive optics and optical coherence tomography techniques for high-resolution retinal imaging, enabling cellular-level visualization of photoreceptors and retinal structures in patients.",
+    photoURL: "",
+    subfields: ["systems"],
+    institutes: ["Institut de la Vision"],
+    links: [{ label: "C-BRAINS", url: "https://dim-cbrains.fr/fr/network/312/team" }]
+  },
+  {
+    name: "Florian Sennlaub",
+    keywords: ["retinal inflammation", "macular degeneration", "mononuclear phagocytes", "complement system", "innate immunity"],
+    summary: "Studies the role of inflammation in retinal degeneration, investigating how mononuclear phagocytes and complement activation contribute to age-related macular degeneration and developing anti-inflammatory therapeutic strategies.",
+    photoURL: "",
+    subfields: ["molecular"],
+    institutes: ["Institut de la Vision"],
+    links: [{ label: "C-BRAINS", url: "https://dim-cbrains.fr/fr/network/99/team" }]
+  },
+  {
+    name: "Valentina Emiliani",
+    keywords: ["two-photon optogenetics", "wavefront shaping", "holographic stimulation", "neural circuits", "all-optical interrogation"],
+    summary: "Pioneers holographic two-photon optogenetics for all-optical interrogation of neural circuits, developing wavefront shaping techniques to simultaneously image and stimulate multiple neurons with single-cell precision.",
+    photoURL: "",
+    subfields: ["systems", "computational"],
+    institutes: ["Institut de la Vision"],
+    links: [{ label: "C-BRAINS", url: "https://dim-cbrains.fr/fr/network/201/team" }]
+  },
+  {
+    name: "Kristina Irsch",
+    keywords: ["oculomotor system", "binocular vision", "strabismus", "eye tracking", "visual rehabilitation"],
+    summary: "Studies the oculomotor system and binocular vision, investigating strabismus mechanisms and developing eye tracking-based approaches for visual rehabilitation and surgical planning.",
+    photoURL: "",
+    subfields: ["systems", "human"],
+    institutes: ["Institut de la Vision"],
+    links: [{ label: "C-BRAINS", url: "https://dim-cbrains.fr/fr/network/425/team" }]
+  },
+  {
+    name: "Gilles Tessier",
+    keywords: ["3D microscopy", "holographic imaging", "digital holography", "nanoparticle tracking", "deep tissue imaging"],
+    summary: "Develops advanced 3D microscopy and holographic imaging techniques for neuroscience, enabling deep tissue visualization and nanoparticle tracking in living neural tissue.",
+    photoURL: "",
+    subfields: ["systems"],
+    institutes: ["Institut de la Vision"],
+    links: [{ label: "C-BRAINS", url: "https://dim-cbrains.fr/fr/network/311/team" }]
+  },
+  {
+    name: "Jean Livet",
+    keywords: ["Brainbow", "clonal analysis", "neuronal lineage", "fluorescent reporters", "cortical neurogenesis"],
+    summary: "Developed the Brainbow multicolor labeling technology for clonal analysis of neural circuits, using combinatorial fluorescent reporters to trace neuronal lineage and connectivity during cortical neurogenesis.",
+    photoURL: "",
+    subfields: ["molecular"],
+    institutes: ["Institut de la Vision"],
+    links: [{ label: "C-BRAINS", url: "https://dim-cbrains.fr/fr/network/143/team" }]
+  },
+  {
+    name: "Deniz Dalkara",
+    keywords: ["AAV gene therapy", "retinal diseases", "intravitreal delivery", "photoreceptor rescue", "viral vector engineering"],
+    summary: "Engineers AAV viral vectors for gene therapy of inherited retinal diseases, developing improved delivery methods including intravitreal administration and novel capsids for efficient photoreceptor transduction.",
+    photoURL: "",
+    subfields: ["molecular"],
+    institutes: ["Institut de la Vision"],
+    links: [{ label: "C-BRAINS", url: "https://dim-cbrains.fr/fr/network/85/team" }]
+  },
+  {
+    name: "Olivier Marre",
+    keywords: ["retinal coding", "computational neuroscience", "neural networks", "retinal ganglion cells", "population coding"],
+    summary: "Studies how the retina encodes visual information using computational models and large-scale multi-electrode recordings, investigating population coding strategies in retinal ganglion cells and their implications for visual prosthetics.",
+    photoURL: "",
+    subfields: ["computational", "systems"],
+    institutes: ["Institut de la Vision"],
+    links: [{ label: "C-BRAINS", url: "https://dim-cbrains.fr/fr/network/195/team" }]
+  },
+
+  // ===== INCC - UNIVERSITE PARIS CITE — 5 PIs =====
+
+  {
+    name: "Veronique Izard",
+    keywords: ["numerical cognition", "infant development", "core knowledge", "geometry", "cognitive foundations"],
+    summary: "Studies the cognitive foundations of mathematical knowledge in infants and young children, investigating how core systems of numerical and geometric representation develop and support later mathematical abilities.",
+    photoURL: "",
+    subfields: ["human"],
+    institutes: ["INCC - Universite Paris Cite"],
+    links: [{ label: "C-BRAINS", url: "https://dim-cbrains.fr/fr/network/115/team" }]
+  },
+  {
+    name: "Mathieu Beraneck",
+    keywords: ["vestibular system", "spatial orientation", "multisensory integration", "vestibular compensation", "eye movements"],
+    summary: "Studies the vestibular system and spatial orientation, investigating multisensory integration mechanisms and vestibular compensation processes that support balance, eye movements, and spatial cognition.",
+    photoURL: "",
+    subfields: ["systems", "human"],
+    institutes: ["INCC - Universite Paris Cite"],
+    links: [{ label: "C-BRAINS", url: "https://dim-cbrains.fr/fr/network/185/team" }]
+  },
+  {
+    name: "Louise Kirsch",
+    keywords: ["body perception", "body ownership", "rubber hand illusion", "multisensory self", "social touch"],
+    summary: "Studies body perception and the sense of bodily self, investigating how multisensory integration creates feelings of body ownership and how social touch modulates self-other boundaries.",
+    photoURL: "",
+    subfields: ["human"],
+    institutes: ["INCC - Universite Paris Cite"],
+    links: [{ label: "C-BRAINS", url: "https://dim-cbrains.fr/fr/network/166/team" }]
+  },
+  {
+    name: "Elsa Isingrini",
+    keywords: ["depression", "stress neurobiology", "monoamine signaling", "animal models", "psychiatric disorders"],
+    summary: "Studies the neurobiological mechanisms of depression and stress-related psychiatric disorders, investigating monoamine signaling pathways and developing animal models to understand treatment-resistant depression.",
+    photoURL: "",
+    subfields: ["systems", "human"],
+    institutes: ["INCC - Universite Paris Cite"],
+    links: [{ label: "C-BRAINS", url: "https://dim-cbrains.fr/fr/network/441/team" }]
+  },
+  {
+    name: "Sylvie Chokron",
+    keywords: ["visual cognition", "hemispatial neglect", "blindsight", "visual rehabilitation", "neuropsychology"],
+    summary: "Studies visual cognition disorders including hemispatial neglect and blindsight, developing neuropsychological rehabilitation programs for patients with visual field defects and attentional disorders.",
+    photoURL: "",
+    subfields: ["human"],
+    institutes: ["INCC - Universite Paris Cite"],
+    links: [{ label: "C-BRAINS", url: "https://dim-cbrains.fr/fr/network/194/team" }]
+  },
+
+  // ===== INSTITUT DE L'AUDITION — 8 PIs =====
+
+  {
+    name: "Jeremie Barral",
+    keywords: ["auditory neural coding", "cochlear mechanics", "hair cells", "mechanotransduction", "signal processing"],
+    summary: "Studies how the cochlea and auditory neurons encode sound, investigating the biophysics of hair cell mechanotransduction and the neural coding strategies used in the early auditory pathway.",
+    photoURL: "",
+    subfields: ["systems"],
+    institutes: ["Institut de l'Audition"],
+    links: [{ label: "C-BRAINS", url: "https://dim-cbrains.fr/fr/network/101/team" }]
+  },
+  {
+    name: "Luc Arnal",
+    keywords: ["auditory cognition", "temporal predictions", "speech processing", "neural oscillations", "auditory cortex"],
+    summary: "Studies how the brain processes complex sounds and generates temporal predictions, investigating the role of neural oscillations in speech perception and auditory scene analysis.",
+    photoURL: "",
+    subfields: ["human", "computational"],
+    institutes: ["Institut de l'Audition"],
+    links: [{ label: "C-BRAINS", url: "https://dim-cbrains.fr/fr/network/299/team" }]
+  },
+  {
+    name: "Aziz El Amraoui",
+    keywords: ["Usher syndrome", "inner ear genetics", "stereocilia", "deafness-blindness", "hair cell biology"],
+    summary: "Studies the genetics and cell biology of Usher syndrome and other hereditary sensory disorders, investigating how stereocilia bundle proteins control hair cell function and how their defects cause combined deafness and blindness.",
+    photoURL: "",
+    subfields: ["molecular"],
+    institutes: ["Institut de l'Audition"],
+    links: [{ label: "C-BRAINS", url: "https://dim-cbrains.fr/fr/network/103/team" }]
+  },
+  {
+    name: "Raphael Etournay",
+    keywords: ["cochlear morphogenesis", "tissue mechanics", "cell intercalation", "organ of Corti", "developmental biophysics"],
+    summary: "Studies the biophysical mechanisms of cochlear morphogenesis, investigating how cell rearrangements and tissue-level mechanical forces shape the organ of Corti during inner ear development.",
+    photoURL: "",
+    subfields: ["molecular"],
+    institutes: ["Institut de l'Audition"],
+    links: [{ label: "C-BRAINS", url: "https://dim-cbrains.fr/fr/network/104/team" }]
+  },
+  {
+    name: "Christine Petit",
+    keywords: ["hereditary deafness", "hair cell physiology", "gene therapy", "cochlear genes", "inner ear development"],
+    summary: "Pioneered the genetics of hereditary deafness, identifying dozens of deafness genes and characterizing hair cell physiology to develop gene therapy strategies for hearing restoration.",
+    photoURL: "",
+    subfields: ["molecular"],
+    institutes: ["Institut de l'Audition"],
+    links: [{ label: "C-BRAINS", url: "https://dim-cbrains.fr/fr/network/107/team" }]
+  },
+  {
+    name: "Nicolas Michalski",
+    keywords: ["auditory synapse", "ribbon synapse", "hair cell-afferent signaling", "synaptic plasticity", "cochlear neurotransmission"],
+    summary: "Studies the specialized ribbon synapses of inner hair cells, investigating the molecular mechanisms of cochlear neurotransmission and how synaptic plasticity at the first auditory synapse shapes hearing.",
+    photoURL: "",
+    subfields: ["molecular"],
+    institutes: ["Institut de l'Audition"],
+    links: [{ label: "C-BRAINS", url: "https://dim-cbrains.fr/fr/network/108/team" }]
+  },
+  {
+    name: "Saaid Safieddine",
+    keywords: ["otoferlin", "gene therapy for deafness", "synaptic exocytosis", "AAV vectors", "auditory neuropathy"],
+    summary: "Studies the molecular machinery of synaptic vesicle exocytosis at auditory hair cell synapses, focusing on otoferlin function and developing AAV-based gene therapy for genetic forms of deafness.",
+    photoURL: "",
+    subfields: ["molecular"],
+    institutes: ["Institut de l'Audition"],
+    links: [{ label: "C-BRAINS", url: "https://dim-cbrains.fr/fr/network/109/team" }]
+  },
+  {
+    name: "Keith Doelling",
+    keywords: ["auditory temporal processing", "neural entrainment", "rhythm perception", "MEG", "speech timing"],
+    summary: "Studies how the brain tracks temporal structure in complex sounds, investigating neural entrainment to rhythmic patterns in speech and music using MEG and computational modeling.",
+    photoURL: "",
+    subfields: ["human", "computational"],
+    institutes: ["Institut de l'Audition"],
+    links: []
+  },
+
+  // ===== IPNP - UNIVERSITE PARIS CITE — 13 PIs =====
+
+  {
+    name: "Urs Bohm",
+    keywords: ["GnRH neurons", "neuroendocrine circuits", "reproductive neuroscience", "hypothalamus", "puberty"],
+    summary: "Studies the neuroendocrine circuits controlling reproduction, investigating how GnRH neurons in the hypothalamus regulate puberty onset and reproductive function through genetic and optogenetic approaches in mice.",
+    photoURL: "",
+    subfields: ["systems", "molecular"],
+    institutes: ["IPNP - Universite Paris Cite"],
+    links: [{ label: "C-BRAINS", url: "https://dim-cbrains.fr/fr/network/368/team" }]
+  },
+  {
+    name: "Zsolt Lenkei",
+    keywords: ["cannabinoid receptors", "CB1 receptor trafficking", "endocannabinoid signaling", "axonal transport", "neuronal polarity"],
+    summary: "Studies cannabinoid receptor signaling and trafficking, investigating how CB1 receptor endocytosis and axonal transport regulate endocannabinoid signaling in neuronal circuits and contribute to synaptic plasticity.",
+    photoURL: "",
+    subfields: ["molecular"],
+    institutes: ["IPNP - Universite Paris Cite"],
+    links: [{ label: "C-BRAINS", url: "https://dim-cbrains.fr/fr/network/66/team" }]
+  },
+  {
+    name: "Alessandra Pierani",
+    keywords: ["cortical development", "Cajal-Retzius cells", "neuronal migration", "cortical patterning", "transient neurons"],
+    summary: "Studies the cellular and molecular mechanisms of cortical development, investigating how Cajal-Retzius cells and transient neuronal populations control cortical patterning and neuronal migration.",
+    photoURL: "",
+    subfields: ["molecular"],
+    institutes: ["IPNP - Universite Paris Cite", "IMAGINE - Universite Paris Cite"],
+    links: [{ label: "C-BRAINS", url: "https://dim-cbrains.fr/fr/network/335/team" }]
+  },
+  {
+    name: "Catherine Oppenheim",
+    keywords: ["stroke neuroimaging", "diffusion MRI", "cerebral small vessel disease", "brain microstructure", "clinical radiology"],
+    summary: "Develops advanced diffusion MRI methods for studying stroke and cerebral small vessel disease, investigating brain microstructural changes that predict clinical outcomes and cognitive decline.",
+    photoURL: "",
+    subfields: ["human"],
+    institutes: ["IPNP - Universite Paris Cite"],
+    links: [{ label: "C-BRAINS", url: "https://dim-cbrains.fr/fr/network/10/team" }]
+  },
+  {
+    name: "Maria Cecilia Angulo",
+    keywords: ["NG2 glia", "oligodendrocyte precursors", "neuron-glia signaling", "synaptic contacts", "white matter plasticity"],
+    summary: "Studies the role of NG2 glial cells in brain function, investigating how oligodendrocyte precursor cells form synaptic contacts with neurons and contribute to white matter plasticity and myelination.",
+    photoURL: "",
+    subfields: ["molecular"],
+    institutes: ["IPNP - Universite Paris Cite"],
+    links: [{ label: "C-BRAINS", url: "https://dim-cbrains.fr/fr/network/111/team" }]
+  },
+  {
+    name: "Heike Rebholz",
+    keywords: ["basal ganglia", "dopamine signaling", "Parkinson's disease", "striatal neurons", "phosphodiesterases"],
+    summary: "Studies dopamine signaling mechanisms in the basal ganglia, investigating how phosphodiesterase enzymes and intracellular signaling cascades in striatal neurons contribute to Parkinson's disease pathophysiology.",
+    photoURL: "",
+    subfields: ["molecular", "systems"],
+    institutes: ["IPNP - Universite Paris Cite"],
+    links: [{ label: "C-BRAINS", url: "https://dim-cbrains.fr/fr/network/126/team" }]
+  },
+  {
+    name: "Anne Joutel",
+    keywords: ["CADASIL", "Notch3 signaling", "cerebral small vessel disease", "vascular smooth muscle", "white matter degeneration"],
+    summary: "Studies the molecular pathogenesis of CADASIL and cerebral small vessel disease, investigating how Notch3 mutations in vascular smooth muscle cells lead to progressive white matter degeneration and stroke.",
+    photoURL: "",
+    subfields: ["molecular"],
+    institutes: ["IPNP - Universite Paris Cite"],
+    links: [{ label: "C-BRAINS", url: "https://dim-cbrains.fr/fr/network/164/team" }]
+  },
+  {
+    name: "Marie-Odile Krebs",
+    keywords: ["schizophrenia", "early psychosis", "clinical neuroscience", "cannabis vulnerability", "cognitive remediation"],
+    summary: "Studies the neurobiology of schizophrenia and early psychosis, investigating vulnerability factors including cannabis exposure and developing cognitive remediation approaches for psychotic disorders.",
+    photoURL: "",
+    subfields: ["human"],
+    institutes: ["IPNP - Universite Paris Cite"],
+    links: []
+  },
+  {
+    name: "Gilles Huberfeld",
+    keywords: ["epilepsy", "cortical networks", "human brain slices", "seizure dynamics", "GABA signaling"],
+    summary: "Studies human epilepsy mechanisms using ex vivo brain slices from surgical resections, investigating seizure initiation dynamics and GABAergic signaling alterations in epileptic cortical networks.",
+    photoURL: "",
+    subfields: ["systems", "human"],
+    institutes: ["IPNP - Universite Paris Cite"],
+    links: [{ label: "C-BRAINS", url: "https://dim-cbrains.fr/fr/network/397/team" }]
+  },
+  {
+    name: "Guillaume Turc",
+    keywords: ["acute stroke", "neuroimaging", "thrombectomy", "perfusion imaging", "cerebrovascular disease"],
+    summary: "Studies acute stroke using advanced neuroimaging techniques, investigating perfusion imaging biomarkers to guide thrombectomy decisions and improve outcomes in cerebrovascular emergencies.",
+    photoURL: "",
+    subfields: ["human"],
+    institutes: ["IPNP - Universite Paris Cite"],
+    links: [{ label: "C-BRAINS", url: "https://dim-cbrains.fr/fr/network/186/team" }]
+  },
+  {
+    name: "Thierry Galli",
+    keywords: ["membrane trafficking", "SNARE proteins", "neurite outgrowth", "exocytosis", "vesicular transport"],
+    summary: "Studies membrane trafficking mechanisms in neurons, investigating how SNARE proteins and vesicular transport pathways control neurite outgrowth, axon guidance, and synaptic membrane dynamics.",
+    photoURL: "",
+    subfields: ["molecular"],
+    institutes: ["IPNP - Universite Paris Cite"],
+    links: [{ label: "C-BRAINS", url: "https://dim-cbrains.fr/fr/network/191/team" }]
+  },
+  {
+    name: "Antoine Drieu",
+    keywords: ["meningeal immunity", "brain-immune interface", "dural macrophages", "neuroinflammation", "CNS barriers"],
+    summary: "Studies the meningeal immune system at the brain-immune interface, investigating how dural macrophages and other immune cells in the meninges survey and respond to CNS pathology.",
+    photoURL: "",
+    subfields: ["molecular"],
+    institutes: ["IPNP - Universite Paris Cite"],
+    links: [{ label: "C-BRAINS", url: "https://dim-cbrains.fr/fr/network/398/team" }]
+  },
+  {
+    name: "Nicolas Ramoz",
+    keywords: ["psychiatric genetics", "autism", "ADHD", "genetic variants", "epigenetics"],
+    summary: "Studies the genetic and epigenetic basis of psychiatric disorders including autism and ADHD, identifying risk variants and investigating how genetic factors interact with environmental exposures to influence brain development.",
+    photoURL: "",
+    subfields: ["molecular", "human"],
+    institutes: ["IPNP - Universite Paris Cite"],
+    links: [{ label: "C-BRAINS", url: "https://dim-cbrains.fr/fr/network/200/team" }]
+  },
+
+  // ===== ISIR - SORBONNE UNIVERSITE — 5 PIs =====
+
+  {
+    name: "Benoit Girard",
+    keywords: ["basal ganglia models", "action selection", "computational neuroscience", "neurorobotics", "decision-making"],
+    summary: "Develops computational models of the basal ganglia for action selection and decision-making, implementing biologically-grounded neural network models on robots to test theories of motor control and reinforcement learning.",
+    photoURL: "",
+    subfields: ["computational"],
+    institutes: ["ISIR - Sorbonne Universite"],
+    links: [{ label: "C-BRAINS", url: "https://dim-cbrains.fr/fr/network/444/team" }]
+  },
+  {
+    name: "Nizar Ouarti",
+    keywords: ["brain-computer interfaces", "neural signal processing", "assistive robotics", "EEG decoding", "neuroprosthetics"],
+    summary: "Develops brain-computer interfaces and neural signal processing methods for assistive technology, creating neuroprosthetic systems that decode brain signals to control robotic devices.",
+    photoURL: "",
+    subfields: ["computational"],
+    institutes: ["ISIR - Sorbonne Universite"],
+    links: [{ label: "C-BRAINS", url: "https://dim-cbrains.fr/fr/network/445/team" }]
+  },
+  {
+    name: "Ludovic Saint-Bauzel",
+    keywords: ["medical robotics", "surgical assistance", "haptic feedback", "neurorehabilitation", "robot control"],
+    summary: "Develops medical robotic systems for surgical assistance and neurorehabilitation, combining haptic feedback with intelligent control algorithms to improve therapeutic outcomes.",
+    photoURL: "",
+    subfields: ["computational"],
+    institutes: ["ISIR - Sorbonne Universite"],
+    links: []
+  },
+  {
+    name: "Matthieu Cord",
+    keywords: ["deep learning", "computer vision", "neural network architectures", "multimodal learning", "AI for neuroscience"],
+    summary: "Develops deep learning and computer vision methods with applications in neuroscience, working on neural network architectures for multimodal learning and visual understanding.",
+    photoURL: "",
+    subfields: ["computational"],
+    institutes: ["ISIR - Sorbonne Universite"],
+    links: [{ label: "C-BRAINS", url: "https://dim-cbrains.fr/fr/network/81/team" }]
+  },
+  {
+    name: "Brahim Tamadazte",
+    keywords: ["micro-robotics", "microsurgery", "visual servoing", "surgical instrumentation", "biomedical engineering"],
+    summary: "Develops micro-robotic systems for precision microsurgery, combining visual servoing and advanced instrumentation for minimally invasive neurosurgical procedures.",
+    photoURL: "",
+    subfields: ["computational"],
+    institutes: ["ISIR - Sorbonne Universite"],
+    links: [{ label: "C-BRAINS", url: "https://dim-cbrains.fr/fr/network/447/team" }]
+  },
+
+  // ===== CEA NEUROSPIN — 10 PIs =====
+
+  {
+    name: "Jean-Francois Mangin",
+    keywords: ["brain morphometry", "cortical folding", "sulcal patterns", "neuroimaging pipelines", "BrainVISA"],
+    summary: "Develops computational neuroimaging tools for brain morphometry, studying cortical folding patterns and sulcal anatomy using the BrainVISA/CATI platforms for large-scale neuroimaging studies.",
+    photoURL: "",
+    subfields: ["computational"],
+    institutes: ["CEA NeuroSpin"],
+    links: []
+  },
+  {
+    name: "Sebastien Meriaux",
+    keywords: ["high-field MRI", "contrast agents", "functional imaging", "nanoparticles", "preclinical MRI"],
+    summary: "Develops advanced MRI contrast agents and high-field imaging methods, combining nanoparticle technology with preclinical MRI to improve brain imaging sensitivity and specificity.",
+    photoURL: "",
+    subfields: ["systems"],
+    institutes: ["CEA NeuroSpin"],
+    links: [{ label: "C-BRAINS", url: "https://dim-cbrains.fr/fr/network/454/team" }]
+  },
+  {
+    name: "Edouard Duchesnay",
+    keywords: ["machine learning", "neuroimaging biomarkers", "psychiatric disorders", "brain age", "predictive modeling"],
+    summary: "Applies machine learning to neuroimaging data to discover biomarkers for psychiatric disorders, developing predictive models of brain aging and disease progression from structural and functional MRI.",
+    photoURL: "",
+    subfields: ["computational"],
+    institutes: ["CEA NeuroSpin"],
+    links: [{ label: "C-BRAINS", url: "https://dim-cbrains.fr/fr/network/455/team" }]
+  },
+  {
+    name: "David Germanaud",
+    keywords: ["neurodevelopment", "cortical folding", "premature birth", "fetal brain imaging", "developmental disorders"],
+    summary: "Studies brain development and cortical folding in children, investigating how premature birth and developmental disorders affect cortical gyrification using MRI and computational morphometry.",
+    photoURL: "",
+    subfields: ["human"],
+    institutes: ["CEA NeuroSpin"],
+    links: []
+  },
+  {
+    name: "Christophe Pallier",
+    keywords: ["language processing", "fMRI", "syntax", "sentence comprehension", "linguistic hierarchy"],
+    summary: "Studies the neural basis of language processing using fMRI, investigating how the brain builds hierarchical syntactic structures during sentence comprehension across different languages.",
+    photoURL: "",
+    subfields: ["human", "computational"],
+    institutes: ["CEA NeuroSpin"],
+    links: [{ label: "C-BRAINS", url: "https://dim-cbrains.fr/fr/network/456/team" }]
+  },
+  {
+    name: "Nicolas Boulant",
+    keywords: ["MRI physics", "RF coil design", "parallel transmission", "ultra-high field MRI", "B1 homogeneity"],
+    summary: "Develops MRI physics solutions for ultra-high field brain imaging, designing RF coils and parallel transmission methods to achieve homogeneous excitation and improve image quality at 7T and above.",
+    photoURL: "",
+    subfields: ["computational"],
+    institutes: ["CEA NeuroSpin"],
+    links: [{ label: "C-BRAINS", url: "https://dim-cbrains.fr/fr/network/453/team" }]
+  },
+  {
+    name: "Philippe Ciuciu",
+    keywords: ["signal processing", "fMRI analysis", "compressed sensing", "Bayesian methods", "brain decoding"],
+    summary: "Develops advanced signal processing and statistical methods for fMRI data analysis, including compressed sensing approaches for fast MRI acquisition and Bayesian brain decoding algorithms.",
+    photoURL: "",
+    subfields: ["computational"],
+    institutes: ["CEA NeuroSpin"],
+    links: [{ label: "C-BRAINS", url: "https://dim-cbrains.fr/fr/network/233/team" }]
+  },
+  {
+    name: "Michel Bottlaender",
+    keywords: ["PET imaging", "radiopharmacology", "neuroreceptor mapping", "radiotracer development", "aging brain"],
+    summary: "Develops PET radiotracers for neuroreceptor mapping in the living brain, studying neurochemical changes during aging and neurodegenerative diseases using novel radiopharmacological approaches.",
+    photoURL: "",
+    subfields: ["systems"],
+    institutes: ["CEA NeuroSpin"],
+    links: [{ label: "C-BRAINS", url: "https://dim-cbrains.fr/fr/network/46/team" }]
+  },
+  {
+    name: "Bechir Jarraya",
+    keywords: ["brain-computer interfaces", "non-human primates", "neural decoding", "consciousness", "general anesthesia"],
+    summary: "Studies brain-computer interfaces and neural coding in non-human primates, investigating neural signatures of consciousness and developing brain-machine interfaces for communication and motor restoration.",
+    photoURL: "",
+    subfields: ["computational", "human"],
+    institutes: ["CEA NeuroSpin"],
+    links: [{ label: "C-BRAINS", url: "https://dim-cbrains.fr/fr/network/50/team" }]
+  },
+  {
+    name: "Charles Laidi",
+    keywords: ["computational psychiatry", "brain connectivity", "autism neuroimaging", "bipolar disorder", "machine learning"],
+    summary: "Applies computational psychiatry and machine learning approaches to neuroimaging data, studying brain connectivity alterations in autism spectrum disorder and bipolar disorder.",
+    photoURL: "",
+    subfields: ["computational", "human"],
+    institutes: ["CEA NeuroSpin"],
+    links: [{ label: "C-BRAINS", url: "https://dim-cbrains.fr/fr/network/458/team" }]
+  },
+
+  // ===== IBPS - SORBONNE UNIVERSITE (NeuroSU) — 16 PIs =====
+
+  {
+    name: "Bruno Cauli",
+    keywords: ["neurovascular coupling", "cortical interneurons", "vasodilation", "single-cell RT-PCR", "functional hyperemia"],
+    summary: "Studies neurovascular coupling mechanisms, investigating how specific cortical interneuron subtypes control local blood flow through vasodilation and vasoconstriction using single-cell molecular profiling and imaging.",
+    photoURL: "",
+    subfields: ["systems"],
+    institutes: ["IBPS - Sorbonne Universite"],
+    links: [{ label: "C-BRAINS", url: "https://dim-cbrains.fr/fr/network/427/team" }]
+  },
+  {
+    name: "Christian Neri",
+    keywords: ["Huntington's disease", "systems biology", "neurodegeneration", "C. elegans", "proteostasis"],
+    summary: "Studies neurodegenerative disease mechanisms using systems biology approaches, combining C. elegans models with computational analysis to understand proteostasis failure in Huntington's disease.",
+    photoURL: "",
+    subfields: ["computational", "molecular"],
+    institutes: ["IBPS - Sorbonne Universite"],
+    links: [{ label: "C-BRAINS", url: "https://dim-cbrains.fr/fr/network/251/team" }]
+  },
+  {
+    name: "Laure Rondi-Reig",
+    keywords: ["cerebellum", "spatial navigation", "path integration", "hippocampal-cerebellar interactions", "self-motion"],
+    summary: "Studies the role of the cerebellum in spatial navigation and path integration, investigating how hippocampal-cerebellar interactions support spatial representation and self-motion computation during navigation.",
+    photoURL: "",
+    subfields: ["systems"],
+    institutes: ["IBPS - Sorbonne Universite"],
+    links: []
+  },
+  {
+    name: "Stephanie Daumas",
+    keywords: ["hippocampus", "memory consolidation", "glucocorticoid receptors", "stress and memory", "spatial learning"],
+    summary: "Studies hippocampal mechanisms of memory consolidation and the modulation of learning by stress, investigating how glucocorticoid receptor signaling in the hippocampus shapes spatial memory and emotional learning.",
+    photoURL: "",
+    subfields: ["systems"],
+    institutes: ["IBPS - Sorbonne Universite"],
+    links: [{ label: "C-BRAINS", url: "https://dim-cbrains.fr/fr/network/429/team" }]
+  },
+  {
+    name: "Fiona Francis",
+    keywords: ["cortical malformations", "neuronal migration", "doublecortin", "microtubule dynamics", "lissencephaly"],
+    summary: "Studies the molecular mechanisms of neuronal migration and cortical malformations, investigating how doublecortin and microtubule-associated proteins control neuronal movement and how their mutations cause lissencephaly.",
+    photoURL: "",
+    subfields: ["molecular"],
+    institutes: ["IBPS - Sorbonne Universite"],
+    links: [{ label: "C-BRAINS", url: "https://dim-cbrains.fr/fr/network/56/team" }]
+  },
+  {
+    name: "Sebastien Parnaudeau",
+    keywords: ["thalamus", "prefrontal cortex", "gene expression", "cognitive flexibility", "thalamocortical circuits"],
+    summary: "Studies the role of thalamocortical circuits in cognition, investigating how gene expression patterns in the mediodorsal thalamus shape prefrontal cortex function and cognitive flexibility.",
+    photoURL: "",
+    subfields: ["systems"],
+    institutes: ["IBPS - Sorbonne Universite"],
+    links: [{ label: "C-BRAINS", url: "https://dim-cbrains.fr/fr/network/431/team" }]
+  },
+  {
+    name: "Elim Hong",
+    keywords: ["zebrafish", "anxiety circuits", "habenula", "serotonin", "emotional behavior"],
+    summary: "Studies the neural circuits of emotional behavior in zebrafish, investigating how the habenula and serotonergic system regulate anxiety-like behavior and stress responses using imaging and genetic tools.",
+    photoURL: "",
+    subfields: ["systems"],
+    institutes: ["IBPS - Sorbonne Universite"],
+    links: [{ label: "C-BRAINS", url: "https://dim-cbrains.fr/fr/network/432/team" }]
+  },
+  {
+    name: "Martin Giurfa",
+    keywords: ["insect cognition", "honeybee learning", "visual perception", "concept learning", "invertebrate neuroscience"],
+    summary: "Studies cognitive abilities in insects, demonstrating that honeybees can learn abstract concepts, perform numerical cognition, and display sophisticated visual perception, challenging assumptions about brain size and intelligence.",
+    photoURL: "",
+    subfields: ["systems", "computational"],
+    institutes: ["IBPS - Sorbonne Universite"],
+    links: [{ label: "C-BRAINS", url: "https://dim-cbrains.fr/fr/network/433/team" }]
+  },
+  {
+    name: "Julien Ferent",
+    keywords: ["morphogen signaling", "Wnt signaling", "axon guidance", "cortical wiring", "developmental neurobiology"],
+    summary: "Studies how morphogen signaling pathways, particularly Wnt signaling, guide axon pathfinding and cortical wiring during brain development, investigating the molecular basis of neural circuit connectivity.",
+    photoURL: "",
+    subfields: ["molecular"],
+    institutes: ["IBPS - Sorbonne Universite"],
+    links: [{ label: "C-BRAINS", url: "https://dim-cbrains.fr/fr/network/434/team" }]
+  },
+  {
+    name: "Catalina Betancur",
+    keywords: ["autism spectrum disorder", "SHANK genes", "synaptic genetics", "neurodevelopmental disorders", "copy number variants"],
+    summary: "Studies the genetic basis of autism spectrum disorder, investigating how mutations in synaptic genes like SHANK and copy number variants disrupt neural development and contribute to neurodevelopmental disorders.",
+    photoURL: "",
+    subfields: ["molecular"],
+    institutes: ["IBPS - Sorbonne Universite"],
+    links: [{ label: "C-BRAINS", url: "https://dim-cbrains.fr/fr/network/435/team" }]
+  },
+  {
+    name: "Corentin Le Magueresse",
+    keywords: ["neuroimmunity", "microglia", "perinatal brain", "neuroinflammation", "developmental immunity"],
+    summary: "Studies neuroimmune interactions during brain development, investigating how microglia and inflammatory processes shape neural circuit formation and how perinatal neuroinflammation contributes to neurodevelopmental disorders.",
+    photoURL: "",
+    subfields: ["molecular"],
+    institutes: ["IBPS - Sorbonne Universite"],
+    links: [{ label: "C-BRAINS", url: "https://dim-cbrains.fr/fr/network/181/team" }]
+  },
+  {
+    name: "Rebecca Piskorowski",
+    keywords: ["hippocampal circuits", "CA2 region", "social memory", "synaptic plasticity", "oxytocin"],
+    summary: "Studies the unique properties of hippocampal CA2 circuits, investigating how this region supports social memory through specialized synaptic plasticity mechanisms and oxytocin signaling.",
+    photoURL: "",
+    subfields: ["systems"],
+    institutes: ["IBPS - Sorbonne Universite"],
+    links: [{ label: "C-BRAINS", url: "https://dim-cbrains.fr/fr/network/390/team" }]
+  },
+  {
+    name: "Peter Vanhoutte",
+    keywords: ["ERK signaling", "striatal neurons", "neuronal survival", "Huntington's disease", "MAPK pathway"],
+    summary: "Studies intracellular signaling cascades in striatal neurons, investigating how ERK/MAPK pathway activation controls neuronal survival and plasticity and how its dysregulation contributes to Huntington's disease.",
+    photoURL: "",
+    subfields: ["molecular"],
+    institutes: ["IBPS - Sorbonne Universite"],
+    links: [{ label: "C-BRAINS", url: "https://dim-cbrains.fr/fr/network/437/team" }]
+  },
+  {
+    name: "Gabrielle Girardeau",
+    keywords: ["memory consolidation", "sleep replay", "hippocampal sharp-wave ripples", "emotional memory", "fear memory"],
+    summary: "Studies how sleep supports memory consolidation, investigating the role of hippocampal sharp-wave ripples in replaying and strengthening emotional and spatial memories during sleep.",
+    photoURL: "",
+    subfields: ["systems"],
+    institutes: ["IBPS - Sorbonne Universite"],
+    links: [{ label: "C-BRAINS", url: "https://dim-cbrains.fr/fr/network/184/team" }]
+  },
+  {
+    name: "Ludovic Tricoire",
+    keywords: ["cortical interneurons", "neuroenergetics", "GABAergic neurons", "metabolic coupling", "patch-seq"],
+    summary: "Studies the diversity and metabolic properties of cortical interneurons, investigating how neuroenergetic demands of different GABAergic neuron subtypes shape their functional roles in cortical circuits.",
+    photoURL: "",
+    subfields: ["systems"],
+    institutes: ["IBPS - Sorbonne Universite"],
+    links: [{ label: "C-BRAINS", url: "https://dim-cbrains.fr/fr/network/439/team" }]
+  },
+  {
+    name: "Loic Broix",
+    keywords: ["mRNA transport", "local translation", "axonal mRNA", "neuronal polarization", "RNA granules"],
+    summary: "Studies mRNA transport and local translation in neurons, investigating how RNA granule trafficking along axons and dendrites controls neuronal polarization and synaptic protein synthesis.",
+    photoURL: "",
+    subfields: ["molecular"],
+    institutes: ["IBPS - Sorbonne Universite"],
+    links: [{ label: "C-BRAINS", url: "https://dim-cbrains.fr/fr/network/440/team" }]
+  },
+
+  // ===== SPPIN - UNIVERSITE PARIS CITE — 7 PIs =====
+
+  {
+    name: "Nicolas Panayotis",
+    keywords: ["neuropeptides", "BDNF", "neurotrophin signaling", "synaptic modulation", "Rett syndrome"],
+    summary: "Studies neuropeptide and neurotrophin signaling in the brain, investigating how BDNF and related factors modulate synaptic function and how their deficiency contributes to Rett syndrome.",
+    photoURL: "",
+    subfields: ["molecular"],
+    institutes: ["SPPIN - Universite Paris Cite"],
+    links: [{ label: "C-BRAINS", url: "https://dim-cbrains.fr/fr/network/182/team" }]
+  },
+  {
+    name: "Brandon Stell",
+    keywords: ["retinal circuits", "bipolar cells", "retinal processing", "patch-clamp", "visual coding"],
+    summary: "Studies retinal circuit function, investigating how bipolar cells and other retinal interneurons process visual information using patch-clamp electrophysiology and imaging.",
+    photoURL: "",
+    subfields: ["systems"],
+    institutes: ["SPPIN - Universite Paris Cite"],
+    links: [{ label: "C-BRAINS", url: "https://dim-cbrains.fr/fr/network/369/team" }]
+  },
+  {
+    name: "Martin Oheim",
+    keywords: ["fluorescence microscopy", "TIRF imaging", "calcium sensors", "astrocyte signaling", "near-membrane dynamics"],
+    summary: "Develops advanced fluorescence microscopy techniques including TIRF imaging for studying near-membrane dynamics, calcium signaling in astrocytes, and neurotransmitter release at synapses.",
+    photoURL: "",
+    subfields: ["systems"],
+    institutes: ["SPPIN - Universite Paris Cite"],
+    links: []
+  },
+  {
+    name: "Bruno Gasnier",
+    keywords: ["vesicular transporters", "VGLUT", "lysosomal transport", "neurotransmitter loading", "synaptic vesicles"],
+    summary: "Studies the molecular mechanisms of vesicular neurotransmitter transport, investigating how vesicular glutamate transporters (VGLUT) and lysosomal transporters load and store neurotransmitters in synaptic vesicles.",
+    photoURL: "",
+    subfields: ["molecular"],
+    institutes: ["SPPIN - Universite Paris Cite"],
+    links: []
+  },
+  {
+    name: "Marc Guillon",
+    keywords: ["wavefront sensing", "adaptive optics", "light shaping", "multiphoton microscopy", "optical engineering"],
+    summary: "Develops optical engineering solutions for neuroscience, including wavefront sensing and light shaping technologies for deep tissue multiphoton microscopy and optogenetic stimulation.",
+    photoURL: "",
+    subfields: ["computational"],
+    institutes: ["SPPIN - Universite Paris Cite"],
+    links: []
+  },
+  {
+    name: "Boris Lamotte d'Incamps",
+    keywords: ["motoneurons", "spinal circuits", "Renshaw cells", "recurrent inhibition", "motor control"],
+    summary: "Studies spinal motor circuits, investigating how Renshaw cells and recurrent inhibition mechanisms regulate motoneuron output and contribute to fine motor control and locomotor patterns.",
+    photoURL: "",
+    subfields: ["systems"],
+    institutes: ["SPPIN - Universite Paris Cite"],
+    links: []
+  },
+  {
+    name: "Marco Diana",
+    keywords: ["cerebellar circuits", "Purkinje cell physiology", "climbing fiber", "synaptic integration", "motor learning"],
+    summary: "Studies cerebellar circuit physiology, investigating how climbing fiber inputs and synaptic integration in Purkinje cells contribute to motor learning and cerebellar computation.",
+    photoURL: "",
+    subfields: ["systems"],
+    institutes: ["SPPIN - Universite Paris Cite"],
+    links: []
+  },
+
+  // ===== BFA - UNIVERSITE PARIS CITE — 1 PI =====
+
+  {
+    name: "Serge Luquet",
+    keywords: ["food intake regulation", "hypothalamus", "neuropeptide Y", "energy homeostasis", "obesity circuits"],
+    summary: "Studies hypothalamic circuits controlling food intake and energy homeostasis, investigating how neuropeptide signaling in the arcuate nucleus and other hypothalamic regions regulates feeding behavior and body weight.",
+    photoURL: "",
+    subfields: ["systems", "molecular"],
+    institutes: ["BFA - Universite Paris Cite"],
+    links: [{ label: "C-BRAINS", url: "https://dim-cbrains.fr/fr/network/492/team" }]
+  },
+
+  // ===== IMAGINE - UNIVERSITE PARIS CITE — 8 PIs =====
+
+  {
+    name: "Jeanne Amiel",
+    keywords: ["congenital disorders", "neural crest", "Hirschsprung disease", "CCHS", "developmental genetics"],
+    summary: "Studies the genetic basis of congenital disorders affecting neural crest derivatives, including Hirschsprung disease and congenital central hypoventilation syndrome, identifying causative genes and developmental mechanisms.",
+    photoURL: "",
+    subfields: ["molecular"],
+    institutes: ["IMAGINE - Universite Paris Cite"],
+    links: [{ label: "C-BRAINS", url: "https://dim-cbrains.fr/fr/network/421/team" }]
+  },
+  {
+    name: "Vincent Cantagrel",
+    keywords: ["brain malformations", "intellectual disability", "glycosylation disorders", "cerebellar hypoplasia", "rare diseases"],
+    summary: "Studies the genetic causes of brain malformations and intellectual disability, investigating how glycosylation defects and other rare metabolic disorders affect brain development and cerebellar formation.",
+    photoURL: "",
+    subfields: ["molecular"],
+    institutes: ["IMAGINE - Universite Paris Cite"],
+    links: [{ label: "C-BRAINS", url: "https://dim-cbrains.fr/fr/network/359/team" }]
+  },
+  {
+    name: "Nathalie Boddaert",
+    keywords: ["pediatric neuroimaging", "brain malformations", "MRI diagnostics", "genetic syndromes", "fetal brain imaging"],
+    summary: "Develops neuroimaging approaches for diagnosing brain malformations in children, using advanced MRI techniques to characterize structural abnormalities in genetic syndromes and neurodevelopmental disorders.",
+    photoURL: "",
+    subfields: ["human"],
+    institutes: ["IMAGINE - Universite Paris Cite"],
+    links: [{ label: "C-BRAINS", url: "https://dim-cbrains.fr/fr/network/424/team" }]
+  },
+  {
+    name: "Yves Ville",
+    keywords: ["fetal medicine", "prenatal brain imaging", "twin-twin transfusion", "fetal neurology", "fetal surgery"],
+    summary: "Pioneers fetal medicine and prenatal brain assessment, developing imaging and surgical interventions for fetal neurological conditions including twin-twin transfusion syndrome effects on brain development.",
+    photoURL: "",
+    subfields: ["human"],
+    institutes: ["IMAGINE - Universite Paris Cite"],
+    links: [{ label: "C-BRAINS", url: "https://dim-cbrains.fr/fr/network/330/team" }]
+  },
+  {
+    name: "Michela Deleidi",
+    keywords: ["neurodegeneration", "brain organoids", "Parkinson's disease", "mitochondrial dysfunction", "iPSC models"],
+    summary: "Studies the molecular mechanisms of neurodegeneration using brain organoids and iPSC models, investigating how mitochondrial dysfunction and inflammatory pathways contribute to Parkinson's disease and related disorders.",
+    photoURL: "",
+    subfields: ["molecular"],
+    institutes: ["IMAGINE - Universite Paris Cite"],
+    links: [{ label: "C-BRAINS", url: "https://dim-cbrains.fr/fr/network/334/team" }]
+  },
+  {
+    name: "Sara Bizzotto",
+    keywords: ["somatic mosaicism", "brain mutations", "single-cell genomics", "cortical development", "neuropsychiatric disease"],
+    summary: "Studies somatic mosaicism in the human brain, using single-cell genomics to understand how post-zygotic mutations during cortical development may contribute to neuropsychiatric and neurodevelopmental disorders.",
+    photoURL: "",
+    subfields: ["molecular"],
+    institutes: ["IMAGINE - Universite Paris Cite"],
+    links: [{ label: "C-BRAINS", url: "https://dim-cbrains.fr/fr/network/423/team" }]
+  },
+  {
+    name: "Yanick Crow",
+    keywords: ["interferonopathies", "Aicardi-Goutieres syndrome", "neuroinflammation", "innate immunity", "type I interferon"],
+    summary: "Studies type I interferonopathies including Aicardi-Goutieres syndrome, investigating how dysregulated innate immune signaling causes brain inflammation and neurological damage in genetic autoinflammatory conditions.",
+    photoURL: "",
+    subfields: ["molecular"],
+    institutes: ["IMAGINE - Universite Paris Cite"],
+    links: [{ label: "C-BRAINS", url: "https://dim-cbrains.fr/fr/network/333/team" }]
+  },
+  {
+    name: "Edor Kabashi",
+    keywords: ["ALS genetics", "FTD", "zebrafish models", "C9orf72", "motor neuron disease"],
+    summary: "Studies the genetics of ALS and frontotemporal dementia using zebrafish models, investigating how mutations in genes like C9orf72 cause motor neuron degeneration and developing therapeutic strategies.",
+    photoURL: "",
+    subfields: ["molecular"],
+    institutes: ["IMAGINE - Universite Paris Cite"],
+    links: [{ label: "C-BRAINS", url: "https://dim-cbrains.fr/fr/network/422/team" }]
+  },
+
+  // ===== NEURODIDEROT - UNIVERSITE PARIS CITE — 5 PIs =====
+
+  {
+    name: "Mireille Laforge",
+    keywords: ["brain innate immunity", "microglia activation", "neuroinflammation", "cell death", "CNS infections"],
+    summary: "Studies innate immune responses in the brain, investigating how microglial activation and inflammatory cell death mechanisms contribute to neuroinflammation during CNS infections and neurodevelopmental injury.",
+    photoURL: "",
+    subfields: ["molecular"],
+    institutes: ["NeuroDiderot - Universite Paris Cite"],
+    links: [{ label: "C-BRAINS", url: "https://dim-cbrains.fr/fr/network/137/team" }]
+  },
+  {
+    name: "Jessica Dubois",
+    keywords: ["infant brain imaging", "white matter maturation", "diffusion MRI", "premature brain", "developmental neuroscience"],
+    summary: "Studies brain development in infants using advanced diffusion MRI, characterizing white matter maturation trajectories in premature and term-born babies to understand early brain connectivity formation.",
+    photoURL: "",
+    subfields: ["human"],
+    institutes: ["NeuroDiderot - Universite Paris Cite"],
+    links: [{ label: "C-BRAINS", url: "https://dim-cbrains.fr/fr/network/97/team" }]
+  },
+  {
+    name: "Vincent El Ghouzzi",
+    keywords: ["microcephaly", "cortical progenitors", "centriole biology", "neurodevelopmental genetics", "brain size regulation"],
+    summary: "Studies the genetic mechanisms controlling brain size, investigating how centrosome and centriole biology defects in cortical progenitor cells lead to microcephaly and other neurodevelopmental disorders.",
+    photoURL: "",
+    subfields: ["molecular"],
+    institutes: ["NeuroDiderot - Universite Paris Cite"],
+    links: [{ label: "C-BRAINS", url: "https://dim-cbrains.fr/fr/network/141/team" }]
+  },
+  {
+    name: "Pierre Gressens",
+    keywords: ["perinatal brain injury", "white matter damage", "neonatal neuroprotection", "preterm brain", "oligodendrocyte injury"],
+    summary: "Studies perinatal brain injury mechanisms, investigating how inflammation and hypoxia-ischemia damage the developing white matter in preterm infants and developing neuroprotective strategies.",
+    photoURL: "",
+    subfields: ["molecular"],
+    institutes: ["NeuroDiderot - Universite Paris Cite"],
+    links: [{ label: "C-BRAINS", url: "https://dim-cbrains.fr/fr/network/149/team" }]
+  },
+  {
+    name: "Marie-Pia d'Ortho",
+    keywords: ["sleep disorders", "sleep apnea", "circadian rhythms", "insomnia", "sleep medicine"],
+    summary: "Studies sleep disorders including sleep apnea and insomnia, investigating the neural and respiratory mechanisms of sleep disruption and developing clinical approaches for sleep medicine.",
+    photoURL: "",
+    subfields: ["human"],
+    institutes: ["NeuroDiderot - Universite Paris Cite"],
+    links: []
+  },
+
+  // ===== MIRCen - CEA — 5 PIs =====
+
+  {
+    name: "Marc Dhenain",
+    keywords: ["Alzheimer's imaging", "amyloid PET", "preclinical MRI", "mouse lemur", "tau pathology"],
+    summary: "Develops preclinical imaging methods for Alzheimer's disease research, using MRI and PET in mouse lemur and rodent models to track amyloid and tau pathology progression in living animals.",
+    photoURL: "",
+    subfields: ["systems"],
+    institutes: ["MIRCen - CEA"],
+    links: [{ label: "C-BRAINS", url: "https://dim-cbrains.fr/fr/network/306/team" }]
+  },
+  {
+    name: "Alexis Bemelmans",
+    keywords: ["AAV vectors", "gene therapy", "neurotropic viruses", "brain delivery", "viral vector engineering"],
+    summary: "Engineers AAV and lentiviral vectors for CNS gene therapy, developing neurotropic viral tools for efficient and targeted gene delivery to specific brain regions and cell types.",
+    photoURL: "",
+    subfields: ["molecular"],
+    institutes: ["MIRCen - CEA"],
+    links: [{ label: "C-BRAINS", url: "https://dim-cbrains.fr/fr/network/239/team" }]
+  },
+  {
+    name: "Julien Valette",
+    keywords: ["MR spectroscopy", "brain metabolism", "lactate shuttling", "diffusion-weighted MRS", "metabolic imaging"],
+    summary: "Develops MR spectroscopy methods to study brain metabolism in vivo, investigating neuronal-glial metabolic coupling and lactate dynamics using diffusion-weighted MRS techniques.",
+    photoURL: "",
+    subfields: ["systems", "computational"],
+    institutes: ["MIRCen - CEA"],
+    links: [{ label: "C-BRAINS", url: "https://dim-cbrains.fr/fr/network/314/team" }]
+  },
+  {
+    name: "Ronald Melki",
+    keywords: ["protein aggregation", "alpha-synuclein", "prion-like spreading", "amyloid fibrils", "Parkinson's disease"],
+    summary: "Studies the structural biology of protein aggregation in neurodegenerative diseases, investigating how alpha-synuclein and other proteins form prion-like amyloid fibrils that spread through the brain in Parkinson's disease.",
+    photoURL: "",
+    subfields: ["molecular"],
+    institutes: ["MIRCen - CEA"],
+    links: [{ label: "C-BRAINS", url: "https://dim-cbrains.fr/fr/network/224/team" }]
+  },
+  {
+    name: "Romina Aron Badin",
+    keywords: ["non-human primate imaging", "brain connectivity", "translational neuroscience", "DBS", "neurodegenerative models"],
+    summary: "Develops translational neuroscience approaches in non-human primates, using neuroimaging and deep brain stimulation to study brain connectivity and model neurodegenerative diseases for therapeutic development.",
+    photoURL: "",
+    subfields: ["systems"],
+    institutes: ["MIRCen - CEA"],
+    links: []
+  },
+
+  // ===== NeuroPSI (Paris-Saclay) EXTRA — 1 PI =====
+
+  {
+    name: "Glenn Dallerac",
+    keywords: ["astrocyte-neuron interactions", "working memory", "prefrontal cortex", "astroglial calcium", "cognitive circuits"],
+    summary: "Studies how astrocytes modulate neuronal circuit function and cognition, investigating astroglial calcium signaling in the prefrontal cortex and its role in working memory and cognitive flexibility.",
+    photoURL: "",
+    subfields: ["systems"],
+    institutes: ["NeuroPSI (Paris-Saclay)"],
+    links: []
+  },
+
+  // ===== S2CH - CNRS — 1 PI =====
+
+  {
+    name: "Jean-Christophe Vergnaud",
+    keywords: ["neuroeconomics", "decision under risk", "behavioral economics", "expected utility", "experimental economics"],
+    summary: "Studies neuroeconomics and decision-making under risk, investigating how humans evaluate uncertain outcomes and the neural correlates of utility computation using behavioral and experimental economics approaches.",
+    photoURL: "",
+    subfields: ["human"],
+    institutes: ["S2CH - CNRS"],
+    links: []
+  },
+
+  // ===== EPN-R — 7 PIs =====
+
+  {
+    name: "Gilles Seraphin",
+    keywords: ["visual perception", "cognitive psychology", "attention", "perceptual learning", "psychophysics"],
+    summary: "Studies visual perception and attention using psychophysical methods, investigating perceptual learning mechanisms and attentional control in human visual cognition.",
+    photoURL: "",
+    subfields: ["human"],
+    institutes: ["EPN-R"],
+    links: []
+  },
+  {
+    name: "Cyrille Bouvet",
+    keywords: ["clinical psychology", "psychopathology", "schizophrenia", "mental health", "therapeutic approaches"],
+    summary: "Studies clinical psychology and psychopathology, investigating psychological mechanisms in psychiatric conditions including schizophrenia and developing therapeutic approaches.",
+    photoURL: "",
+    subfields: ["human"],
+    institutes: ["EPN-R"],
+    links: []
+  },
+  {
+    name: "Thibaut Brouillet",
+    keywords: ["embodied cognition", "motor simulation", "action-perception coupling", "affordances", "cognitive psychology"],
+    summary: "Studies embodied cognition and the coupling between action and perception, investigating how motor simulation and affordances shape cognitive processing and perceptual judgments.",
+    photoURL: "",
+    subfields: ["human"],
+    institutes: ["EPN-R"],
+    links: []
+  },
+  {
+    name: "Sebastien Deregnaucourt",
+    keywords: ["birdsong learning", "vocal development", "zebra finch", "motor learning", "song crystallization"],
+    summary: "Studies vocal learning in songbirds, investigating the developmental processes and neural mechanisms underlying song acquisition, practice, and crystallization in the zebra finch.",
+    photoURL: "",
+    subfields: ["systems"],
+    institutes: ["EPN-R"],
+    links: []
+  },
+  {
+    name: "Laurence Conty",
+    keywords: ["social cognition", "eye gaze", "joint attention", "social neuroscience", "EEG"],
+    summary: "Studies social cognition with a focus on eye gaze perception and joint attention, investigating how direct gaze capture and shared attention signals modulate cognitive processing and social interaction.",
+    photoURL: "",
+    subfields: ["human"],
+    institutes: ["EPN-R"],
+    links: []
+  },
+  {
+    name: "Giovanni De Marco",
+    keywords: ["motor cognition", "neuroimaging", "motor imagery", "fMRI", "embodied simulation"],
+    summary: "Studies motor cognition and action representation using fMRI, investigating how the brain simulates and plans movements through motor imagery and embodied cognitive processes.",
+    photoURL: "",
+    subfields: ["human"],
+    institutes: ["EPN-R"],
+    links: []
+  },
+  {
+    name: "Patrick Mollaret",
+    keywords: ["neuropsychology", "cognitive rehabilitation", "executive function", "brain injury", "attention disorders"],
+    summary: "Studies neuropsychological assessment and cognitive rehabilitation, developing interventions for executive function and attention disorders following brain injury.",
+    photoURL: "",
+    subfields: ["human"],
+    institutes: ["EPN-R"],
+    links: []
+  },
+];
+
+// ========== SEED FUNCTIONS ==========
+
+async function seedNewInstitutes() {
+  log('--- Checking / Creating New Institutes ---', 'info');
+  for (const inst of newInstitutes) {
+    const q = query(collection(db, 'institutes'), where('name', '==', inst.name), where('status', '==', 'approved'));
+    const snap = await getDocs(q);
+    if (snap.size > 0) {
+      log(`  Skip (exists): ${inst.name}`);
+      continue;
+    }
+    await addDoc(collection(db, 'institutes'), {
+      name: inst.name,
+      website: inst.website,
+      logoURL: inst.logoURL || '',
+      status: 'approved',
+      proposedBy: currentUser.uid,
+      createdAt: serverTimestamp()
+    });
+    log(`  Created institute: ${inst.name}`, 'success');
+  }
+}
+
+async function seedPIs() {
+  log('--- Seeding C-BRAINS PIs ---', 'info');
+  let created = 0, updated = 0, skipped = 0, errors = 0;
+  for (const pi of pis) {
+    const q = query(collection(db, 'groups'), where('name', '==', pi.name));
+    const snap = await getDocs(q);
+    if (snap.size > 0) {
+      const existing = snap.docs[0];
+      const data = existing.data();
+      const needsPhoto = pi.photoURL && (!data.photoURL || data.photoURL === '');
+      if (needsPhoto) {
+        try {
+          await updateDoc(doc(db, 'groups', existing.id), {
+            photoURL: pi.photoURL,
+            updatedAt: serverTimestamp()
+          });
+          log(`  Updated photo: ${pi.name}`, 'success');
+          updated++;
+        } catch (e) {
+          log(`  ERROR updating ${pi.name}: ${e.message}`, 'error');
+          errors++;
+        }
+      } else {
+        log(`  Skip (exists): ${pi.name}`);
+        skipped++;
+      }
+      continue;
+    }
+    try {
+      await addDoc(collection(db, 'groups'), {
+        name: pi.name,
+        keywords: pi.keywords,
+        summary: pi.summary,
+        links: pi.links,
+        photoURL: pi.photoURL || '',
+        subfields: pi.subfields,
+        institutes: pi.institutes,
+        subfield: pi.subfields[0],
+        institute: pi.institutes[0],
+        creatorUid: currentUser.uid,
+        createdAt: serverTimestamp(),
+        updatedAt: serverTimestamp()
+      });
+      log(`  Created: ${pi.name}`, 'success');
+      created++;
+    } catch (e) {
+      log(`  ERROR creating ${pi.name}: ${e.message}`, 'error');
+      errors++;
+    }
+  }
+  log(`\nDone! Created ${created}, updated photos ${updated}, skipped ${skipped}, errors ${errors}.`, 'info');
+}
+
+window.runSeed = async () => {
+  document.getElementById('seedBtn').disabled = true;
+  try {
+    await seedNewInstitutes();
+    await seedPIs();
+  } catch (e) {
+    log('ERROR: ' + e.message, 'error');
+  }
+  document.getElementById('seedBtn').disabled = false;
+};
+</script>
+</body>
+</html>

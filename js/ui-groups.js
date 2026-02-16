@@ -8,7 +8,7 @@ let activeKeyword = null;
 let searchText = '';
 let activeInstitute = null;
 
-const SUBFIELDS = ['computational', 'systems', 'human'];
+const SUBFIELDS = ['computational', 'systems', 'human', 'molecular'];
 
 // Normalize old string or new array format
 function toArray(val) { return Array.isArray(val) ? val : (val ? [val] : []); }
@@ -201,7 +201,7 @@ function renderGroups() {
   });
 
   // Partition by subfield — a PI can appear in multiple sections
-  const bySubfield = { computational: [], systems: [], human: [] };
+  const bySubfield = { computational: [], systems: [], human: [], molecular: [] };
   filtered.forEach(g => {
     const sfs = toArray(g.subfields || g.subfield);
     const validSfs = sfs.filter(sf => bySubfield[sf]);

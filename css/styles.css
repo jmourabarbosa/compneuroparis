@@ -24,6 +24,9 @@
   --color-human: #D97706;
   --color-human-light: #FEF3C7;
   --color-human-dark: #92400E;
+  --color-molecular: #DC2680;
+  --color-molecular-light: #FDE8F0;
+  --color-molecular-dark: #9D174D;
   --color-institutes: #374151;
   --color-institutes-light: #F3F4F6;
   --color-institutes-dark: #111827;
@@ -417,6 +420,12 @@ img {
   --sf-color: var(--color-human);
   --sf-color-light: var(--color-human-light);
   --sf-color-dark: var(--color-human-dark);
+}
+
+.subfield-section[data-subfield="molecular"] {
+  --sf-color: var(--color-molecular);
+  --sf-color-light: var(--color-molecular-light);
+  --sf-color-dark: var(--color-molecular-dark);
 }
 
 .subfield-section[data-subfield="institutes"] {
@@ -839,6 +848,10 @@ img {
 
 .group-card[data-subfield="human"] {
   border-left: 3px solid var(--color-human);
+}
+
+.group-card[data-subfield="molecular"] {
+  border-left: 3px solid var(--color-molecular);
 }
 
 .card-photo {
@@ -1571,6 +1584,11 @@ img {
 .pi-detail-subfield-badge[data-subfield="human"] {
   background: var(--color-human-light);
   color: var(--color-human-dark);
+}
+
+.pi-detail-subfield-badge[data-subfield="molecular"] {
+  background: var(--color-molecular-light);
+  color: var(--color-molecular-dark);
 }
 
 .pi-detail-summary {
