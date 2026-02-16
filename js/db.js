@@ -177,7 +177,9 @@ export async function approveInstitute(id) {
 }
 
 export async function rejectInstitute(id) {
-  await deleteDoc(doc(db, 'institutes', id));
+  await updateDoc(doc(db, 'institutes', id), {
+    status: 'rejected'
+  });
 }
 
 // ========== CLAIMS ==========
