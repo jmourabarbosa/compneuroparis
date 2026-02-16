@@ -31,7 +31,8 @@
   <nav class="nav-bar">
     <div class="nav-bar-inner">
       <div class="header-actions">
-        <button id="btn-admin-login" class="btn btn-outline" aria-label="Login">Login</button>
+        <button id="btn-signup" class="btn btn-primary btn-sm" aria-label="Sign Up">Sign Up</button>
+        <button id="btn-admin-login" class="btn btn-outline btn-sm" aria-label="Login">Login</button>
         <div id="admin-bar" class="admin-bar hidden">
           <span id="admin-email" class="admin-email"></span>
           <button id="btn-admin-panel" class="btn btn-primary btn-sm">Admin Panel</button>
@@ -306,6 +307,32 @@
           <div id="login-message" class="form-message hidden" role="alert"></div>
           <button type="submit" class="btn btn-primary btn-full">Login</button>
           <button type="button" id="btn-login-forgot" class="btn btn-text btn-full">Forgot password?</button>
+        </form>
+      </div>
+    </div>
+  </div>
+
+  <!-- ========== SIGN UP MODAL ========== -->
+  <div id="modal-signup" class="modal-overlay hidden" role="dialog" aria-modal="true" aria-label="Sign Up">
+    <div class="modal">
+      <div class="modal-header">
+        <h3>Create Account</h3>
+        <button class="modal-close" data-close-modal="modal-signup" aria-label="Close">&times;</button>
+      </div>
+      <div class="modal-body">
+        <p class="signup-tip">If you plan to claim management of a PI or institute page, we recommend using your institutional email.</p>
+        <form id="signup-form" novalidate>
+          <div class="form-group">
+            <label for="signup-email">Email</label>
+            <input type="email" id="signup-email" required>
+          </div>
+          <div class="form-group">
+            <label for="signup-password">Password</label>
+            <input type="password" id="signup-password" required minlength="6">
+          </div>
+          <div id="signup-message" class="form-message hidden" role="alert"></div>
+          <button type="submit" class="btn btn-primary btn-full">Create Account</button>
+          <p class="signup-login-hint">Already have an account? <button type="button" id="btn-signup-to-login" class="btn btn-text">Login</button></p>
         </form>
       </div>
     </div>

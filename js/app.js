@@ -1,6 +1,6 @@
 import { loadGroups, initSearch, initSections, loadPublicInstitutes, initPiDetail, initInstituteDetail } from './ui-groups.js';
 import { initForm, updateSubmissionAuthUI } from './ui-form.js';
-import { onAuthChange, login, logout, resetPassword, authReady } from './auth.js';
+import { onAuthChange, login, logout, resetPassword, createAccount, authReady } from './auth.js';
 import {
   initTabs, loadPending, loadManageGroups, loadAdmins,
   initSubmissionActions, initEditForm, initAddAdmin,
@@ -20,6 +20,12 @@ const modalLogin = document.getElementById('modal-login');
 const loginForm = document.getElementById('login-form');
 const loginMessage = document.getElementById('login-message');
 const modalAdmin = document.getElementById('modal-admin');
+
+// Sign up
+const btnSignup = document.getElementById('btn-signup');
+const modalSignup = document.getElementById('modal-signup');
+const signupForm = document.getElementById('signup-form');
+const signupMessage = document.getElementById('signup-message');
 
 // Creator bar
 const creatorBar = document.getElementById('creator-bar');
@@ -128,6 +134,52 @@ document.getElementById('btn-login-forgot').addEventListener('click', async () =
   }
 });
 
+// ========== SIGN UP UI ==========
+btnSignup.addEventListener('click', () => openModal(modalSignup));
+
+signupForm.addEventListener('submit', async (e) => {
+  e.preventDefault();
+  signupMessage.classList.add('hidden');
+
+  const email = document.getElementById('signup-email').value.trim();
+  const password = document.getElementById('signup-password').value;
+
+  if (!email || !password) {
+    showSignupMsg('Please enter email and password.', 'error');
+    return;
+  }
+  if (password.length < 6) {
+    showSignupMsg('Password must be at least 6 characters.', 'error');
+    return;
+  }
+
+  const submitBtn = signupForm.querySelector('button[type="submit"]');
+  submitBtn.disabled = true;
+
+  try {
+    await createAccount(email, password);
+    showSignupMsg('Account created! A verification email has been sent — please check your inbox (and spam folder).', 'success');
+    // Don't close modal — let user read the message
+  } catch (err) {
+    showSignupMsg(err.message || 'Error creating account.', 'error');
+  } finally {
+    submitBtn.disabled = false;
+  }
+});
+
+document.getElementById('btn-signup-to-login').addEventListener('click', () => {
+  closeModal(modalSignup);
+  signupForm.reset();
+  signupMessage.classList.add('hidden');
+  openModal(modalLogin);
+});
+
+function showSignupMsg(text, type) {
+  signupMessage.textContent = text;
+  signupMessage.className = `form-message ${type}`;
+  signupMessage.classList.remove('hidden');
+}
+
 function showLoginMsg(text, type) {
   loginMessage.textContent = text;
   loginMessage.className = `form-message ${type}`;
@@ -142,20 +194,25 @@ onAuthChange((user, isAdmin) => {
   if (user && isAdmin) {
     // Admin state
     btnAdminLogin.classList.add('hidden');
+    btnSignup.classList.add('hidden');
     adminBar.classList.remove('hidden');
     creatorBar.classList.add('hidden');
     adminEmail.textContent = user.email;
+    closeModal(modalSignup);
   } else if (user) {
     // Creator state (logged in but not admin)
     btnAdminLogin.classList.add('hidden');
+    btnSignup.classList.add('hidden');
     adminBar.classList.add('hidden');
     creatorBar.classList.remove('hidden');
     creatorEmail.textContent = user.email;
     // Close admin modals if open
     closeModal(modalAdmin);
+    closeModal(modalSignup);
   } else {
     // Anonymous state
     btnAdminLogin.classList.remove('hidden');
+    btnSignup.classList.remove('hidden');
     adminBar.classList.add('hidden');
     creatorBar.classList.add('hidden');
     adminEmail.textContent = '';

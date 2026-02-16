@@ -858,6 +858,29 @@ img {
   color: #6cb4ee;
 }
 
+.signup-tip {
+  font-size: 0.85rem;
+  color: var(--color-text-muted);
+  background: var(--color-surface-alt, #1a2a3a);
+  padding: 0.6rem 0.8rem;
+  border-radius: var(--radius-sm);
+  margin-bottom: 1rem;
+  line-height: 1.4;
+}
+
+.signup-login-hint {
+  text-align: center;
+  font-size: 0.85rem;
+  color: var(--color-text-muted);
+  margin-top: 0.75rem;
+}
+
+.signup-login-hint .btn-text {
+  font-size: 0.85rem;
+  padding: 0;
+  text-decoration: underline;
+}
+
 .verify-banner {
   display: flex;
   align-items: center;
