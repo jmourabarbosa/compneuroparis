@@ -7,12 +7,12 @@ admin.initializeApp();
 const transporter = nodemailer.createTransport({
   service: "gmail",
   auth: {
-    user: functions.config().email.user,
-    pass: functions.config().email.pass,
+    user: process.env.EMAIL_USER,
+    pass: process.env.EMAIL_PASS,
   },
 });
 
-const FROM = `Neuroscience in Paris <${functions.config().email.user}>`;
+const FROM = `Neuroscience in Paris <${process.env.EMAIL_USER}>`;
 
 async function sendEmail(to, subject, html) {
   try {
