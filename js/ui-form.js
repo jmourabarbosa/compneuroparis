@@ -30,7 +30,6 @@ const btnInstSubLogout = document.getElementById('btn-inst-sub-logout');
 const subSubfieldContainer = document.getElementById('sub-subfield');
 const subInstitute = document.getElementById('sub-institute');
 const subInstitutePills = document.getElementById('sub-institute-pills');
-const btnAddInstitute = document.getElementById('btn-add-institute');
 const subInstituteNewName = document.getElementById('sub-institute-new-name');
 const subInstituteNewWebsite = document.getElementById('sub-institute-new-website');
 const subInstituteNewFields = document.getElementById('sub-institute-new-fields');
@@ -77,7 +76,7 @@ export function initForm() {
 
   form.addEventListener('submit', handleSubmit);
 
-  // Institute picker: show/hide new institute fields
+  // Institute picker: add on select for existing, show fields for new
   subInstitute.addEventListener('change', () => {
     if (subInstitute.value === '__new__') {
       subInstituteNewFields.classList.remove('hidden');
@@ -86,11 +85,12 @@ export function initForm() {
       subInstituteNewFields.classList.add('hidden');
       subInstituteNewName.value = '';
       subInstituteNewWebsite.value = '';
+      handleAddInstitute();
     }
   });
 
-  // Multi-institute: add button
-  btnAddInstitute.addEventListener('click', handleAddInstitute);
+  // "Add" button for proposed new institute
+  document.getElementById('btn-add-new-institute').addEventListener('click', handleAddInstitute);
 
   // Auth buttons
   btnSubCreate.addEventListener('click', handleCreateAccount);
@@ -446,7 +446,7 @@ async function handleSubmit(e) {
   }
 
   if (selectedInstitutes.length === 0) {
-    showMessage(formMessage, 'Please add at least one institute using the + button.', 'error');
+    showMessage(formMessage, 'Please select at least one institute.', 'error');
     return;
   }
 

@@ -50,7 +50,6 @@ const editMessage = document.getElementById('edit-message');
 const editSubfieldContainer = document.getElementById('edit-subfield');
 const editInstituteSelect = document.getElementById('edit-institute-select');
 const editInstitutePills = document.getElementById('edit-institute-pills');
-const btnEditAddInstitute = document.getElementById('btn-edit-add-institute');
 
 // Edit institute state
 let editSelectedInstitutes = [];
@@ -416,7 +415,9 @@ function renderEditInstitutePills() {
 
 export function initEditForm() {
   btnEditAddLink.addEventListener('click', () => addEditLinkRow());
-  btnEditAddInstitute.addEventListener('click', handleEditAddInstitute);
+  editInstituteSelect.addEventListener('change', () => {
+    handleEditAddInstitute();
+  });
 
   editForm.addEventListener('submit', async (e) => {
     e.preventDefault();
