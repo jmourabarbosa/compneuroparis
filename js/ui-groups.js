@@ -1,4 +1,4 @@
-import { fetchGroups, fetchApprovedInstitutes, createClaim, fetchMyClaimForTarget, deleteGroup, deleteInstitute, createReport } from './db.js';
+import { fetchGroups, fetchApprovedInstitutes, createClaim, fetchMyClaimForTarget, fetchApprovedClaimForTarget, deleteGroup, deleteInstitute, createReport } from './db.js';
 import { getCurrentUser, getIsAdmin, createAccount, login, isEmailVerified, resendVerification } from './auth.js';
 
 let allGroups = [];
@@ -379,10 +379,18 @@ async function openPiDetail(group) {
 
   // Managed-by display
   if (group.claimedBy) {
-    const adminInfo = isAdmin && group.claimedByEmail
-      ? ` <span class="managed-by-email">(${escapeHTML(group.claimedByEmail)})</span>`
-      : '';
-    piDetailManagedBy.innerHTML = `<div class="managed-by-badge">Managed by the PI${adminInfo}</div>`;
+    let emailStr = '';
+    if (isAdmin) {
+      let email = group.claimedByEmail;
+      if (!email) {
+        try {
+          const claim = await fetchApprovedClaimForTarget(group.id);
+          if (claim) email = claim.claimantEmail;
+        } catch (e) { /* ignore */ }
+      }
+      if (email) emailStr = ` <span class="managed-by-email">(${escapeHTML(email)})</span>`;
+    }
+    piDetailManagedBy.innerHTML = `<div class="managed-by-badge">Managed by the PI${emailStr}</div>`;
   } else {
     piDetailManagedBy.innerHTML = '<div class="unclaimed-warning">Not yet claimed — information was semi-automatically populated and may contain errors</div>';
   }
@@ -790,10 +798,18 @@ async function openInstituteDetail(inst) {
 
   // Managed-by display
   if (inst.claimedBy) {
-    const adminInfo = isAdmin && inst.claimedByEmail
-      ? ` <span class="managed-by-email">(${escapeHTML(inst.claimedByEmail)})</span>`
-      : '';
-    instDetailManagedBy.innerHTML = `<div class="managed-by-badge">Managed by a member${adminInfo}</div>`;
+    let emailStr = '';
+    if (isAdmin) {
+      let email = inst.claimedByEmail;
+      if (!email) {
+        try {
+          const claim = await fetchApprovedClaimForTarget(inst.id);
+          if (claim) email = claim.claimantEmail;
+        } catch (e) { /* ignore */ }
+      }
+      if (email) emailStr = ` <span class="managed-by-email">(${escapeHTML(email)})</span>`;
+    }
+    instDetailManagedBy.innerHTML = `<div class="managed-by-badge">Managed by a member${emailStr}</div>`;
   } else {
     instDetailManagedBy.innerHTML = '<div class="unclaimed-warning">Not yet claimed — information was semi-automatically populated and may contain errors</div>';
   }
