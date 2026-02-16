@@ -964,6 +964,7 @@ function createJobCard(job) {
       </div>
       <div class="job-card-pi">${escapeHTML(job.piName || '')}</div>
       ${kwHTML}
+      ${job.description ? `<p class="job-card-description">${escapeHTML(job.description)}</p>` : ''}
       <div class="job-card-meta">
         <span class="job-position-badge">${escapeHTML(job.positionType)}</span>
         ${dateStr ? `<span class="job-card-date">${dateStr}</span>` : ''}

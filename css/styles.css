@@ -621,6 +621,16 @@ img {
   color: var(--color-text-secondary);
 }
 
+.job-card-description {
+  font-size: 0.8rem;
+  color: var(--color-text-secondary);
+  margin: 0.25rem 0 0;
+  display: -webkit-box;
+  -webkit-line-clamp: 3;
+  -webkit-box-orient: vertical;
+  overflow: hidden;
+}
+
 .job-card-link {
   margin-top: auto;
 }
