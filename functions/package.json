@@ -2,7 +2,7 @@
   "name": "compneuroparis-functions",
   "description": "Cloud Functions for Neuroscience in Paris email notifications",
   "engines": {
-    "node": "18"
+    "node": "20"
   },
   "main": "index.js",
   "dependencies": {
