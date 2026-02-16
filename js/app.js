@@ -336,5 +336,7 @@ initInstituteDetail();
 initJobDetail();
 initJobForm();
 
-// Load groups, institutes, and jobs (public data), then handle deep links
-Promise.all([loadGroups(), loadPublicInstitutes(), loadPublicJobs()]).then(() => handleDeepLink());
+// Load jobs first (needed for Hiring badges on PI cards), then groups + institutes, then deep links
+loadPublicJobs()
+  .then(() => Promise.all([loadGroups(), loadPublicInstitutes()]))
+  .then(() => handleDeepLink());
