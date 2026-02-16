@@ -26,8 +26,9 @@ const btnInstSubCreate = document.getElementById('btn-inst-sub-create');
 const btnInstSubLogin = document.getElementById('btn-inst-sub-login');
 const btnInstSubLogout = document.getElementById('btn-inst-sub-logout');
 
-// Subfield checkboxes & institute
+// Subfield picker & institute
 const subSubfieldContainer = document.getElementById('sub-subfield');
+let subSelectedSubfields = [];
 const subInstitute = document.getElementById('sub-institute');
 const subInstitutePills = document.getElementById('sub-institute-pills');
 const subInstituteNewName = document.getElementById('sub-institute-new-name');
@@ -75,6 +76,9 @@ export function initForm() {
   });
 
   form.addEventListener('submit', handleSubmit);
+
+  // Subfield picker
+  initSubfieldPicker(subSubfieldContainer, subSelectedSubfields, (updated) => { subSelectedSubfields = updated; });
 
   // Institute picker: add on select for existing, show fields for new
   subInstitute.addEventListener('change', () => {
@@ -370,7 +374,7 @@ function addLinkRow(container) {
 }
 
 function getSelectedSubfields() {
-  return [...subSubfieldContainer.querySelectorAll('input[name="subfield"]:checked')].map(cb => cb.value);
+  return [...subSelectedSubfields];
 }
 
 function handleAddInstitute() {
@@ -515,6 +519,8 @@ async function handleSubmit(e) {
     subInstituteNewWebsite.value = '';
     selectedInstitutes = [];
     newInstituteData = {};
+    subSelectedSubfields = [];
+    renderSubfieldPicker(subSubfieldContainer, subSelectedSubfields);
     renderInstitutePills();
     // Reset links to single row
     linksContainer.innerHTML = '';
@@ -539,4 +545,42 @@ function showMessage(el, text, type) {
 function hideMessage(el) {
   el.classList.add('hidden');
   el.textContent = '';
+}
+
+// ========== SHARED SUBFIELD PICKER ==========
+export function initSubfieldPicker(container, selected, onUpdate) {
+  container.querySelectorAll('.subfield-pill').forEach(pill => {
+    pill.addEventListener('click', () => {
+      const val = pill.dataset.value;
+      const idx = selected.indexOf(val);
+      if (idx >= 0) {
+        selected.splice(idx, 1);
+      } else {
+        selected.push(val);
+      }
+      if (onUpdate) onUpdate(selected);
+      renderSubfieldPicker(container, selected);
+    });
+  });
+  renderSubfieldPicker(container, selected);
+}
+
+export function renderSubfieldPicker(container, selected) {
+  container.querySelectorAll('.subfield-pill').forEach(pill => {
+    const val = pill.dataset.value;
+    const idx = selected.indexOf(val);
+    if (idx >= 0) {
+      pill.classList.add('selected');
+      pill.innerHTML = `<span class="pill-order">${idx + 1}</span> ${pill.dataset.value.charAt(0).toUpperCase() + pill.dataset.value.slice(1)}`;
+    } else {
+      pill.classList.remove('selected');
+      pill.textContent = pill.dataset.value.charAt(0).toUpperCase() + pill.dataset.value.slice(1);
+    }
+  });
+}
+
+export function setSubfieldPicker(container, selected, values) {
+  selected.length = 0;
+  values.forEach(v => { if (!selected.includes(v)) selected.push(v); });
+  renderSubfieldPicker(container, selected);
 }

@@ -8,6 +8,7 @@ import {
 } from './db.js';
 import { getCurrentUser, createAdminUser } from './auth.js';
 import { loadGroups, loadPublicInstitutes } from './ui-groups.js';
+import { initSubfieldPicker, setSubfieldPicker, renderSubfieldPicker } from './ui-form.js';
 import { loadInstituteOptions } from './ui-form.js';
 
 // DOM refs
@@ -31,6 +32,7 @@ const reviewMeta = document.getElementById('review-meta');
 const btnApprove = document.getElementById('btn-approve');
 const btnReject = document.getElementById('btn-reject');
 const reviewSubfieldContainer = document.getElementById('review-subfield');
+let reviewSelectedSubfields = [];
 const reviewInstituteDisplay = document.getElementById('review-institute-display');
 const reviewInstituteWarning = document.getElementById('review-institute-warning');
 
@@ -48,6 +50,7 @@ const editPhotoCurrentDiv = document.getElementById('edit-photo-current');
 const editPhotoImg = document.getElementById('edit-photo-img');
 const editMessage = document.getElementById('edit-message');
 const editSubfieldContainer = document.getElementById('edit-subfield');
+let editSelectedSubfields = [];
 const editInstituteSelect = document.getElementById('edit-institute-select');
 const editInstitutePills = document.getElementById('edit-institute-pills');
 
@@ -165,11 +168,9 @@ async function showSubmissionDetail(sub) {
   reviewSummary.value = sub.summary || '';
   reviewPhotoURL.value = sub.photoURL || '';
 
-  // Subfield checkboxes
+  // Subfield picker
   const subfields = toArray(sub.subfields || sub.subfield || 'computational');
-  reviewSubfieldContainer.querySelectorAll('input[type="checkbox"]').forEach(cb => {
-    cb.checked = subfields.includes(cb.value);
-  });
+  setSubfieldPicker(reviewSubfieldContainer, reviewSelectedSubfields, subfields);
 
   // Institute display + warning
   const institutes = toArray(sub.institutes || sub.institute);
@@ -220,7 +221,7 @@ function getReviewFormData() {
   const keywords = reviewKeywords.value.split(',').map(k => k.trim()).filter(Boolean);
   const summary = reviewSummary.value.trim();
   const photoURL = reviewPhotoURL.value.trim();
-  const subfields = [...reviewSubfieldContainer.querySelectorAll('input[type="checkbox"]:checked')].map(cb => cb.value);
+  const subfields = [...reviewSelectedSubfields];
   if (subfields.length === 0) subfields.push('computational');
 
   const linkRows = reviewLinksContainer.querySelectorAll('.link-row');
@@ -238,6 +239,7 @@ function getReviewFormData() {
 }
 
 export function initSubmissionActions() {
+  initSubfieldPicker(reviewSubfieldContainer, reviewSelectedSubfields, (updated) => { reviewSelectedSubfields = updated; });
   btnReviewAddLink.addEventListener('click', () => addReviewLinkRow());
 
   btnApprove.addEventListener('click', async () => {
@@ -324,11 +326,9 @@ function showEditModal(group) {
   editKeywords.value = (group.keywords || []).join(', ');
   editSummary.value = group.summary || '';
 
-  // Subfield checkboxes
+  // Subfield picker
   const subfields = toArray(group.subfields || group.subfield || 'computational');
-  editSubfieldContainer.querySelectorAll('input[type="checkbox"]').forEach(cb => {
-    cb.checked = subfields.includes(cb.value);
-  });
+  setSubfieldPicker(editSubfieldContainer, editSelectedSubfields, subfields);
 
   // Institute picker — pre-populate with existing institutes
   editSelectedInstitutes = [...toArray(group.institutes || group.institute)];
@@ -414,6 +414,7 @@ function renderEditInstitutePills() {
 }
 
 export function initEditForm() {
+  initSubfieldPicker(editSubfieldContainer, editSelectedSubfields, (updated) => { editSelectedSubfields = updated; });
   btnEditAddLink.addEventListener('click', () => addEditLinkRow());
   editInstituteSelect.addEventListener('change', () => {
     handleEditAddInstitute();
@@ -432,7 +433,7 @@ export function initEditForm() {
 
     const keywords = editKeywords.value.split(',').map(k => k.trim()).filter(Boolean);
     const summary = editSummary.value.trim();
-    const subfields = [...editSubfieldContainer.querySelectorAll('input[type="checkbox"]:checked')].map(cb => cb.value);
+    const subfields = [...editSelectedSubfields];
     if (subfields.length === 0) subfields.push('computational');
 
     const linkRows = editLinksContainer.querySelectorAll('.link-row');
