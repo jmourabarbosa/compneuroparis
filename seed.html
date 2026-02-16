@@ -97,21 +97,21 @@ window.doReset = async () => {
 
 // ---------- PI DATA ----------
 const institutes = [
-  { name: "ENS - Ecole Normale Superieure", website: "https://cognition.ens.fr/en", logoURL: "https://cognition.ens.fr/sites/cognition.ens.fr/files/2018-10/logo-ens.png" },
+  { name: "ENS - Ecole Normale Superieure", website: "https://cognition.ens.fr/en", logoURL: "https://www.ens.psl.eu/sites/default/files/logo_ens_psl_en_png.png" },
   { name: "Paris Brain Institute (ICM)", website: "https://parisbraininstitute.org", logoURL: "https://parisbraininstitute.org/themes/custom/brain_institute/public/icm-logo-en.png" },
-  { name: "Institut Pasteur", website: "https://research.pasteur.fr/en/department/neuroscience/", logoURL: "https://research.pasteur.fr/wp-content/uploads/2025/01/research_pasteur-logo-solo-new-logo-solo-new.webp" },
-  { name: "ESPCI Paris", website: "https://www.bio.espci.fr", logoURL: "https://www.espci.psl.eu/sites/www.espci.psl.eu/files/logo_espci_psl_rvb.png" },
+  { name: "Institut Pasteur", website: "https://research.pasteur.fr/en/department/neuroscience/", logoURL: "https://www.pasteur.fr/sites/default/files/logo_ppal_bas.png" },
+  { name: "ESPCI Paris", website: "https://www.bio.espci.fr", logoURL: "https://static.psl.eu/sites/default/files/2020-07/espci-psl_4.png" },
   { name: "College de France", website: "https://www.college-de-france.fr", logoURL: "https://images.seeklogo.com/logo-png/47/1/college-de-france-logo-png_seeklogo-476087.png" },
   { name: "CEA NeuroSpin", website: "https://joliot.cea.fr/drf/joliot/en/Pages/research_entities/NeuroSpin.aspx", logoURL: "https://joliot.cea.fr/drf/joliot/PublishingImages/Entites_de_recherche/Neurospin/Presentation/logo%20facebook.jpeg" },
   { name: "NeuroPSI (Paris-Saclay)", website: "https://neuropsi.cnrs.fr/en/homepage/", logoURL: "https://neuropsi.cnrs.fr/wp-content/uploads/2021/01/logo.png" },
   { name: "INCC - Universite Paris Cite", website: "https://incc-paris.fr", logoURL: "https://incc-paris.fr/wp-content/uploads/Logo_v2_300-1.png" },
   { name: "ISIR - Sorbonne Universite", website: "https://www.isir.upmc.fr", logoURL: "https://www.isir.upmc.fr/wp-content/themes/isir/dist/images/logo-color.png" },
-  { name: "Institut de la Vision", website: "https://www.institut-vision.org/en/", logoURL: "https://www.institut-vision.org/themes/custom/efil/logo.svg" },
+  { name: "Institut de la Vision", website: "https://www.institut-vision.org/en/", logoURL: "https://www.bionic-vision.org/images/logos/institutions/institut-de-la-vision.jpg" },
   { name: "Institut de l'Audition", website: "https://www.institut-audition.fr/en", logoURL: "https://static.wixstatic.com/media/33fa28_193ed8fc133943ff9c86e1d0fe10a5e2~mv2.png" },
   { name: "IPNP - Universite Paris Cite", website: "https://ipnp.paris5.inserm.fr", logoURL: "https://ipnp.paris5.inserm.fr/img/logo_fr.png" },
   { name: "SPPIN - Universite Paris Cite", website: "https://www.sppin.fr", logoURL: "https://www.sppin.fr/wp-content/uploads/2023/09/logoSPPIN.png" },
   { name: "IBENS - ENS", website: "https://www.bio.ens.psl.eu", logoURL: "https://www.bio.ens.psl.eu/depbio/squelettes/img/ENS_alone_Logo_100.png" },
-  { name: "INRIA Paris", website: "https://www.inria.fr/en/centre-inria-de-paris", logoURL: "https://www.inria.fr/themes/custom/inria/logo/logo.svg" },
+  { name: "INRIA Paris", website: "https://www.inria.fr/en/centre-inria-de-paris", logoURL: "https://cdn.freebiesupply.com/logos/large/2x/inria-logo-png-transparent.png" },
 ];
 
 const pis = [
@@ -274,7 +274,7 @@ async function updateInstitutes() {
     const existing = snap.docs[0].data();
     const isEmpty = v => v === undefined || v === null || v === '' || (Array.isArray(v) && v.length === 0);
     const patch = {};
-    if (isEmpty(existing.logoURL)) patch.logoURL = inst.logoURL || '';
+    if (inst.logoURL && existing.logoURL !== inst.logoURL) patch.logoURL = inst.logoURL;
     if (isEmpty(existing.website)) patch.website = inst.website;
     if (Object.keys(patch).length === 0) {
       log(`  Skip (no empty fields): ${inst.name}`);
