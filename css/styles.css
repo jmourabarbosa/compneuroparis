@@ -1107,6 +1107,24 @@ img {
   border-bottom: 2px solid transparent;
   margin-bottom: -2px;
   transition: all 0.2s;
+  position: relative;
+}
+
+.tab-badge {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  background: #dc3545;
+  color: #fff;
+  font-size: 0.6rem;
+  font-weight: 700;
+  min-width: 16px;
+  height: 16px;
+  line-height: 16px;
+  border-radius: 8px;
+  padding: 0 4px;
+  margin-left: 4px;
+  vertical-align: top;
 }
 
 .tab:hover {

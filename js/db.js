@@ -360,3 +360,32 @@ export async function isAdmin(uid) {
   return snap.exists();
 }
 
+// ========== CONTACT MESSAGES ==========
+
+export async function createMessage({ email, message }) {
+  const docRef = await addDoc(collection(db, 'messages'), {
+    email: email || '',
+    message,
+    status: 'open',
+    createdAt: serverTimestamp()
+  });
+  return docRef.id;
+}
+
+export async function fetchOpenMessages() {
+  const q = query(
+    collection(db, 'messages'),
+    where('status', '==', 'open'),
+    orderBy('createdAt', 'desc')
+  );
+  const snapshot = await getDocs(q);
+  return snapshot.docs.map(d => ({ id: d.id, ...d.data() }));
+}
+
+export async function resolveMessage(id) {
+  await updateDoc(doc(db, 'messages', id), {
+    status: 'resolved',
+    resolvedAt: serverTimestamp()
+  });
+}
+

@@ -49,6 +49,12 @@ service cloud.firestore {
       allow read, update, delete: if isAdmin();
     }
 
+    // Contact messages: anyone can create, admin read/update/delete
+    match /messages/{msgId} {
+      allow create: if true;
+      allow read, update, delete: if isAdmin();
+    }
+
     // Admins: users can check their own admin status, admins can read all and write
     match /admins/{uid} {
       allow read: if isAdmin() || (request.auth != null && request.auth.uid == uid);

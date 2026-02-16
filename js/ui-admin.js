@@ -5,7 +5,8 @@ import {
   fetchApprovedInstitutes, fetchPendingInstitutes,
   approveInstitute, rejectInstitute, updateInstitute, deleteInstitute,
   fetchPendingClaims, approveClaim, rejectClaim,
-  fetchOpenReports, resolveReport
+  fetchOpenReports, resolveReport,
+  fetchOpenMessages, resolveMessage
 } from './db.js';
 import { getCurrentUser, createAdminUser } from './auth.js';
 import { loadGroups, loadPublicInstitutes } from './ui-groups.js';
@@ -91,6 +92,10 @@ const institutesApprovedEmpty = document.getElementById('institutes-approved-emp
 const reportsList = document.getElementById('reports-list');
 const reportsEmpty = document.getElementById('reports-empty');
 
+// Messages tab
+const messagesList = document.getElementById('messages-list');
+const messagesEmpty = document.getElementById('messages-empty');
+
 let currentSubmission = null;
 
 // Cache for institute status lookups
@@ -113,9 +118,11 @@ export function initTabs() {
       document.querySelectorAll('.tab-panel').forEach(p => p.classList.remove('active'));
       document.getElementById(target).classList.add('active');
 
-      // Auto-load reports when tab is selected
+      // Auto-load reports/messages when tab is selected
       if (target === 'tab-reports') {
         loadReports();
+      } else if (target === 'tab-messages') {
+        loadMessages();
       }
     });
   });
@@ -905,6 +912,61 @@ export async function loadReports() {
     });
   } catch (err) {
     console.error('Error loading reports:', err);
+  }
+}
+
+// ========== MESSAGES TAB ==========
+
+export async function loadMessages() {
+  messagesList.innerHTML = '';
+  messagesEmpty.classList.add('hidden');
+
+  try {
+    const messages = await fetchOpenMessages();
+
+    if (messages.length === 0) {
+      messagesEmpty.classList.remove('hidden');
+      return;
+    }
+
+    messages.forEach(msg => {
+      const item = document.createElement('div');
+      item.className = 'admin-item';
+      const emailHTML = msg.email
+        ? `<div class="admin-item-meta">From: ${escapeHTML(msg.email)}</div>`
+        : `<div class="admin-item-meta">Anonymous</div>`;
+      const date = msg.createdAt?.toDate ? msg.createdAt.toDate().toLocaleDateString() : '';
+      item.innerHTML = `
+        <div class="admin-item-info">
+          ${emailHTML}
+          ${date ? `<div class="admin-item-meta">${date}</div>` : ''}
+          <div class="admin-item-meta">${escapeHTML(msg.message)}</div>
+        </div>
+        <div class="admin-item-actions">
+          <button class="btn btn-success btn-sm btn-resolve-msg" aria-label="Resolve message">Resolve</button>
+        </div>
+      `;
+
+      item.querySelector('.btn-resolve-msg').addEventListener('click', async (e) => {
+        const btn = e.currentTarget;
+        btn.disabled = true;
+        try {
+          await resolveMessage(msg.id);
+          item.remove();
+          if (messagesList.children.length === 0) {
+            messagesEmpty.classList.remove('hidden');
+          }
+        } catch (err) {
+          console.error('Resolve message error:', err);
+          alert('Error resolving message.');
+          btn.disabled = false;
+        }
+      });
+
+      messagesList.appendChild(item);
+    });
+  } catch (err) {
+    console.error('Error loading messages:', err);
   }
 }
 

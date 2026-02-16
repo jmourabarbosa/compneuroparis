@@ -1,4 +1,4 @@
-import { createSubmission, createGroup, fetchApprovedInstitutes, createInstitute } from './db.js';
+import { createSubmission, createGroup, fetchApprovedInstitutes, createInstitute, createMessage } from './db.js';
 import { getCurrentUser, getIsAdmin, createAccount, login, logout, resetPassword, isEmailVerified, resendVerification } from './auth.js';
 import { loadGroups, loadPublicInstitutes } from './ui-groups.js';
 
@@ -50,18 +50,68 @@ const btnSubLogin = document.getElementById('btn-sub-login');
 const btnSubLogout = document.getElementById('btn-sub-logout');
 
 export function initForm() {
+  const contactFormWrapper = document.getElementById('contact-form-wrapper');
+  const btnShowContact = document.getElementById('btn-show-contact');
+
   btnShowForm.addEventListener('click', () => {
     formWrapper.classList.remove('hidden');
     instFormWrapper.classList.add('hidden');
+    contactFormWrapper.classList.add('hidden');
     btnShowForm.classList.add('hidden');
     btnShowInstForm.classList.add('hidden');
+    btnShowContact.classList.add('hidden');
   });
 
   btnShowInstForm.addEventListener('click', () => {
     instFormWrapper.classList.remove('hidden');
     formWrapper.classList.add('hidden');
+    contactFormWrapper.classList.add('hidden');
     btnShowForm.classList.add('hidden');
     btnShowInstForm.classList.add('hidden');
+    btnShowContact.classList.add('hidden');
+  });
+
+  btnShowContact.addEventListener('click', () => {
+    contactFormWrapper.classList.remove('hidden');
+    formWrapper.classList.add('hidden');
+    instFormWrapper.classList.add('hidden');
+    btnShowForm.classList.add('hidden');
+    btnShowInstForm.classList.add('hidden');
+    btnShowContact.classList.add('hidden');
+  });
+
+  // Contact form
+  document.getElementById('contact-form').addEventListener('submit', async (e) => {
+    e.preventDefault();
+    const email = document.getElementById('contact-email').value.trim();
+    const message = document.getElementById('contact-message').value.trim();
+    const msgEl = document.getElementById('contact-form-message');
+    const btn = document.getElementById('btn-contact-submit');
+
+    if (!email || !message) {
+      msgEl.textContent = 'Please fill in all fields.';
+      msgEl.className = 'form-message error';
+      msgEl.classList.remove('hidden');
+      return;
+    }
+
+    btn.disabled = true;
+    btn.textContent = 'Sending...';
+    try {
+      await createMessage({ email, message });
+      msgEl.textContent = 'Message sent! Thank you.';
+      msgEl.className = 'form-message success';
+      msgEl.classList.remove('hidden');
+      document.getElementById('contact-form').reset();
+    } catch (err) {
+      console.error('Contact form error:', err);
+      msgEl.textContent = 'Error sending message. Please try again.';
+      msgEl.className = 'form-message error';
+      msgEl.classList.remove('hidden');
+    } finally {
+      btn.disabled = false;
+      btn.textContent = 'Send Message';
+    }
   });
 
   // Institute submission form

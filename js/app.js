@@ -7,9 +7,9 @@ import {
   showEditModalForCreator,
   showEditInstituteModalForCreator, initEditInstituteForm,
   loadPendingInstitutes, loadApprovedInstitutes,
-  loadPendingClaims
+  loadPendingClaims, loadMessages
 } from './ui-admin.js';
-import { fetchPendingSubmissions, fetchPendingClaims as dbFetchPendingClaims, fetchPendingInstitutes as dbFetchPendingInstitutes, fetchOpenReports } from './db.js';
+import { fetchPendingSubmissions, fetchPendingClaims as dbFetchPendingClaims, fetchPendingInstitutes as dbFetchPendingInstitutes, fetchOpenReports, fetchOpenMessages as dbFetchOpenMessages } from './db.js';
 
 // ========== DOM REFS ==========
 const btnAdminLogin = document.getElementById('btn-admin-login');
@@ -124,6 +124,7 @@ btnAdminPanel.addEventListener('click', () => {
   loadAdmins();
   loadPendingInstitutes();
   loadApprovedInstitutes();
+  updateAdminBadge();
 });
 
 document.getElementById('btn-login-forgot').addEventListener('click', async () => {
@@ -222,21 +223,45 @@ function updateGlobalVerifyBanner(user) {
 async function updateAdminBadge() {
   const badge = document.getElementById('admin-badge');
   try {
-    const [submissions, claims, institutes, reports] = await Promise.all([
+    const [submissions, claims, institutes, reports, messages] = await Promise.all([
       fetchPendingSubmissions(),
       dbFetchPendingClaims(),
       dbFetchPendingInstitutes(),
-      fetchOpenReports()
+      fetchOpenReports(),
+      dbFetchOpenMessages()
     ]);
-    const total = submissions.length + claims.length + institutes.length + reports.length;
+    const total = submissions.length + claims.length + institutes.length + reports.length + messages.length;
     if (total > 0) {
       badge.textContent = total;
       badge.classList.remove('hidden');
     } else {
       badge.classList.add('hidden');
     }
+
+    // Per-tab badges inside admin panel
+    setTabBadge('tab-pending', submissions.length);
+    setTabBadge('tab-claims', claims.length);
+    setTabBadge('tab-institutes', institutes.length);
+    setTabBadge('tab-reports', reports.length);
+    setTabBadge('tab-messages', messages.length);
   } catch (e) {
     badge.classList.add('hidden');
+  }
+}
+
+function setTabBadge(tabId, count) {
+  const tab = document.querySelector(`.tab[data-tab="${tabId}"]`);
+  if (!tab) return;
+  let badge = tab.querySelector('.tab-badge');
+  if (count > 0) {
+    if (!badge) {
+      badge = document.createElement('span');
+      badge.className = 'tab-badge';
+      tab.appendChild(badge);
+    }
+    badge.textContent = count;
+  } else if (badge) {
+    badge.remove();
   }
 }
 

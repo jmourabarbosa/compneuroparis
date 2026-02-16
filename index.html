@@ -129,6 +129,23 @@
       <div class="submit-buttons">
         <button id="btn-show-form" class="btn btn-primary btn-add-group">Add New PI</button>
         <button id="btn-show-institute-form" class="btn btn-outline btn-add-group">Add New Institution</button>
+        <button id="btn-show-contact" class="btn btn-outline btn-add-group">Contact Admins</button>
+      </div>
+      <div id="contact-form-wrapper" class="hidden">
+        <h2>Contact Admins</h2>
+        <p class="submit-description">Have a question, suggestion, or correction? Send us a message.</p>
+        <form id="contact-form" class="submission-form" novalidate>
+          <div class="form-group">
+            <label for="contact-email">Your Email <span class="required">*</span></label>
+            <input type="email" id="contact-email" placeholder="you@example.com" required>
+          </div>
+          <div class="form-group">
+            <label for="contact-message">Message <span class="required">*</span></label>
+            <textarea id="contact-message" rows="4" placeholder="Your message..." required></textarea>
+          </div>
+          <div id="contact-form-message" class="form-message hidden" role="alert"></div>
+          <button type="submit" id="btn-contact-submit" class="btn btn-primary btn-full">Send Message</button>
+        </form>
       </div>
       <div id="institute-form-wrapper" class="hidden">
         <h2>Add an Institution</h2>
@@ -366,6 +383,7 @@
           <button class="tab" data-tab="tab-admins" role="tab" aria-selected="false">Admins</button>
           <button class="tab" data-tab="tab-institutes" role="tab" aria-selected="false">Institutions</button>
           <button class="tab" data-tab="tab-reports" role="tab" aria-selected="false">Reports</button>
+          <button class="tab" data-tab="tab-messages" role="tab" aria-selected="false">Messages</button>
         </div>
 
         <!-- Pending Submissions Tab -->
@@ -438,6 +456,14 @@
             <p>No open reports.</p>
           </div>
           <div id="reports-list" class="admin-list"></div>
+        </div>
+
+        <!-- Messages Tab -->
+        <div id="tab-messages" class="tab-panel" role="tabpanel">
+          <div id="messages-empty" class="empty-state hidden">
+            <p>No open messages.</p>
+          </div>
+          <div id="messages-list" class="admin-list"></div>
         </div>
       </div>
     </div>
