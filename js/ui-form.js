@@ -131,7 +131,7 @@ export async function loadInstituteOptions() {
     placeholder.value = '';
     placeholder.disabled = true;
     placeholder.selected = true;
-    placeholder.textContent = 'Select institute...';
+    placeholder.textContent = 'Select institution...';
     subInstitute.appendChild(placeholder);
 
     institutes.forEach(inst => {
@@ -269,7 +269,7 @@ async function handleInstituteSubmit(e) {
   const logoURL = instForm.elements.logoURL.value.trim();
 
   if (!name) {
-    showMessage(instFormMessage, 'Institute name is required.', 'error');
+    showMessage(instFormMessage, 'Institution name is required.', 'error');
     return;
   }
 
@@ -284,10 +284,10 @@ async function handleInstituteSubmit(e) {
     await createInstitute(name, user.uid, { website, summary, keywords, logoURL, autoApprove: isAdmin });
 
     if (isAdmin) {
-      showMessage(instFormMessage, 'Institute added successfully!', 'success');
+      showMessage(instFormMessage, 'Institution added successfully!', 'success');
       await loadPublicInstitutes();
     } else {
-      showMessage(instFormMessage, 'Thank you! Your institute submission is pending review.', 'success');
+      showMessage(instFormMessage, 'Thank you! Your institution submission is pending review.', 'success');
     }
 
     instForm.reset();
@@ -451,7 +451,7 @@ async function handleSubmit(e) {
   }
 
   if (selectedInstitutes.length === 0) {
-    showMessage(formMessage, 'Please select at least one institute.', 'error');
+    showMessage(formMessage, 'Please select at least one institution.', 'error');
     return;
   }
 

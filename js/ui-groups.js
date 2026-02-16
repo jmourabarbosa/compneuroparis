@@ -801,7 +801,7 @@ async function openInstituteDetail(inst) {
   currentDetailInstitute = inst;
   history.replaceState(null, '', '#inst-' + inst.id);
 
-  instDetailTitle.textContent = inst.name || 'Institute Details';
+  instDetailTitle.textContent = inst.name || 'Institution Details';
   instDetailLogo.src = inst.logoURL || 'assets/placeholder-lab.svg';
   instDetailLogo.alt = inst.name || '';
 

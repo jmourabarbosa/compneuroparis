@@ -188,7 +188,7 @@ async function showSubmissionDetail(sub) {
   if (isPending) {
     reviewInstituteWarning.classList.remove('hidden');
     btnApprove.disabled = true;
-    btnApprove.title = 'Institute must be approved first';
+    btnApprove.title = 'Institution must be approved first';
   } else {
     reviewInstituteWarning.classList.add('hidden');
     btnApprove.disabled = false;
@@ -387,7 +387,7 @@ async function loadEditInstituteOptions() {
     placeholder.value = '';
     placeholder.disabled = true;
     placeholder.selected = true;
-    placeholder.textContent = 'Select institute...';
+    placeholder.textContent = 'Select institution...';
     editInstituteSelect.appendChild(placeholder);
 
     institutes.forEach(inst => {
@@ -503,7 +503,7 @@ export async function loadPendingClaims() {
       const item = document.createElement('div');
       item.className = 'admin-item';
       const claimType = claim.type || 'pi';
-      const typeBadge = `<span class="admin-item-type-badge admin-item-type-badge--${claimType}">[${claimType === 'institute' ? 'Institute' : 'PI'}]</span>`;
+      const typeBadge = `<span class="admin-item-type-badge admin-item-type-badge--${claimType}">[${claimType === 'institute' ? 'Institution' : 'PI'}]</span>`;
       const targetName = claim.targetName || claim.piName;
       const justificationHTML = claim.justification
         ? `<div class="admin-item-meta"><strong>Justification:</strong> ${escapeHTML(claim.justification)}</div>`
@@ -845,7 +845,7 @@ export async function loadReports() {
     reports.forEach(report => {
       const item = document.createElement('div');
       item.className = 'admin-item';
-      const typeBadge = `<span class="admin-item-type-badge admin-item-type-badge--${report.type}">[${report.type === 'institute' ? 'Institute' : 'PI'}]</span>`;
+      const typeBadge = `<span class="admin-item-type-badge admin-item-type-badge--${report.type}">[${report.type === 'institute' ? 'Institution' : 'PI'}]</span>`;
       const reporterHTML = report.reporterEmail
         ? `<div class="admin-item-meta">Reported by: ${escapeHTML(report.reporterEmail)}</div>`
         : `<div class="admin-item-meta">Reported anonymously</div>`;
@@ -867,7 +867,7 @@ export async function loadReports() {
         try {
           if (report.type === 'institute') {
             const inst = await fetchInstituteById(report.targetId);
-            if (!inst) { alert('Institute not found.'); return; }
+            if (!inst) { alert('Institution not found.'); return; }
             document.querySelector('#modal-admin').classList.add('hidden');
             document.dispatchEvent(new CustomEvent('creator-edit-institute', { detail: inst }));
           } else {

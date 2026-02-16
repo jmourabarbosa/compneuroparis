@@ -113,7 +113,7 @@
 
     <div class="subfield-section collapsed" data-subfield="institutes">
       <button class="subfield-header" aria-expanded="false">
-        <h2>Institutes</h2>
+        <h2>Institutions</h2>
         <span class="subfield-count" id="institutes-public-count">0</span>
         <svg class="subfield-arrow" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><polyline points="6 9 12 15 18 9"/></svg>
       </button>
@@ -128,11 +128,11 @@
     <div class="submit-inner">
       <div class="submit-buttons">
         <button id="btn-show-form" class="btn btn-primary btn-add-group">Add New PI</button>
-        <button id="btn-show-institute-form" class="btn btn-outline btn-add-group">Add New Institute</button>
+        <button id="btn-show-institute-form" class="btn btn-outline btn-add-group">Add New Institution</button>
       </div>
       <div id="institute-form-wrapper" class="hidden">
-        <h2>Add an Institute</h2>
-        <p class="submit-description">Know a neuroscience institute in Paris? Submit it for review.</p>
+        <h2>Add an Institution</h2>
+        <p class="submit-description">Know a neuroscience institution in Paris? Submit it for review.</p>
 
         <!-- Reuse same auth section — user must be logged in -->
         <div id="inst-sub-auth" class="submission-auth">
@@ -161,7 +161,7 @@
 
         <form id="institute-submission-form" class="submission-form" novalidate>
           <div class="form-group">
-            <label for="inst-sub-name">Institute Name <span class="required">*</span></label>
+            <label for="inst-sub-name">Institution Name <span class="required">*</span></label>
             <input type="text" id="inst-sub-name" name="name" required>
           </div>
           <div class="form-group">
@@ -236,18 +236,18 @@
             </div>
           </div>
           <div class="form-group">
-            <label>Institute(s) <span class="required">*</span></label>
+            <label>Institution(s) <span class="required">*</span></label>
             <div class="institute-picker">
               <div class="institute-picker-row">
                 <select id="sub-institute">
-                  <option value="" disabled selected>Select institute...</option>
+                  <option value="" disabled selected>Select institution...</option>
                   <option value="__new__">Propose new...</option>
                 </select>
               </div>
               <div id="sub-institute-pills" class="institute-pills"></div>
               <div id="sub-institute-new-fields" class="institute-new-fields hidden">
                 <input type="text" id="sub-institute-new-name" placeholder="New institute name">
-                <input type="url" id="sub-institute-new-website" placeholder="Institute website (https://...)">
+                <input type="url" id="sub-institute-new-website" placeholder="Institution website (https://...)">
                 <button type="button" id="btn-add-new-institute" class="btn btn-outline btn-sm">Add</button>
               </div>
             </div>
@@ -364,7 +364,7 @@
           <button class="tab" data-tab="tab-manage" role="tab" aria-selected="false">Manage PIs</button>
           <button class="tab" data-tab="tab-claims" role="tab" aria-selected="false">Claims</button>
           <button class="tab" data-tab="tab-admins" role="tab" aria-selected="false">Admins</button>
-          <button class="tab" data-tab="tab-institutes" role="tab" aria-selected="false">Institutes</button>
+          <button class="tab" data-tab="tab-institutes" role="tab" aria-selected="false">Institutions</button>
           <button class="tab" data-tab="tab-reports" role="tab" aria-selected="false">Reports</button>
         </div>
 
@@ -416,17 +416,17 @@
           </div>
         </div>
 
-        <!-- Institutes Tab -->
+        <!-- Institutions Tab -->
         <div id="tab-institutes" class="tab-panel" role="tabpanel">
-          <h4>Pending Institutes</h4>
+          <h4>Pending Institutions</h4>
           <div id="institutes-pending-empty" class="empty-state hidden">
-            <p>No pending institutes.</p>
+            <p>No pending institutions.</p>
           </div>
           <div id="institutes-pending-list" class="admin-list"></div>
           <div class="institutes-approved-section">
-            <h4>Approved Institutes</h4>
+            <h4>Approved Institutions</h4>
             <div id="institutes-approved-empty" class="empty-state hidden">
-              <p>No approved institutes yet.</p>
+              <p>No approved institutions yet.</p>
             </div>
             <div id="institutes-approved-list" class="admin-list"></div>
           </div>
@@ -475,11 +475,11 @@
             </div>
           </div>
           <div class="form-group">
-            <label>Institute(s)</label>
+            <label>Institution(s)</label>
             <div class="institute-picker">
               <div class="institute-picker-row">
                 <select id="edit-institute-select">
-                  <option value="" disabled selected>Select institute...</option>
+                  <option value="" disabled selected>Select institution...</option>
                 </select>
               </div>
               <div id="edit-institute-pills" class="institute-pills"></div>
@@ -604,7 +604,7 @@
   </div>
 
   <!-- ========== INSTITUTE DETAIL MODAL ========== -->
-  <div id="modal-institute-detail" class="modal-overlay hidden" role="dialog" aria-modal="true" aria-label="Institute Details">
+  <div id="modal-institute-detail" class="modal-overlay hidden" role="dialog" aria-modal="true" aria-label="Institution Details">
     <div class="modal modal-lg">
       <div class="modal-header">
         <h3 id="inst-detail-title">Institute Details</h3>
@@ -653,10 +653,10 @@
   </div>
 
   <!-- ========== INSTITUTE EDIT MODAL ========== -->
-  <div id="modal-edit-institute" class="modal-overlay hidden" role="dialog" aria-modal="true" aria-label="Edit Institute">
+  <div id="modal-edit-institute" class="modal-overlay hidden" role="dialog" aria-modal="true" aria-label="Edit Institution">
     <div class="modal">
       <div class="modal-header">
-        <h3>Edit Institute</h3>
+        <h3>Edit Institution</h3>
         <button class="modal-close" data-close-modal="modal-edit-institute" aria-label="Close">&times;</button>
       </div>
       <div class="modal-body">
@@ -665,7 +665,7 @@
           <div id="edit-inst-message" class="form-message hidden" role="alert"></div>
           <button type="submit" class="btn btn-primary btn-full">Save Changes</button>
           <div class="form-group">
-            <label for="edit-inst-name">Institute Name <span class="required">*</span></label>
+            <label for="edit-inst-name">Institution Name <span class="required">*</span></label>
             <input type="text" id="edit-inst-name" required>
           </div>
           <div class="form-group">
@@ -730,11 +730,11 @@
           </div>
         </div>
         <div class="form-group">
-          <label>Institute(s)</label>
+          <label>Institution(s)</label>
           <div id="review-institute-display" class="institute-display"></div>
         </div>
         <div id="review-institute-warning" class="institute-warning hidden">
-          Institute is pending approval. You cannot approve this PI until the institute is approved.
+          Institution is pending approval. You cannot approve this PI until the institution is approved.
         </div>
         <div class="form-group">
           <label for="review-keywords">Keywords <span class="hint">(comma-separated)</span></label>
