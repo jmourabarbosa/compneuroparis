@@ -1,0 +1,192 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<title>Export DB → seed.html</title>
+<style>
+  body { font-family: system-ui; max-width: 900px; margin: 40px auto; padding: 0 20px; background: #111; color: #eee; }
+  button { padding: 10px 24px; font-size: 16px; cursor: pointer; border: none; border-radius: 6px; }
+  #loginBtn { background: #4285f4; color: white; }
+  #exportBtn { background: #34a853; color: white; font-size: 18px; padding: 14px 32px; }
+  #exportBtn:disabled { background: #555; cursor: not-allowed; color: #999; }
+  #log { background: #1a1a1a; padding: 16px; border-radius: 8px; max-height: 200px; overflow-y: auto; font-family: monospace; font-size: 13px; white-space: pre-wrap; margin-top: 16px; }
+  #output { background: #0a0a0a; padding: 16px; border-radius: 8px; max-height: 600px; overflow-y: auto; font-family: monospace; font-size: 11px; white-space: pre-wrap; margin-top: 16px; display: none; }
+  .success { color: #34a853; }
+  .error { color: #ea4335; }
+  .info { color: #4285f4; }
+  input { padding: 8px 12px; font-size: 14px; border-radius: 4px; border: 1px solid #444; background: #222; color: #eee; width: 240px; }
+  #authSection { margin-bottom: 24px; }
+  #copyBtn { background: #8b5cf6; color: white; margin-left: 12px; display: none; }
+</style>
+</head>
+<body>
+<h1>Export Firestore → seed.html format</h1>
+<p>Reads all PIs and institutes from the live database and generates the <code>pis</code> and <code>institutes</code> arrays for seed.html.</p>
+
+<div id="authSection">
+  <p id="authStatus">Not logged in</p>
+  <div id="loginForm">
+    <input type="email" id="email" placeholder="Admin email">
+    <input type="password" id="password" placeholder="Password">
+    <button id="loginBtn" onclick="doLogin()">Login</button>
+  </div>
+</div>
+
+<button id="exportBtn" disabled onclick="runExport()">Export All Data</button>
+<button id="copyBtn" onclick="copyOutput()">Copy to Clipboard</button>
+<div id="log"></div>
+<div id="output"></div>
+
+<script type="module">
+import { initializeApp } from 'https://www.gstatic.com/firebasejs/11.4.0/firebase-app.js';
+import { getAuth, signInWithEmailAndPassword, onAuthStateChanged } from 'https://www.gstatic.com/firebasejs/11.4.0/firebase-auth.js';
+import { getFirestore, collection, getDocs, query, where } from 'https://www.gstatic.com/firebasejs/11.4.0/firebase-firestore.js';
+
+const firebaseConfig = {
+  apiKey: "AIzaSyCEUSVBEAPYfsoG00GKPqw_lHJQKelgVbk",
+  authDomain: "compneuroparis.firebaseapp.com",
+  projectId: "compneuroparis",
+  storageBucket: "compneuroparis.firebasestorage.app",
+  messagingSenderId: "768335946036",
+  appId: "1:768335946036:web:61184dde3b4b66c58bc561"
+};
+
+const app = initializeApp(firebaseConfig);
+const auth = getAuth(app);
+const db = getFirestore(app);
+
+const logEl = document.getElementById('log');
+function log(msg, cls = '') {
+  const span = document.createElement('span');
+  span.className = cls;
+  span.textContent = msg + '\n';
+  logEl.appendChild(span);
+  logEl.scrollTop = logEl.scrollHeight;
+}
+
+onAuthStateChanged(auth, user => {
+  if (user) {
+    document.getElementById('authStatus').textContent = `Logged in as ${user.email}`;
+    document.getElementById('loginForm').style.display = 'none';
+    document.getElementById('exportBtn').disabled = false;
+  }
+});
+
+window.doLogin = async () => {
+  const email = document.getElementById('email').value;
+  const pw = document.getElementById('password').value;
+  try {
+    await signInWithEmailAndPassword(auth, email, pw);
+    log('Logged in!', 'success');
+  } catch (e) {
+    log('Login error: ' + e.message, 'error');
+  }
+};
+
+function escJS(s) {
+  return s.replace(/\\/g, '\\\\').replace(/"/g, '\\"').replace(/\n/g, '\\n');
+}
+
+window.runExport = async () => {
+  document.getElementById('exportBtn').disabled = true;
+  const outputEl = document.getElementById('output');
+  outputEl.style.display = 'block';
+  outputEl.textContent = '';
+
+  try {
+    // 1. Export institutes
+    log('Reading institutes...', 'info');
+    const instSnap = await getDocs(query(collection(db, 'institutes'), where('status', '==', 'approved')));
+    const institutes = [];
+    instSnap.forEach(d => {
+      const data = d.data();
+      institutes.push({
+        name: data.name || '',
+        website: data.website || '',
+        logoURL: data.logoURL || ''
+      });
+    });
+    institutes.sort((a, b) => a.name.localeCompare(b.name));
+    log(`Found ${institutes.length} institutes`, 'success');
+
+    // 2. Export PIs (groups)
+    log('Reading PIs (groups)...', 'info');
+    const groupSnap = await getDocs(collection(db, 'groups'));
+    const pis = [];
+    groupSnap.forEach(d => {
+      const data = d.data();
+      // Extract website from links array
+      let website = '';
+      if (data.links && Array.isArray(data.links)) {
+        const webLink = data.links.find(l => l.label === 'Website' || l.url);
+        if (webLink) website = webLink.url || '';
+      }
+      pis.push({
+        name: data.name || '',
+        keywords: data.keywords || [],
+        summary: data.summary || '',
+        website: website,
+        photoURL: data.photoURL || '',
+        subfields: data.subfields || [data.subfield || 'computational'],
+        institutes: data.institutes || [data.institute || ''],
+        hiring: data.hiring || false,
+        claimedBy: data.claimedBy || null,
+      });
+    });
+    // Sort by primary subfield, then by name
+    const sfOrder = ['computational', 'systems', 'human', 'molecular', 'developmental', 'clinical'];
+    pis.sort((a, b) => {
+      const sa = sfOrder.indexOf(a.subfields[0]) === -1 ? 99 : sfOrder.indexOf(a.subfields[0]);
+      const sb = sfOrder.indexOf(b.subfields[0]) === -1 ? 99 : sfOrder.indexOf(b.subfields[0]);
+      if (sa !== sb) return sa - sb;
+      return a.name.localeCompare(b.name);
+    });
+    log(`Found ${pis.length} PIs`, 'success');
+
+    // 3. Build output
+    let out = '';
+
+    // Institutes array
+    out += 'const institutes = [\n';
+    for (const inst of institutes) {
+      out += `  { name: "${escJS(inst.name)}", website: "${escJS(inst.website)}", logoURL: "${escJS(inst.logoURL)}" },\n`;
+    }
+    out += '];\n\n';
+
+    // PIs array
+    out += 'const pis = [\n';
+    let currentSf = '';
+    for (const pi of pis) {
+      const sf = pi.subfields[0];
+      if (sf !== currentSf) {
+        currentSf = sf;
+        out += `  // ===== ${sf.toUpperCase()} =====\n`;
+      }
+      const kw = JSON.stringify(pi.keywords);
+      const sfs = JSON.stringify(pi.subfields);
+      const insts = JSON.stringify(pi.institutes);
+      out += `  { name:"${escJS(pi.name)}", keywords:${kw}, summary:"${escJS(pi.summary)}", website:"${escJS(pi.website)}", photoURL:"${escJS(pi.photoURL)}", subfields:${sfs}, institutes:${insts} },\n`;
+    }
+    out += '];\n';
+
+    outputEl.textContent = out;
+    document.getElementById('copyBtn').style.display = 'inline-block';
+    log(`\nExport complete! ${institutes.length} institutes, ${pis.length} PIs.`, 'success');
+    log('Copy the output below and paste into seed.html.', 'info');
+
+  } catch (e) {
+    log('ERROR: ' + e.message, 'error');
+    console.error(e);
+  }
+  document.getElementById('exportBtn').disabled = false;
+};
+
+window.copyOutput = () => {
+  const text = document.getElementById('output').textContent;
+  navigator.clipboard.writeText(text).then(() => {
+    log('Copied to clipboard!', 'success');
+  });
+};
+</script>
+</body>
+</html>

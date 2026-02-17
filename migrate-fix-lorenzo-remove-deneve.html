@@ -1,0 +1,146 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<title>Fix Lorenzo + Remove Sophie Deneve</title>
+<style>
+  body { font-family: system-ui; max-width: 800px; margin: 40px auto; padding: 0 20px; background: #111; color: #eee; }
+  button { padding: 10px 24px; font-size: 16px; cursor: pointer; border: none; border-radius: 6px; }
+  #loginBtn { background: #4285f4; color: white; }
+  .run-btn { background: #34a853; color: white; font-size: 18px; padding: 14px 32px; }
+  .run-btn:disabled { background: #555; cursor: not-allowed; color: #999; }
+  .danger-btn { background: #ea4335; color: white; font-size: 18px; padding: 14px 32px; }
+  .danger-btn:disabled { background: #555; cursor: not-allowed; color: #999; }
+  #log { background: #1a1a1a; padding: 16px; border-radius: 8px; max-height: 500px; overflow-y: auto; font-family: monospace; font-size: 13px; white-space: pre-wrap; margin-top: 16px; }
+  .success { color: #34a853; }
+  .error { color: #ea4335; }
+  .info { color: #4285f4; }
+  .warn { color: #fbbc04; }
+  input { padding: 8px 12px; font-size: 14px; border-radius: 4px; border: 1px solid #444; background: #222; color: #eee; width: 240px; }
+  #authSection { margin-bottom: 24px; }
+  h2 { margin-top: 32px; }
+</style>
+</head>
+<body>
+<h1>Fix Lorenzo Posani + Remove Sophie Deneve</h1>
+
+<div id="authSection">
+  <p id="authStatus">Not logged in</p>
+  <div id="loginForm">
+    <input type="email" id="email" placeholder="Admin email">
+    <input type="password" id="password" placeholder="Password">
+    <button id="loginBtn" onclick="doLogin()">Login</button>
+  </div>
+</div>
+
+<h2>1. Fix Lorenzo Posani → subfields: ["computational", "systems"]</h2>
+<button id="fixLorenzoBtn" class="run-btn" disabled onclick="fixLorenzo()">Fix Lorenzo</button>
+
+<h2>2. Delete Sophie Deneve from database</h2>
+<button id="deleteDenevBtn" class="danger-btn" disabled onclick="deleteDeneve()">Delete Sophie Deneve</button>
+
+<div id="log"></div>
+
+<script type="module">
+import { initializeApp } from 'https://www.gstatic.com/firebasejs/11.4.0/firebase-app.js';
+import { getAuth, signInWithEmailAndPassword, onAuthStateChanged } from 'https://www.gstatic.com/firebasejs/11.4.0/firebase-auth.js';
+import { getFirestore, collection, getDocs, query, where, updateDoc, deleteDoc, doc, serverTimestamp } from 'https://www.gstatic.com/firebasejs/11.4.0/firebase-firestore.js';
+
+const firebaseConfig = {
+  apiKey: "AIzaSyCEUSVBEAPYfsoG00GKPqw_lHJQKelgVbk",
+  authDomain: "compneuroparis.firebaseapp.com",
+  projectId: "compneuroparis",
+  storageBucket: "compneuroparis.firebasestorage.app",
+  messagingSenderId: "768335946036",
+  appId: "1:768335946036:web:61184dde3b4b66c58bc561"
+};
+
+const app = initializeApp(firebaseConfig);
+const auth = getAuth(app);
+const db = getFirestore(app);
+
+const logEl = document.getElementById('log');
+function log(msg, cls = '') {
+  const span = document.createElement('span');
+  span.className = cls;
+  span.textContent = msg + '\n';
+  logEl.appendChild(span);
+  logEl.scrollTop = logEl.scrollHeight;
+}
+
+onAuthStateChanged(auth, user => {
+  if (user) {
+    document.getElementById('authStatus').textContent = `Logged in as ${user.email}`;
+    document.getElementById('loginForm').style.display = 'none';
+    document.getElementById('fixLorenzoBtn').disabled = false;
+    document.getElementById('deleteDenevBtn').disabled = false;
+  }
+});
+
+window.doLogin = async () => {
+  const email = document.getElementById('email').value;
+  const pw = document.getElementById('password').value;
+  try {
+    await signInWithEmailAndPassword(auth, email, pw);
+    log('Logged in!', 'success');
+  } catch (e) {
+    log('Login error: ' + e.message, 'error');
+  }
+};
+
+window.fixLorenzo = async () => {
+  document.getElementById('fixLorenzoBtn').disabled = true;
+  try {
+    log('Looking for Lorenzo Posani...', 'info');
+    const q = query(collection(db, 'groups'), where('name', '==', 'Lorenzo Posani'));
+    const snap = await getDocs(q);
+    if (snap.empty) {
+      log('Lorenzo Posani NOT FOUND in database!', 'error');
+      return;
+    }
+    const docSnap = snap.docs[0];
+    const data = docSnap.data();
+    log(`Found: ${data.name} (id: ${docSnap.id})`, 'info');
+    log(`Current subfields: ${JSON.stringify(data.subfields)}`, 'warn');
+    log(`Current subfield: ${data.subfield}`, 'warn');
+
+    const newSubfields = ['computational', 'systems'];
+    await updateDoc(doc(db, 'groups', docSnap.id), {
+      subfields: newSubfields,
+      subfield: 'computational',
+      updatedAt: serverTimestamp()
+    });
+    log(`Updated subfields → ${JSON.stringify(newSubfields)}`, 'success');
+    log(`Updated subfield → "computational"`, 'success');
+  } catch (e) {
+    log('ERROR: ' + e.message, 'error');
+  }
+  document.getElementById('fixLorenzoBtn').disabled = false;
+};
+
+window.deleteDeneve = async () => {
+  document.getElementById('deleteDenevBtn').disabled = true;
+  try {
+    log('Looking for Sophie Deneve...', 'info');
+    const q = query(collection(db, 'groups'), where('name', '==', 'Sophie Deneve'));
+    const snap = await getDocs(q);
+    if (snap.empty) {
+      log('Sophie Deneve NOT FOUND in database!', 'error');
+      return;
+    }
+    const docSnap = snap.docs[0];
+    const data = docSnap.data();
+    log(`Found: ${data.name} (id: ${docSnap.id})`, 'info');
+    log(`Subfields: ${JSON.stringify(data.subfields)}`, 'warn');
+    log(`Keywords: ${JSON.stringify(data.keywords)}`, 'warn');
+
+    await deleteDoc(doc(db, 'groups', docSnap.id));
+    log(`DELETED Sophie Deneve from database`, 'success');
+  } catch (e) {
+    log('ERROR: ' + e.message, 'error');
+  }
+  document.getElementById('deleteDenevBtn').disabled = false;
+};
+</script>
+</body>
+</html>
