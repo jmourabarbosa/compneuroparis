@@ -532,6 +532,85 @@ const KEYWORD_RULES = {
     'intravitreal delivery', 'photoreceptor rescue',
     'hearing restoration', 'cell therapy', 'gene delivery',
     'neurotropic virus'
+  ],
+
+  // ── Umbrella categories ──
+  'cognition': [
+    'cognition', 'cognitive', 'memory', 'learning', 'decision-making',
+    'decision making', 'attention', 'language', 'consciousness',
+    'social cognition', 'metacognition', 'executive function',
+    'reasoning', 'theory of mind', 'numerical cognition',
+    'working memory', 'cognitive control', 'cognitive flexibility',
+    'mental representation', 'concept learning', 'knowledge'
+  ],
+  'circuits & synapses': [
+    'neural circuit', 'neuronal circuit', 'synaptic plasticity',
+    'neural coding', 'brain connectivity', 'connectom', 'microcircuit',
+    'synaptogenesis', 'neurotransmitter', 'synaptic', 'circuit dynamics',
+    'circuit assembly', 'interneuron', 'excitation-inhibition',
+    'gabaergic', 'glutamatergic', 'cholinergic', 'serotonergic',
+    'dopaminergic', 'noradrenergic', 'neural network',
+    'feedforward inhibition', 'recurrent inhibition'
+  ],
+  'imaging': [
+    'neuroimaging', 'fmri', 'microscopy', 'two-photon', '2-photon',
+    'calcium imaging', 'ultrasound imaging', 'connectomics', 'brain imaging',
+    'mri', 'pet imaging', 'light sheet', 'confocal', 'voltage imaging',
+    'tissue clearing', 'oct imaging', 'idisco', 'brainbow',
+    'super-resolution', 'fluorescence', 'holographic imaging',
+    'adaptive optic', 'cryo-em', 'electron microscopy',
+    'diffusion mri', 'mr spectroscopy', 'preclinical mri'
+  ],
+  'recording': [
+    'electrophysiology', 'patch clamp', 'patch-clamp',
+    'eeg', 'meg ', 'magnetoencephalogra', 'electroencephalogra',
+    'calcium imaging', 'neuropixels', 'multi-electrode',
+    'neural recording', 'extracellular recording', 'in vivo recording',
+    'single-unit', 'electrode', 'whole-cell recording',
+    'voltage clamp', 'current clamp', 'field potential',
+    'spike recording'
+  ],
+  'sensory systems': [
+    'visual system', 'auditory system', 'auditory', 'olfactory',
+    'retina', 'retinal', 'sensory processing', 'psychophysics',
+    'visual perception', 'somatosensory', 'tactile', 'vestibular',
+    'multisensory', 'cochlea', 'cochlear', 'hearing',
+    'visual cortex', 'smell', 'nociception', 'pain',
+    'photoreceptor', 'hair cell', 'inner ear',
+    'mechanotransduction', 'whisker', 'barrel cortex',
+    'psychoacoustic', 'sensory coding', 'perceptual'
+  ],
+  'motor systems': [
+    'motor control', 'basal ganglia', 'cerebellum', 'cerebellar',
+    'spinal cord', 'locomotion', 'movement', 'motor cortex',
+    'motor learning', 'gait', 'posture', 'motor neuron', 'motoneuron',
+    'motor planning', 'reaching', 'grasping', 'action sequence',
+    'sensorimotor', 'movement disorder', 'dystonia', 'deep brain stimulation',
+    'oculomotor', 'eye movement', 'motor adaptation', 'striatum'
+  ],
+  'sleep & homeostasis': [
+    'sleep', 'circadian', 'brain-body', 'interoception', 'pain',
+    'nociception', 'arousal state', 'wakefulness', 'dream',
+    'slow-wave', 'rem sleep', 'sleep-wake', 'insomnia',
+    'homeostasis', 'energy homeostasis', 'food intake',
+    'feeding behavior', 'hypothalamus', 'neuroendocrine',
+    'gut-brain', 'visceral', 'breathing rhythm', 'respiratory',
+    'metabolic', 'body temperature'
+  ],
+
+  // ── Model organisms ──
+  'primate': [
+    'primate', 'non-human primate', 'monkey', 'macaque', 'marmoset',
+    'mouse lemur', 'baboon', 'chimpanzee', 'great ape'
+  ],
+  'rodent': [
+    'mouse', 'mice', 'rat ', 'rats', 'rodent', 'murine',
+    'behaving mice', 'mouse model', 'mouse brain', 'mouse cortex'
+  ],
+  'invertebrates': [
+    'drosophila', 'c. elegans', 'caenorhabditis', 'honeybee',
+    'insect', 'invertebrate', 'fruit fly', 'nematode',
+    'arthropod', 'mollusk', 'aplysia'
   ]
 };
 
@@ -718,7 +797,7 @@ const OVERRIDES = {
   'Thomas Andrillon': { add: ['behavioral experiments'] }, // sleep/consciousness experiments
   'Delphine Oudiette': { add: ['behavioral experiments'] }, // lucid dream experiments
   'Laurence Conty': { add: ['behavioral experiments'] }, // eye gaze, joint attention experiments
-  'Marc Dhenain': { add: ['behavioral experiments'] }, // Alzheimer mouse models
+  'Marc Dhenain': { add: ['behavioral experiments'], remove: ['rodent'] }, // mouse lemur (primate), not rodent
   'Bechir Jarraya': { add: ['behavioral experiments'] }, // NHP behavioral tasks
 
   'Kate Grieve': { remove: ['learning'] }, // retinal imaging, not learning
