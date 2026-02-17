@@ -869,8 +869,10 @@ export function initSearch() {
     modalInstDetail.classList.add('hidden');
     modalJobDetail.classList.add('hidden');
 
-    // Set search input to keyword and filter
+    // Set search input to keyword and auto-select it as active filter
     searchInput.value = kw;
+    activeKeywords.clear();
+    activeKeywords.add(kw.trim().toLowerCase());
     filterGroups();
   });
 }
