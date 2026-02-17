@@ -4,7 +4,7 @@ import { getCurrentUser, getIsAdmin, createAccount, login, isEmailVerified, rese
 let allGroups = [];
 let allInstitutes = [];
 let allJobs = [];
-let activeKeyword = null;
+let activeKeywords = new Set();
 let searchText = '';
 let activeInstitute = null;
 
@@ -117,21 +117,16 @@ export async function loadGroups() {
 function buildKeywordFilters() {
   // Initial keyword pills are built by renderGroups() via rebuildKeywordPills().
   // This function now just ensures keyword bar visibility on first load.
-  keywordFilters.classList.toggle('hidden', searchText.length === 0 && !activeKeyword);
+  keywordFilters.classList.toggle('hidden', searchText.length === 0 && activeKeywords.size === 0);
 }
 
 function toggleKeyword(kw, btn) {
-  if (activeKeyword === kw) {
-    activeKeyword = null;
+  if (activeKeywords.has(kw)) {
+    activeKeywords.delete(kw);
     btn.classList.remove('active');
     btn.setAttribute('aria-pressed', 'false');
   } else {
-    // Deactivate previous
-    keywordFilters.querySelectorAll('.keyword-btn').forEach(b => {
-      b.classList.remove('active');
-      b.setAttribute('aria-pressed', 'false');
-    });
-    activeKeyword = kw;
+    activeKeywords.add(kw);
     btn.classList.add('active');
     btn.setAttribute('aria-pressed', 'true');
   }
@@ -142,7 +137,7 @@ export function filterGroups() {
   searchText = searchInput.value.trim().toLowerCase();
   // Clear keyword selection when search is emptied
   if (!searchText) {
-    activeKeyword = null;
+    activeKeywords.clear();
   }
   renderGroups();
   renderInstitutes();
@@ -194,10 +189,12 @@ function renderGroups() {
       const institutes = toArray(g.institutes || g.institute);
       if (!institutes.includes(activeInstitute)) return false;
     }
-    // Keyword filter
-    if (activeKeyword) {
+    // Keyword filter (PI must have ALL selected keywords)
+    if (activeKeywords.size > 0) {
       const kws = (g.keywords || []).map(k => k.trim().toLowerCase());
-      if (!kws.includes(activeKeyword)) return false;
+      for (const ak of activeKeywords) {
+        if (!kws.includes(ak)) return false;
+      }
     }
     // Text search (fuzzy)
     if (searchText) {
@@ -253,7 +250,7 @@ function renderGroups() {
 
   let totalVisible = 0;
 
-  const isSearching = searchText || activeKeyword || activeInstitute || filterHiring || filterValidated;
+  const isSearching = searchText || activeKeywords.size > 0 || activeInstitute || filterHiring || filterValidated;
 
   SUBFIELDS.forEach(sf => {
     const { grid, count, countSecondary, el } = sections[sf];
@@ -328,7 +325,7 @@ function rebuildKeywordPills(filteredGroups) {
 
   // No search text → hide keywords entirely
   if (!searchText) {
-    activeKeyword = null;
+    activeKeywords.clear();
     keywordFilters.classList.add('hidden');
     return;
   }
@@ -346,9 +343,9 @@ function rebuildKeywordPills(filteredGroups) {
   const matching = [...kwCounts.keys()].filter(kw => fuzzyMatch(kw, searchText))
     .sort((a, b) => kwCounts.get(b) - kwCounts.get(a));
 
-  // If active keyword is no longer relevant, deactivate it
-  if (activeKeyword && !matching.includes(activeKeyword)) {
-    activeKeyword = null;
+  // Remove active keywords that are no longer in the matching set
+  for (const ak of [...activeKeywords]) {
+    if (!matching.includes(ak)) activeKeywords.delete(ak);
   }
 
   if (matching.length === 0) {
@@ -359,7 +356,7 @@ function rebuildKeywordPills(filteredGroups) {
   matching.forEach(kw => {
     const btn = document.createElement('button');
     btn.className = 'keyword-btn';
-    if (kw === activeKeyword) {
+    if (activeKeywords.has(kw)) {
       btn.classList.add('active');
       btn.setAttribute('aria-pressed', 'true');
     } else {
