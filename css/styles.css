@@ -2139,29 +2139,50 @@ img {
   display: flex;
   flex-wrap: wrap;
   gap: 0.5rem;
-  margin-top: 0.75rem;
+  margin-bottom: 1rem;
 }
 
 .filter-toggle {
   padding: 0.3rem 0.75rem;
   border: 1.5px solid var(--color-border);
   border-radius: 999px;
-  background: var(--color-surface);
+  background: transparent;
   font-family: var(--font);
   font-size: 0.8rem;
-  color: var(--color-text-secondary);
+  font-weight: 500;
   cursor: pointer;
   transition: all 0.2s;
 }
 
-.filter-toggle:hover {
-  border-color: var(--color-primary);
-  color: var(--color-primary);
+/* Hiring toggle: red */
+.filter-toggle-hiring {
+  color: var(--color-danger);
+  border-color: var(--color-danger);
 }
 
-.filter-toggle.active {
-  background: var(--color-primary);
-  border-color: var(--color-primary);
+.filter-toggle-hiring:hover {
+  background: rgba(239, 68, 68, 0.1);
+}
+
+.filter-toggle-hiring.active {
+  background: var(--color-danger);
+  border-color: var(--color-danger);
+  color: white;
+}
+
+/* Validated toggle: green */
+.filter-toggle-validated {
+  color: var(--color-success);
+  border-color: var(--color-success);
+}
+
+.filter-toggle-validated:hover {
+  background: rgba(34, 197, 94, 0.1);
+}
+
+.filter-toggle-validated.active {
+  background: var(--color-success);
+  border-color: var(--color-success);
   color: white;
 }
 

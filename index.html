@@ -60,10 +60,6 @@
         <input type="search" id="search-input" placeholder="Search PIs and institutes by name, keyword, or summary..." aria-label="Search PIs and institutes" autocomplete="off">
       </div>
       <div id="keyword-filters" class="keyword-filters" aria-label="Filter by keyword"></div>
-      <div class="filter-toggles" id="filter-toggles">
-        <button class="filter-toggle" id="filter-hiring">Only Hiring</button>
-        <button class="filter-toggle" id="filter-validated">Only Validated</button>
-      </div>
     </div>
   </section>
 
@@ -80,6 +76,11 @@
     <div id="institute-filter-banner" class="institute-filter-banner hidden">
       <span>Showing PIs from <strong id="institute-filter-name"></strong></span>
       <button id="institute-filter-clear" class="institute-filter-clear">Clear filter</button>
+    </div>
+
+    <div class="filter-toggles" id="filter-toggles">
+      <button class="filter-toggle filter-toggle-hiring" id="filter-hiring">Only Hiring</button>
+      <button class="filter-toggle filter-toggle-validated" id="filter-validated">Only Validated</button>
     </div>
 
     <div class="subfield-section collapsed" data-subfield="computational">
