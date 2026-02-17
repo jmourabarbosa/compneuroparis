@@ -103,245 +103,411 @@ window.doLogin = async () => {
 const KEYWORD_RULES = {
   // ── Techniques / Methods ──
   'electrophysiology': [
-    'electrophysiology', 'patch clamp', 'whole-cell recording', 'extracellular recording',
-    'neuropixels', 'multi-electrode', 'neural recording', 'single-unit',
-    'voltage clamp', 'current clamp'
+    'electrophysiology', 'patch clamp', 'patch-clamp', 'whole-cell recording',
+    'extracellular recording', 'neuropixels', 'multi-electrode', 'neural recording',
+    'single-unit', 'voltage clamp', 'current clamp', 'in vivo recording',
+    'electrode', 'spike recording', 'patch-seq', 'single-cell rt-pcr',
+    'sharp-wave ripple', 'field potential', 'brain slice', 'brain slices',
+    'ion channel', 'channel gating', 'synaptic physiology'
   ],
   'calcium imaging': [
     'calcium imaging', 'two-photon calcium', 'gcamp', 'calcium indicator',
-    'genetically encoded calcium'
+    'genetically encoded calcium', 'calcium sensor', 'calcium signaling',
+    'astroglial calcium', 'calcium dynamics'
   ],
   'optogenetics': [
     'optogenetics', 'optogenetic', 'channelrhodopsin', 'halorhodopsin',
-    'opsin', 'light-activated'
+    'opsin', 'light-activated', 'holographic stimulation', 'all-optical interrogation',
+    'two-photon optogenetics'
   ],
   'fMRI': [
     'fmri', 'functional mri', 'functional magnetic resonance', 'bold signal',
-    'bold imaging'
+    'bold imaging', 'brain imaging', 'functional brain imaging',
+    'neuroimaging', 'resting-state'
   ],
   'EEG/MEG': [
-    'eeg', 'meg', 'electroencephalogra', 'magnetoencephalogra',
-    'event-related potential', 'erp', 'electrophysiological signatures'
+    'eeg', ' meg ', 'meg,', 'meg ', 'electroencephalogra', 'magnetoencephalogra',
+    'event-related potential', 'erp ', 'electrophysiological signatures',
+    'neural oscillations', 'brain oscillations', 'neural entrainment',
+    'spectral measure'
   ],
   'two-photon microscopy': [
     'two-photon', '2-photon', 'multiphoton'
   ],
   'patch clamp': [
-    'patch clamp', 'patch-clamp', 'whole-cell'
+    'patch clamp', 'patch-clamp', 'whole-cell', 'patch-seq',
+    'synaptic physiology', 'brain slice', 'single-cell rt-pcr'
   ],
   'psychophysics': [
-    'psychophysics', 'psychophysical', 'psychoacoustics', 'psychoacoustic'
+    'psychophysics', 'psychophysical', 'psychoacoustics', 'psychoacoustic',
+    'perceptual confidence', 'sensory decision-making', 'detection threshold',
+    'perceptual performance', 'temporal processing'
   ],
   'computational modeling': [
     'computational model', 'computational neuroscience', 'mathematical model',
     'mean-field', 'network model', 'dynamical systems', 'biophysical model',
     'theoretical neuroscience', 'neural network theory', 'stochastic processes',
-    'statistical physics', 'computational approach'
+    'statistical physics', 'computational approach', 'bayesian',
+    'variational method', 'differential geometry', 'recurrent neural network',
+    'low-rank network', 'dimensionality reduction', 'attractor dynamics',
+    'balanced network', 'spiking neural network', 'computational principles',
+    'actor-critic', 'calcium-based model', 'computational anatomy',
+    'systems biology', 'hierarchical statistical model', 'diffusion model',
+    'neuro-computational', 'simulation', 'brian simulator',
+    'computational biophysics', 'statistical model', 'predictive model',
+    'morphometry', 'signal processing'
   ],
   'machine learning': [
     'machine learning', 'deep learning', 'neural network simulator',
     'artificial intelligence', 'scikit-learn', 'unsupervised learning',
     'supervised learning', 'random forest', 'gradient descent',
-    'convolutional neural', 'transformer model', 'language model'
+    'convolutional neural', 'transformer model', 'language model',
+    'zero-resource learning', 'brain decoding', 'classification',
+    'anomaly detection', 'computer vision', 'multimodal learning',
+    'predictive model', 'ai for neuroscience', 'neuroai',
+    'ai and the brain', 'code generation'
   ],
   'brain-computer interfaces': [
     'brain-computer interface', 'bci', 'brain-machine interface',
-    'neurofeedback', 'neural prosthe'
+    'neurofeedback', 'neural prosthe', 'neuroprosthe',
+    'assistive robotic', 'eeg decod', 'motor imagery classification',
+    'cortical implant'
   ],
   'ultrasound imaging': [
-    'ultrasound', 'functional ultrasound', 'ultrafast doppler'
+    'ultrasound', 'functional ultrasound', 'ultrafast doppler',
+    'ultrafast ultrasound'
   ],
   'connectomics': [
     'connectomics', 'connectome', 'connectivity reconstruction',
-    'electron microscopy reconstruction'
+    'electron microscopy reconstruction', 'synaptic connectivity reconstruction',
+    'brainbow', 'clonal analysis'
   ],
   'neuroimaging': [
     'neuroimaging', 'brain imaging', 'medical image', 'brain mapping',
     'tissue clearing', 'whole-brain mapping', 'light sheet microscopy',
-    'idisco', '3d imaging'
+    'idisco', '3d imaging', 'brain morphometry', 'cortical folding',
+    'mri', 'pet imaging', 'diffusion mri', 'mr spectroscopy',
+    'preclinical mri', 'oct imaging', 'brain age', 'sulcal',
+    'perfusion imaging', 'fetal brain imaging', 'infant brain imaging',
+    'pediatric neuroimaging', 'brain microstructure', 'white matter lesion',
+    'voxel', 'brainvisa', 'neuroimaging pipeline'
   ],
   'behavioral experiments': [
     'behavioral experiment', 'behaving mice', 'behavioral approach',
     'behavioral analysis', 'behavioral task', 'behavioral paradigm',
-    'behaving animal'
+    'behaving animal', 'behavioral neurology', 'behavioral economics',
+    'behavioral science', 'behavioral test', 'behavioral disorder',
+    'animal model', 'prey capture', 'feeding behavior',
+    'spatial preference', 'fear', 'anxiety-like behavior',
+    'aversive learning', 'vocal development', 'larval behavior'
   ],
   'microscopy': [
     'microscopy', 'confocal', 'light sheet', 'super-resolution',
-    'voltage imaging', 'imaging technique'
+    'voltage imaging', 'imaging technique', 'adaptive optic',
+    'oct imaging', 'holographic imaging', 'digital holography',
+    'fluorescence microscopy', 'tirf imaging', '3d microscopy',
+    'wavefront shaping', 'wavefront sensing', 'deep tissue imaging',
+    'nanoparticle tracking', 'optical method'
   ],
 
   // ── Brain Areas / Systems ──
   'cortex': [
     'cortex', 'cortical', 'neocortex', 'neocortical', 'prefrontal',
     'somatosensory cortex', 'visual cortex', 'auditory cortex',
-    'barrel cortex', 'motor cortex', 'frontal cortex', 'parietal cortex'
+    'barrel cortex', 'motor cortex', 'frontal cortex', 'parietal cortex',
+    'frontal lobe', 'layer 2/3', 'cortical interneuron', 'cortical circuit',
+    'cortical folding', 'cortical malformation', 'cortical progenitor',
+    'cortical patterning'
   ],
   'hippocampus': [
     'hippocampus', 'hippocampal', 'place cell', 'grid cell',
-    'entorhinal', 'subicul', 'ca1', 'ca3', 'dentate gyrus'
+    'entorhinal', 'subicul', 'ca1', 'ca2', 'ca3', 'dentate gyrus',
+    'sharp-wave ripple', 'spatial navigation', 'path integration',
+    'spatial representation', 'spatial memory', 'social memory'
   ],
   'cerebellum': [
     'cerebellum', 'cerebellar', 'purkinje cell', 'granule cell',
-    'climbing fiber', 'mossy fiber'
+    'climbing fiber', 'mossy fiber', 'cortico-cerebellar',
+    'cerebellar motor control', 'cerebellar cortex', 'cerebellar computation',
+    'cerebellar hypoplasia'
   ],
   'basal ganglia': [
     'basal ganglia', 'striatum', 'striatal', 'corticostriatal',
-    'substantia nigra', 'globus pallidus', 'subthalamic'
+    'substantia nigra', 'globus pallidus', 'subthalamic',
+    'dopamine', 'dopaminergic', 'action selection', 'habit formation',
+    'deep brain stimulation', 'movement disorder'
   ],
   'retina': [
-    'retina', 'retinal', 'ganglion cell'
+    'retina', 'retinal', 'ganglion cell', 'photoreceptor',
+    'retinitis pigmentosa', 'cone-rod', 'macular degeneration',
+    'retinal organoid', 'retinal degeneration', 'retinal coding',
+    'retinal circuit', 'bipolar cell', 'retinal topography',
+    'inherited retinal disease', 'visual prosthetic',
+    'intravitreal', 'ophthalmology'
   ],
   'visual system': [
     'visual system', 'visual cortex', 'visual perception', 'visual processing',
     'visual awareness', 'visual attention', 'v1 ', 'primary visual',
-    'object representation', 'visual scene'
+    'object representation', 'visual scene', 'visual cognition',
+    'visual rehabilitation', 'visual field', 'blindsight',
+    'binocular vision', 'strabismus', 'oculomotor', 'eye tracking',
+    'optic lobe', 'pretectum', 'prey capture', 'visual circuit',
+    'visual coding', 'three-dimensional perception'
   ],
   'auditory system': [
     'auditory', 'hearing', 'audition', 'cochlea', 'cochlear',
-    'tonotop', 'sound processing', 'auditory scene'
+    'tonotop', 'sound processing', 'auditory scene', 'hair cell',
+    'inner ear', 'deafness', 'hearing restoration', 'ribbon synapse',
+    'otoferlin', 'organ of corti', 'usher syndrome', 'speech processing',
+    'stereocilia', 'mechanotransduction', 'auditory neuropathy',
+    'hearing rehabilitation'
   ],
   'olfactory system': [
-    'olfaction', 'olfactory', 'odor', 'smell'
+    'olfaction', 'olfactory', 'odor', 'smell', 'odor memory',
+    'olfactory bulb', 'olfactory neuron'
   ],
   'spinal cord': [
     'spinal cord', 'spinal circuit', 'spinal neuron',
-    'locomotion circuit', 'cerebrospinal fluid-contacting'
+    'locomotion circuit', 'cerebrospinal fluid-contacting',
+    'motor neuron', 'motoneuron', 'renshaw cell', 'spinal',
+    'spinal morphogenesis', 'spinal motor'
   ],
   'brainstem': [
-    'brainstem', 'brain stem', 'hindbrain', 'medulla', 'pons'
+    'brainstem', 'brain stem', 'hindbrain', 'medulla', 'pons',
+    'autonomic nervous system', 'visceral neuron', 'phox2b',
+    'habenula', 'zona incerta'
   ],
   'thalamus': [
-    'thalamus', 'thalamic', 'thalamocortical', 'lateral geniculate'
+    'thalamus', 'thalamic', 'thalamocortical', 'lateral geniculate',
+    'mediodorsal thalamus'
   ],
 
   // ── Topics ──
   'synaptic plasticity': [
     'synaptic plasticity', 'long-term potentiation', 'long-term depression',
     'ltp', 'ltd', 'spike-timing dependent plasticity', 'stdp',
-    'hebbian', 'homeostatic plasticity', 'potentiation', 'synaptogenesis'
+    'hebbian', 'homeostatic plasticity', 'potentiation', 'synaptogenesis',
+    'synaptic modulation', 'synaptic transmission', 'synaptic integration',
+    'synaptic specificity', 'synaptic dynamics', 'synaptic vesicle',
+    'neurotransmitter release', 'presynaptic', 'postsynaptic',
+    'excitation-inhibition balance', 'inhibitory synapse',
+    'gaba receptor', 'glycine receptor', 'nmda receptor', 'glutamate receptor',
+    'receptor clustering', 'scaffold', 'gephyrin',
+    'endocytosis', 'vesicle recycling'
   ],
   'neural circuits': [
     'neural circuit', 'microcircuit', 'circuit assembly', 'circuit function',
     'circuit dynamics', 'cortical circuit', 'local circuit',
-    'inhibitory circuit', 'excitatory circuit'
+    'inhibitory circuit', 'excitatory circuit', 'neural network',
+    'gabaergic interneuron', 'cortical interneuron', 'interneuron',
+    'feedforward inhibition', 'recurrent inhibition',
+    'circuit architecture', 'incertocortical', 'neuronal wiring',
+    'connectivity logic'
   ],
   'neural coding': [
     'neural coding', 'population coding', 'neural representation',
     'neural decoding', 'information processing', 'rate coding',
     'spike coding', 'temporal coding', 'population dynamics',
-    'tuning curve'
+    'tuning curve', 'neural population geometry', 'neural population activity',
+    'retinal coding', 'retinal encoding', 'sensory coding',
+    'spectro-temporal', 'spike-timing', 'firing pattern'
   ],
   'decision-making': [
     'decision-making', 'decision making', 'choice', 'value-based decision',
     'perceptual decision', 'economic decision', 'exploration-exploitation',
-    'confidence', 'uncertainty'
+    'confidence', 'uncertainty', 'neuroeconomics', 'reward',
+    'motivation', 'effort', 'action selection', 'sensorimotor decision'
   ],
   'memory': [
     'memory', 'engram', 'memory consolidation', 'memory formation',
     'memory recall', 'working memory', 'spatial memory',
-    'episodic memory', 'memory trace'
+    'episodic memory', 'memory trace', 'long-term memory',
+    'aversive learning', 'emotional memory', 'memory replay',
+    'sleep replay', 'odor memory', 'fear memory'
   ],
   'learning': [
     'learning', 'reinforcement learning', 'motor learning',
     'associative learning', 'conditioning', 'reward learning',
-    'perceptual learning', 'skill acquisition'
+    'perceptual learning', 'skill acquisition', 'song learning',
+    'vocal learning', 'concept learning', 'sequence learning',
+    'adaptive', 'plasticity', 'belief updating', 'sensorimotor adaptation',
+    'cognitive flexibility', 'song crystallization'
   ],
   'attention': [
     'attention', 'attentional', 'selective attention',
-    'spatial attention', 'visual attention'
+    'spatial attention', 'visual attention', 'joint attention',
+    'neglect', 'hemispatial neglect', 'mind wandering',
+    'eye gaze', 'attention disorder'
   ],
   'language': [
     'language', 'speech', 'linguistic', 'dyslexia', 'reading',
-    'phonolog', 'syntax', 'semantic', 'word', 'sentence',
-    'language acquisition', 'language processing', 'psycholinguist'
+    'phonolog', 'syntax', 'semantic', 'sentence',
+    'language acquisition', 'language processing', 'psycholinguist',
+    'speech perception', 'speech production', 'speech timing',
+    'language disorder', 'textless speech', 'number cognition',
+    'numerical cognition'
   ],
   'motor control': [
     'motor control', 'locomotion', 'movement', 'motor cortex',
     'motor learning', 'gait', 'posture', 'action sequence',
-    'sensorimotor', 'motor planning', 'reaching', 'grasping'
+    'sensorimotor', 'motor planning', 'reaching', 'grasping',
+    'motor neuron', 'motoneuron', 'motor imagery', 'motor simulation',
+    'action-perception', 'movement disorder', 'dystonia', 'tourette',
+    'hyperkinetic', 'oculomotor', 'eye movement',
+    'motor adaptation', 'motor output', 'motor circuit'
   ],
   'sensory processing': [
     'sensory processing', 'sensory perception', 'tactile',
     'somatosensory', 'multisensory', 'sensory coding',
-    'sensory integration', 'sensory system'
+    'sensory integration', 'sensory system', 'sensory input',
+    'sensory map', 'whisker', 'barrel cortex', 'vibrotactile',
+    'vestibular', 'time perception', 'temporal cognition',
+    'temporal prediction', 'rhythm perception', 'temporal structure',
+    'body perception', 'body ownership', 'rubber hand',
+    'sensory-guided', 'perceptual moment'
   ],
   'social cognition': [
     'social cognition', 'social neuroscience', 'social perception',
     'social motivation', 'social learning', 'theory of mind',
     'social interaction', 'social decision', 'social signal',
-    'emotion', 'body language'
+    'emotion', 'body language', 'social touch', 'social memory',
+    'social scene', 'social context', 'oxytocin',
+    'eye gaze', 'joint attention', 'autism',
+    'facial expression', 'empathy'
   ],
   'development': [
     'development', 'developmental', 'neurogenesis', 'differentiation',
     'embryonic', 'postnatal', 'progenitor', 'cortical development',
     'brain development', 'neurodevelopment', 'neural tube',
-    'cell division', 'cell fate', 'migration'
+    'cell division', 'cell fate', 'migration', 'infant',
+    'neonatal', 'fetal', 'prenatal', 'congenital', 'perinatal',
+    'stem cell', 'ipsc', 'organoid', 'morphogenesis',
+    'axon guidance', 'neural crest', 'neural stem cell',
+    'brain size', 'microcephaly', 'lissencephaly',
+    'brain malformation', 'wnt signaling', 'morphogen',
+    'cell intercalation', 'tissue mechanics', 'critical period',
+    'puberty', 'premature brain', 'premature birth',
+    'white matter maturation', 'centriole', 'lineage'
   ],
   'neurodegeneration': [
     'neurodegeneration', 'neurodegenerative', 'alzheimer', 'parkinson',
     'huntington', 'amyotrophic lateral sclerosis', 'als ',
-    'dementia', 'tauopathy', 'synuclein', 'disease progression model'
+    'dementia', 'tauopathy', 'synuclein', 'disease progression model',
+    'motor neuron degeneration', 'frontotemporal', 'ftd',
+    'leukodystrophy', 'multiple sclerosis', 'remyelination',
+    'demyelination', 'protein aggregation', 'amyloid',
+    'prion-like', 'spinocerebellar ataxia', 'ataxia',
+    'c9orf72', 'neurometabolic', 'vascular cognitive impairment',
+    'cadasil', 'cerebral small vessel disease'
   ],
   "Alzheimer's disease": [
-    'alzheimer'
+    'alzheimer', 'amyloid precursor protein', 'amyloid pet', 'tau pathology'
   ],
   "Parkinson's disease": [
-    'parkinson', 'deep brain stimulation'
+    'parkinson', 'deep brain stimulation', 'alpha-synuclein',
+    'dopaminergic neuron', 'substantia nigra'
   ],
   'epilepsy': [
-    'epilepsy', 'epileptic', 'seizure', 'convuls'
+    'epilepsy', 'epileptic', 'seizure', 'convuls',
+    'focal cortical dysplasia', 'mtor pathway', 'brain mosaicism',
+    'excitation-inhibition balance'
   ],
   'psychiatric disorders': [
-    'psychiatric', 'schizophrenia', 'autism', 'depression',
+    'psychiatric', 'schizophrenia', 'autism', 'mood disorder',
     'anxiety', 'addiction', 'compulsive', 'obsessive',
     'computational psychiatry', 'bipolar', 'psychosis',
-    'anhedonia', 'substance abuse', 'nicotine addiction'
+    'anhedonia', 'substance abuse', 'nicotine addiction',
+    'adhd', 'psychopatholog', 'mental health', 'apathy',
+    'nicotine', 'cannabis vulnerability', 'cognitive remediation',
+    'treatment-resistant', 'early psychosis', 'psychedelic',
+    'psilocybin', 'ketamine', 'rett syndrome',
+    'neuropsychiatric', 'dysexecutive'
   ],
   'sleep': [
     'sleep', 'dream', 'insomnia', 'arousal state',
     'slow-wave', 'rem sleep', 'sharp-wave ripple', 'sleep spindle',
-    'wakefulness'
+    'wakefulness', 'sleep apnea', 'sleep disorder', 'sleep medicine',
+    'sleep replay', 'sleep and memory', 'lucid dream',
+    'local sleep', 'mind blanking'
   ],
   'circadian rhythms': [
-    'circadian', 'biological clock', 'circadian rhythm'
+    'circadian', 'biological clock', 'circadian rhythm',
+    'sleep-wake cycle'
   ],
   'pain': [
-    'pain', 'nociception', 'nociceptor', 'analges'
+    'pain', 'nociception', 'nociceptor', 'analges',
+    'somatosensory pain'
   ],
   'glia': [
     'glia', 'glial', 'astrocyte', 'microglia', 'oligodendrocyte',
     'astroglia', 'astroglial', 'connexin', 'gap junction',
-    'schwann cell', 'ependymal', 'neuroglial'
+    'schwann cell', 'ependymal', 'neuroglial', 'ng2 glia',
+    'oligodendrocyte precursor', 'myelination', 'myelin',
+    'remyelination', 'white matter plasticity',
+    'gliovascular', 'neuron-glia', 'astrocyte endfeet',
+    'mononuclear phagocyte'
   ],
   'neuroimmunology': [
     'neuroimmun', 'immune', 'inflammat', 'cytokine',
-    'blood-brain barrier', 'choroid plexus', 'neuroinflam'
+    'blood-brain barrier', 'choroid plexus', 'neuroinflam',
+    'microglia activation', 'innate immunity', 'complement system',
+    'interferon', 'autoinflammatory', 'dural macrophage',
+    'meningeal immunity', 'brain-immune', 'tumor immunology',
+    'tumor microenvironment', 'cns barrier', 'cns infection'
   ],
   'neurogenetics': [
     'genetic', 'gene ', 'genes ', 'mutation', 'transcription factor',
     'transgenic', 'crispr', 'epigenetic', 'chromatin',
     'gene expression', 'genome', 'shank3', 'phenotyp',
-    'human-specific gene'
+    'human-specific gene', 'somatic mutation', 'copy number variant',
+    'repeat expansion', 'gene identification', 'gene therapy',
+    'viral vector', 'aav', 'lentiviral', 'genomics',
+    'hereditary', 'single-cell genomics', 'brain mosaicism',
+    'genotype-phenotype', 'risk variant', 'rare disease',
+    'inborn error'
   ],
   'brain connectivity': [
     'connectivity', 'connectome', 'network neuroscience',
     'graph theory', 'brain network', 'functional connectivity',
-    'structural connectivity', 'white matter', 'tractography'
+    'structural connectivity', 'white matter', 'tractography',
+    'long-range connection', 'brain-wide', 'whole-brain',
+    'axonal transport', 'commissural', 'wiring'
   ],
   'brain-body interaction': [
     'interoception', 'brain-body', 'gut-brain', 'visceral',
     'heartbeat', 'gastric', 'enteric', 'brain-body interaction',
-    'embodied', 'neurovascular', 'breathing rhythm', 'respiratory'
+    'embodied', 'neurovascular', 'breathing rhythm', 'respiratory',
+    'bodily signal', 'bodily self', 'food intake', 'energy homeostasis',
+    'hypothalamus', 'neuroendocrine', 'neuropeptide y',
+    'feeding behavior', 'metabolic', 'cerebrovascular',
+    'neurovascular coupling', 'blood flow'
   ],
   'evolution': [
     'evolution', 'evolutionary', 'phylogenet', 'comparative',
-    'cortical evolution', 'brain evolution'
+    'cortical evolution', 'brain evolution', 'cross-species',
+    'species ecology', 'human-specific', 'insect cognition',
+    'invertebrate', 'drosophila', 'zebrafish', 'c. elegans',
+    'mouse lemur', 'non-human primate', 'songbird', 'zebra finch',
+    'honeybee'
   ],
   'consciousness': [
     'consciousness', 'conscious perception', 'conscious access',
     'global workspace', 'global neuronal workspace',
     'disorders of consciousness', 'subliminal', 'unconscious',
-    'awareness', 'lucid dream'
+    'awareness', 'lucid dream', 'general anesthesia',
+    'first-person perspective', 'subjective experience',
+    'wake and sleep', 'psychedelic'
+  ],
+  'neuro-oncology': [
+    'glioma', 'brain tumor', 'meningioma', 'neurofibromatosis',
+    'schwannoma', 'tumor genetic', 'precision oncology',
+    'neuro-oncology'
+  ],
+  'gene therapy': [
+    'gene therapy', 'aav', 'viral vector', 'lentiviral',
+    'intravitreal delivery', 'photoreceptor rescue',
+    'hearing restoration', 'cell therapy', 'gene delivery',
+    'neurotropic virus'
   ]
 };
 
@@ -349,9 +515,72 @@ const KEYWORD_RULES = {
 // For PIs where auto-detection misses important keywords or adds wrong ones.
 // Format: { "PI Name": { add: [...], remove: [...] } }
 const OVERRIDES = {
-  // The pattern matcher may tag "depression" (mood disorder) for synaptic "depression" (LTD).
-  // We handle this by only matching "depression" in psychiatric context, not synaptic.
-  // If needed, add specific overrides here.
+  // ── Fix false-positive "psychiatric disorders" from synaptic "depression" / "anxiety circuits" ──
+  'Jean-Christophe Poncer': { remove: ['psychiatric disorders'] }, // synaptic LTD, not mood
+  'Rebecca Piskorowski': { remove: ['psychiatric disorders'] }, // social memory, not disorder
+  'Elim Hong': { remove: ['psychiatric disorders'], add: ['behavioral experiments'] }, // anxiety circuits in zebrafish, not clinical
+
+  // ── Fix false-positive "evolution" from model organisms used as tools, not evolution research ──
+  'German Sumbre': { remove: ['evolution'], add: ['calcium imaging'] },  // zebrafish as tool, not evolution
+  'Filippo Del Bene': { remove: ['evolution'] },  // zebrafish visual circuits
+  'Claire Wyart': { remove: ['evolution'] },  // zebrafish spinal cord
+  'Tihana Jovanic': { remove: ['evolution'] },  // Drosophila circuits
+  'Thomas Preat': { remove: ['evolution'] },  // Drosophila memory
+  'Jean-Baptiste Masson': { remove: ['evolution'] },  // Drosophila computation
+  'Dafni Hadjieconomou': { remove: ['evolution'] },  // Drosophila gut-brain
+  'Edor Kabashi': { remove: ['evolution'] },  // zebrafish as ALS model
+  'Christian Neri': { remove: ['evolution'] },  // C. elegans as disease model
+  'Antonio Carlos Costa': { remove: ['evolution'] },  // C. elegans behavior physics
+
+  // ── Add electrophysiology for PIs who clearly record neurons ──
+  'Alberto Bacci': { add: ['electrophysiology', 'patch clamp'] },
+  'Nelson Rebola': { add: ['electrophysiology', 'calcium imaging'] },
+  'Nikolas Karalis': { add: ['electrophysiology'] },
+  'Brian Lau': { add: ['electrophysiology'] },
+  'Karim Benchenane': { add: ['electrophysiology', 'behavioral experiments'] },
+  'Gabrielle Girardeau': { add: ['electrophysiology'] },
+  'Michael Zugaro': { add: ['electrophysiology'] },
+  'Daniel Shulz': { add: ['electrophysiology'] },
+  'Raouf Issa': { add: ['electrophysiology'] },
+  'Laurent Bourdieu': { add: ['electrophysiology', 'calcium imaging'] },
+  'Florent Haiss': { add: ['electrophysiology', 'calcium imaging'] },
+  'Belen Pardi': { add: ['electrophysiology'] },
+  'Desdemona Fricker': { add: ['electrophysiology', 'patch clamp'] },
+  'Sophie Bagur': { add: ['electrophysiology'] },
+  'Philippe Faure': { add: ['electrophysiology', 'behavioral experiments'] },
+  'Ludovic Tricoire': { add: ['electrophysiology', 'patch clamp'] },
+  'Gilles Huberfeld': { add: ['electrophysiology', 'patch clamp'] },
+  'Brandon Stell': { add: ['electrophysiology'] },
+  'Marco Diana': { add: ['electrophysiology', 'patch clamp'] },
+  'Jeremie Barral': { add: ['electrophysiology'] },
+  'Clement Lena': { add: ['electrophysiology'] },
+  'Olivier Marre': { add: ['electrophysiology'] },
+  'Ulisse Ferrari': { add: ['electrophysiology'] },
+  'Vincent Villette': { add: ['electrophysiology'] },
+
+  // ── Add calcium imaging for PIs who clearly use it ──
+  'Glenn Dallerac': { add: ['calcium imaging'] },
+
+  // ── Add behavioral experiments for systems/human PIs doing experiments ──
+  'Gisella Vetere': { add: ['behavioral experiments'] },
+  'Laure Rondi-Reig': { add: ['behavioral experiments'] },
+  'Stephanie Daumas': { add: ['behavioral experiments'] },
+  'Coralie Chevallier': { add: ['behavioral experiments'] },
+  'Catherine Tallon-Baudry': { add: ['behavioral experiments'] },
+
+  // ── Fix false-positive "brain-body interaction" for pure neurovascular PIs ──
+  'Hugues Chabriat': { remove: ['brain-body interaction'] }, // cerebrovascular disease, not interoception
+  'Guillaume Turc': { remove: ['brain-body interaction'] }, // stroke imaging
+  'Catherine Oppenheim': { remove: ['brain-body interaction'] }, // stroke MRI
+  'Anne Joutel': { remove: ['brain-body interaction'] }, // vascular disease genetics
+
+  // ── Add psychophysics for PIs who clearly do human perceptual experiments ──
+  'Laura Dugue': { add: ['psychophysics'] },
+  'Vincent De Gardelle': { add: ['psychophysics'] },
+  'Claire Sergent': { add: ['psychophysics'] },
+
+  // ── Fix false-positive "neurodegeneration" for non-disease PIs ──
+  'Fani Koukouli': { remove: ['neurodegeneration'] }, // nicotinic receptors generally
 };
 
 // ========== DETECTION LOGIC ==========
