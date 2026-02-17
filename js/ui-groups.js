@@ -333,14 +333,18 @@ function rebuildKeywordPills(filteredGroups) {
     return;
   }
 
-  // Collect all keywords from filtered PIs
-  const allKws = new Set();
+  // Collect all keywords from filtered PIs and count how many PIs have each
+  const kwCounts = new Map();
   filteredGroups.forEach(g => {
-    (g.keywords || []).forEach(k => allKws.add(k.trim().toLowerCase()));
+    (g.keywords || []).forEach(k => {
+      const kl = k.trim().toLowerCase();
+      kwCounts.set(kl, (kwCounts.get(kl) || 0) + 1);
+    });
   });
 
   // Only show keywords that themselves match the search query
-  const matching = [...allKws].filter(kw => fuzzyMatch(kw, searchText)).sort();
+  const matching = [...kwCounts.keys()].filter(kw => fuzzyMatch(kw, searchText))
+    .sort((a, b) => kwCounts.get(b) - kwCounts.get(a));
 
   // If active keyword is no longer relevant, deactivate it
   if (activeKeyword && !matching.includes(activeKeyword)) {
@@ -361,7 +365,7 @@ function rebuildKeywordPills(filteredGroups) {
     } else {
       btn.setAttribute('aria-pressed', 'false');
     }
-    btn.textContent = kw;
+    btn.textContent = `${kw} (${kwCounts.get(kw)})`;
     btn.addEventListener('click', () => toggleKeyword(kw, btn));
     keywordFilters.appendChild(btn);
   });
