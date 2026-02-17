@@ -1,0 +1,432 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<title>Keyword Enrichment Migration — AI-Analyzed</title>
+<style>
+  body { font-family: system-ui; max-width: 900px; margin: 40px auto; padding: 0 20px; background: #111; color: #eee; }
+  button { padding: 10px 24px; font-size: 16px; cursor: pointer; border: none; border-radius: 6px; }
+  #loginBtn { background: #4285f4; color: white; }
+  #migrateBtn { background: #34a853; color: white; font-size: 18px; padding: 14px 32px; }
+  #migrateBtn:disabled { background: #555; cursor: not-allowed; color: #999; }
+  #dryRunBtn { background: #f59e0b; color: #111; font-size: 18px; padding: 14px 32px; margin-left: 12px; }
+  #dryRunBtn:disabled { background: #555; cursor: not-allowed; color: #999; }
+  #log { background: #1a1a1a; padding: 16px; border-radius: 8px; max-height: 700px; overflow-y: auto; font-family: monospace; font-size: 12px; white-space: pre-wrap; margin-top: 16px; }
+  .success { color: #34a853; }
+  .error { color: #ea4335; }
+  .info { color: #4285f4; }
+  .skip { color: #999; }
+  .add { color: #f59e0b; }
+  input { padding: 8px 12px; font-size: 14px; border-radius: 4px; border: 1px solid #444; background: #222; color: #eee; width: 240px; }
+  #authSection { margin-bottom: 24px; }
+  p.desc { color: #aaa; line-height: 1.6; }
+  #summary { margin-top: 12px; font-size: 14px; color: #aaa; }
+</style>
+</head>
+<body>
+<h1>Keyword Enrichment Migration</h1>
+<p class="desc">
+  AI-analyzed keyword additions for all 256 PIs.<br>
+  Each PI was evaluated against the full pool of ~984 keywords using their <strong>summary</strong> and <strong>research profile</strong>.<br>
+  Total: <strong>1270 keyword additions</strong> across 256 PIs (avg ~5 per PI).<br>
+  Only keywords from the existing global pool are used (no new keywords created).
+</p>
+
+<div id="authSection">
+  <p id="authStatus">Not logged in</p>
+  <div id="loginForm">
+    <input type="email" id="email" placeholder="Admin email">
+    <input type="password" id="password" placeholder="Password">
+    <button id="loginBtn" onclick="doLogin()">Login</button>
+  </div>
+</div>
+
+<button id="dryRunBtn" disabled onclick="runMigration(true)">Dry Run (Preview)</button>
+<button id="migrateBtn" disabled onclick="runMigration(false)">Run Migration</button>
+<div id="summary"></div>
+<div id="log"></div>
+
+<script type="module">
+import { initializeApp } from 'https://www.gstatic.com/firebasejs/11.4.0/firebase-app.js';
+import { getAuth, signInWithEmailAndPassword, onAuthStateChanged } from 'https://www.gstatic.com/firebasejs/11.4.0/firebase-auth.js';
+import { getFirestore, collection, doc, updateDoc, serverTimestamp, getDocs } from 'https://www.gstatic.com/firebasejs/11.4.0/firebase-firestore.js';
+
+const firebaseConfig = {
+  apiKey: "AIzaSyCEUSVBEAPYfsoG00GKPqw_lHJQKelgVbk",
+  authDomain: "compneuroparis.firebaseapp.com",
+  projectId: "compneuroparis",
+  storageBucket: "compneuroparis.firebasestorage.app",
+  messagingSenderId: "768335946036",
+  appId: "1:768335946036:web:61184dde3b4b66c58bc561"
+};
+
+const app = initializeApp(firebaseConfig);
+const auth = getAuth(app);
+const db = getFirestore(app);
+
+const logEl = document.getElementById('log');
+const summaryEl = document.getElementById('summary');
+
+function log(msg, cls = '') {
+  const span = document.createElement('span');
+  span.className = cls;
+  span.textContent = msg + '\n';
+  logEl.appendChild(span);
+  logEl.scrollTop = logEl.scrollHeight;
+}
+
+onAuthStateChanged(auth, user => {
+  if (user) {
+    document.getElementById('authStatus').textContent = `Logged in as ${user.email}`;
+    document.getElementById('loginForm').style.display = 'none';
+    document.getElementById('dryRunBtn').disabled = false;
+    document.getElementById('migrateBtn').disabled = false;
+  }
+});
+
+window.doLogin = async () => {
+  const email = document.getElementById('email').value;
+  const pw = document.getElementById('password').value;
+  try {
+    await signInWithEmailAndPassword(auth, email, pw);
+    log('Logged in!', 'success');
+  } catch (e) {
+    log('Login error: ' + e.message, 'error');
+  }
+};
+
+// ========== KEYWORD ADDITIONS MAP ==========
+// AI-analyzed: for each PI name, the keywords to ADD (not replace)
+const KEYWORD_ADDITIONS = {
+    "Boris Gutkin": ["computational modeling", "statistical physics", "dynamical systems", "computational neuroscience"],
+    "Srdjan Ostojic": ["computational neuroscience", "neural network theory", "cortical dynamics", "cortical networks"],
+    "Alex Cayco Gajic": ["basal ganglia", "dynamical systems", "statistical modeling", "machine learning", "computational neuroscience"],
+    "Etienne Koechlin": ["neuroimaging", "fMRI", "cortical hierarchy"],
+    "Valentin Wyart": ["psychophysics", "computational modeling", "perceptual decision-making", "metacognition", "uncertainty"],
+    "Catherine Tallon-Baudry": ["brain-body interactions", "self-referential processing", "gut-brain axis", "autonomic nervous system"],
+    "Stefano Palminteri": ["computational modeling", "neuroimaging", "behavioral modeling", "decision-making"],
+    "Julie Grezes": ["fMRI", "action-perception coupling", "eye gaze"],
+    "Coralie Chevallier": ["autism spectrum disorder", "developmental disorders", "social learning", "cognitive development"],
+    "Emmanuel Dupoux": ["language acquisition", "cognitive development", "speech perception", "cognitive science", "statistical learning"],
+    "Sid Kouider": ["conscious perception", "EEG", "subliminal perception", "neonatal cognition", "global workspace"],
+    "Franck Ramus": ["developmental disorders", "reading", "neurogenetics", "developmental neuroscience"],
+    "Shihab Shamma": ["auditory cortex", "computational modeling", "neurophysiology", "auditory processing", "sensorimotor integration"],
+    "Daniel Pressnitzer": ["auditory temporal processing", "sound perception", "auditory processing"],
+    "Pascal Mamassian": ["psychophysics", "perceptual decision-making", "metacognition", "Bayesian modeling", "multisensory perception"],
+    "Mathias Pessiglione": ["reinforcement learning", "decision-making", "computational modeling", "dopamine"],
+    "Jean Daunizeau": ["computational modeling", "Bayesian methods", "belief updating", "computational neuroscience", "psychiatric disorders"],
+    "Lionel Naccache": ["disorders of consciousness", "EEG", "global neuronal workspace", "clinical neuroscience"],
+    "Paolo Bartolomeo": ["attention disorders", "neuropsychology", "brain connectivity", "cognitive rehabilitation"],
+    "Julia Sliwa": ["prefrontal cortex", "non-human primates", "social cognition", "neuroimaging"],
+    "Nikolas Karalis": ["respiratory oscillations", "brain-body interactions", "neural circuits"],
+    "Alberto Bacci": ["cortical inhibitory circuits", "inhibitory synapses", "patch-clamp", "electrophysiology", "sensory processing", "cortical circuits"],
+    "Nelson Rebola": ["optogenetics", "electrophysiology", "neocortical circuits", "calcium sensors"],
+    "Fabrizio De Vico Fallani": ["brain connectivity", "EEG", "brain decoding", "BCI training"],
+    "Olivier Colliot": ["Alzheimer's disease", "neuroimaging biomarkers", "computer-aided diagnosis", "AI for neuroscience", "disease progression modeling", "reproducible research"],
+    "Ninon Burgos": ["neurodegenerative diseases", "reproducible research", "machine learning", "neuroimaging pipelines"],
+    "Claire Wyart": ["locomotion", "mechanotransduction", "spinal circuits", "developmental biology", "brain ventricles"],
+    "Thomas Andrillon": ["sleep-wake cycles", "brain oscillations", "brain dynamics", "unconscious processing"],
+    "Delphine Oudiette": ["emotional memory", "sleep and memory", "cognition", "introspection"],
+    "Liane Schmidt": ["decision-making", "brain-body interactions", "food intake regulation", "value-based decision-making", "behavioral science", "neuroeconomics"],
+    "Jacobo Sitt": ["brain connectivity", "signal processing", "neuroimaging pipelines", "clinical neuroscience", "brain dynamics"],
+    "Nicolas Renier": ["3D microscopy", "fluorescence microscopy", "deep tissue imaging", "3D brain mapping", "mouse models"],
+    "Dafni Hadjieconomou": ["food intake regulation", "energy homeostasis", "neuropeptides", "neural circuits"],
+    "Stanley Durrleman": ["Alzheimer's disease", "Parkinson's disease", "Huntington's disease", "computational modeling", "statistical modeling", "predictive modeling", "neurodegenerative diseases"],
+    "Marie-Constance Corsi": ["MEG", "motor imagery", "brain connectivity", "brain dynamics", "machine learning"],
+    "Brian Lau": ["DBS", "movement disorders", "cognitive control", "corticostriatal circuits"],
+    "Lorenzo Posani": ["social cognition", "computational neuroscience", "social memory", "computational modeling", "dimensionality reduction", "neural population dynamics"],
+    "Antonio Carlos Costa": ["zebrafish", "animal behavior", "locomotor behavior", "statistical physics"],
+    "Yann Zerlaut": ["machine learning", "synaptic integration", "cortical dynamics", "spiking neural networks", "mouse models", "electrophysiology"],
+    "Pierre-Marie Lledo": ["olfactory memory", "perceptual learning", "reward", "neurogenesis", "neural stem cells"],
+    "Thomas Bourgeron": ["autism spectrum disorder", "neurodevelopmental disorders", "genetics of cognition", "neurogenetics", "genomics"],
+    "Roberto Toro": ["cortical folding", "evo-devo", "brain morphogenesis", "comparative neuroanatomy", "brain development"],
+    "Jean-Baptiste Masson": ["Bayesian inference", "connectomics", "invertebrate neuroscience", "larval behavior", "computational modeling"],
+    "Florent Haiss": ["whisker somatosensory system", "electrophysiology", "sensory decision-making", "perceptual decision-making", "cortical circuits", "two-photon calcium imaging"],
+    "Aleksandra Deczkowska": ["neuroimmune interactions", "brain innate immunity", "neuroinflammation", "developmental immunity", "meningeal immunity", "brain-immune interface"],
+    "Brice Bathellier": ["auditory processing", "two-photon imaging", "optogenetics", "electrophysiology", "multisensory integration", "neuroprosthetics"],
+    "Anne-Lise Giraud": ["speech perception", "language processing", "auditory temporal processing", "language disorders", "temporal processing"],
+    "Karim Benchenane": ["place cells", "sleep and memory", "sleep replay", "emotional memory", "electrophysiology", "spatial navigation"],
+    "Gisella Vetere": ["graph theory", "learning and memory", "long-term memory", "associative memory", "hippocampus"],
+    "Philippe Faure": ["dopaminergic neurons", "electrophysiology", "optogenetics", "motivated behavior", "reinforcement learning", "dopamine signaling", "nicotinic receptors"],
+    "Sophie Bagur": ["prefrontal cortex", "fear conditioning", "neural oscillations", "auditory processing", "visceral signals", "autonomic nervous system"],
+    "Mickael Tanter": ["functional imaging", "biomedical engineering", "perfusion imaging", "functional hyperemia", "signal processing", "deep tissue imaging"],
+    "Stanislas Dehaene": ["disorders of consciousness", "cognitive science", "fMRI", "numerical cognition", "cognitive psychology", "subliminal processing"],
+    "Ghislaine Dehaene-Lambertz": ["speech perception", "cognitive development", "infant brain imaging", "language processing", "brain development"],
+    "Florent Meyniel": ["decision-making", "computational modeling", "belief updating", "perceptual confidence", "MEG"],
+    "Virginie van Wassenhove": ["temporal predictions", "temporal processing", "multisensory perception", "speech timing"],
+    "Bertrand Thirion": ["brain decoding", "fMRI analysis", "deep learning", "neuroimaging pipelines", "neuroinformatics", "fMRI"],
+    "Sophie Herbst": ["cerebellum", "time perception", "temporal cognition", "auditory perception"],
+    "Daniel Shulz": ["cortical plasticity", "electrophysiology", "mouse models", "thalamocortical circuits", "somatosensory", "cortical microcircuits"],
+    "Tihana Jovanic": ["connectomics", "invertebrate neuroscience", "larval behavior", "internal states", "Drosophila", "action selection"],
+    "Laura Dugue": ["visual attention", "visual perception", "neural oscillations", "EEG", "visual cortex"],
+    "Claire Sergent": ["global neuronal workspace", "neuroimaging", "brain connectivity", "fMRI", "cognitive psychology"],
+    "Belen Pardi": ["GABAergic neurons", "cortical circuits", "memory", "thalamus", "inhibition"],
+    "David Hansel": ["excitation-inhibition balance", "mean-field models", "computational neuroscience", "cortical networks", "network models"],
+    "Michael Graupner": ["computational neuroscience", "spike-timing dependent plasticity", "hippocampus", "cerebellum", "computational biophysics"],
+    "Desdemona Fricker": ["GABAergic interneurons", "spatial navigation", "vestibular system", "cortical microcircuits", "inhibitory circuits"],
+    "Fani Koukouli": ["Alzheimer's disease", "psychiatric disorders", "GABAergic interneurons", "cortical interneurons", "neuropharmacology"],
+    "Mehdi Khamassi": ["dopamine", "neurorobotics", "computational neuroscience", "basal ganglia models", "cognitive modeling"],
+    "Romain Brette": ["computational neuroscience", "computational biophysics", "neural simulation", "auditory neuroscience"],
+    "Ulisse Ferrari": ["retinal ganglion cells", "retinal circuits", "visual coding", "computational neuroscience", "retinal coding"],
+    "Jonas Ranft": ["computational neuroscience", "synaptic plasticity", "stochastic processes", "network models"],
+    "Vincent Villette": ["mouse models", "deep tissue imaging", "fluorescent reporters", "excitation-inhibition balance"],
+    "Lucie Berkovitch": ["psychiatric disorders", "subliminal processing", "disorders of consciousness", "global neuronal workspace", "unconscious processing"],
+    "Jean-Remi King": ["speech processing", "language processing", "EEG", "EEG decoding", "cognitive science"],
+    "Heike Stein": ["dynamical systems", "machine learning", "motor control", "neural dynamics"],
+    "Yves Boubenec": ["psychophysics", "electrophysiology", "auditory cortex", "auditory perception", "animal models"],
+    "Claire Meissner-Bernard": ["olfaction", "optogenetics", "spiking neural networks", "memory consolidation", "sleep and memory"],
+    "Alain Destexhe": ["sleep rhythms", "computational biophysics", "large-scale modeling", "neural simulation", "thalamocortical oscillations"],
+    "Andrew Davison": ["computational neuroscience", "computational modeling", "spiking neural networks"],
+    "Thierry Bal": ["attention", "electrophysiology", "oscillations", "synaptic plasticity", "cortical networks", "sleep"],
+    "Valerie Ego-Stengel": ["somatosensory", "motor learning", "mouse models", "whisker somatosensory system"],
+    "Isabelle Ferezou": ["mouse models", "tactile perception", "somatosensory", "cortical processing", "tactile encoding"],
+    "Guy Bouvier": ["vestibular system", "visual circuits", "multisensory integration", "sensory processing"],
+    "Catherine Del Negro": ["auditory neuroscience", "auditory processing", "auditory neural coding", "birdsong learning"],
+    "Jean-Marc Edeline": ["electrophysiology", "cortical plasticity", "thalamocortical circuits", "auditory neuroscience"],
+    "Julien Bouvier": ["optogenetics", "motor circuits", "spinal circuits", "neurorehabilitation"],
+    "Claire Eschbach": ["decision-making", "invertebrate neuroscience", "Drosophila", "larval behavior", "Drosophila memory"],
+    "Valerie Doyere": ["emotional memory", "time perception", "fear memory", "temporal cognition", "aversive learning"],
+    "Sylvie Granon": ["decision-making under uncertainty", "cognitive flexibility", "prefrontal cortex", "cholinergic modulation", "social neuroscience"],
+    "Cyrille Vaillend": ["mouse models", "brain plasticity", "rare diseases", "developmental disorders"],
+    "Isabelle Charrier": ["animal behavior dynamics"],
+    "Francois Rouyer": ["neurogenetics", "invertebrate neuroscience", "sleep", "neuropeptides"],
+    "Jean-Rene Martin": ["olfaction", "invertebrate neuroscience", "neurodegeneration", "aging"],
+    "Gilles Bonvento": ["energy metabolism", "metabolic coupling", "brain energy metabolism", "glia-neuron interactions", "astrocyte-neuron interactions", "neuroenergetics"],
+    "Kei Yamamoto": ["brain evolution", "primate cognition", "neuroanatomy", "neural architecture"],
+    "Carole Escartin": ["viral vectors", "astrocyte signaling", "neuroinflammation", "neurodegenerative diseases", "astrocyte-neuron interactions"],
+    "Sylvie Retaux": ["brain evolution", "developmental genetics", "natural variation", "animal behavior"],
+    "Martial Ruat": ["remyelination", "adult neurogenesis", "morphogen signaling", "stem cell differentiation", "neurogenesis"],
+    "Muriel Perron": ["retinal degeneration", "stem cell differentiation", "inherited retinal diseases", "neural development"],
+    "Sophie Creuzet": ["developmental neurobiology", "morphogen signaling", "brain development", "developmental disorders"],
+    "Jean-Pierre Levraud": ["CNS infections", "neurotropic viruses", "type I interferon", "developmental immunity", "brain innate immunity", "neuroimmunology"],
+    "Daniel Vasiliauskas": ["neuronal specification", "visual system development", "invertebrate neuroscience", "photoreceptor differentiation", "neuronal diversity"],
+    "Mohammed Taouis": ["hypothalamus", "energy homeostasis", "food intake regulation", "obesity circuits"],
+    "Glenda Comai": ["mouse models", "3D imaging", "single-cell transcriptomics"],
+    "Idoia Quintana-Urzainqui": ["evo-devo", "forebrain evolution", "comparative neuroanatomy", "developmental neurobiology", "forebrain regionalization", "developmental genetics"],
+    "Isabelle Brunet": ["axon guidance", "neurovascular coupling", "developmental biology", "signal transduction"],
+    "Laurent Venance": ["decision-making", "electrophysiology", "dopamine", "neuromodulation", "striatal neurons"],
+    "Nathalie Rouach": ["astrocyte signaling", "astrocyte-neuron interactions", "connexins", "metabolic coupling", "neuroenergetics", "lactate shuttling"],
+    "Sonia Garel": ["brain innate immunity", "developmental immunity", "neuroimmunology", "cortical interneurons", "neuronal migration", "brain-immune interface"],
+    "Martine Cohen-Salmon": ["neurovascular coupling", "astrocyte signaling", "CNS barriers", "gap junctions"],
+    "Ariel Di Nardo": ["mTOR pathway", "neurodevelopmental disorders", "brain plasticity", "developmental disorders"],
+    "Fekrije Selimi": ["cerebellar circuits", "synapse development", "Purkinje cell physiology", "climbing fiber", "synaptic structure"],
+    "Michael Zugaro": ["sleep replay", "hippocampal circuits", "spatial navigation", "hippocampal sharp-wave ripples", "sleep oscillations", "hippocampal memory"],
+    "Anne-Catherine Bachoud-Levi": ["neurodegenerative diseases", "language disorders", "clinical neuroscience", "cognitive rehabilitation", "cognitive dysfunction", "neurodegeneration"],
+    "Roberto Casati": ["perception", "visual cognition", "cognitive foundations"],
+    "Jerome Sackur": ["conscious perception", "unconscious processing", "visual awareness", "psychophysics", "cognitive psychology"],
+    "Vincent De Gardelle": ["decision-making", "behavioral economics", "neuroeconomics", "perceptual decision-making", "perceptual confidence", "psychophysics", "computational modeling"],
+    "Thomas Preat": ["Drosophila", "learning and memory", "invertebrate neuroscience", "neuroenergetics", "mushroom bodies"],
+    "Raouf Issa": ["electrophysiology", "whisker somatosensory system", "somatosensory", "cortical microcircuits", "whisker system", "tactile encoding"],
+    "Sabine Levi": ["GABAergic transmission", "inhibitory circuits", "synaptic structure", "synaptic plasticity", "GABA signaling"],
+    "Valerie Mezger": ["gene expression", "neurodevelopmental disorders", "transcription factors", "developmental genetics"],
+    "Pierre Paoletti": ["structural biology", "channel gating", "neuropharmacology", "allosteric transitions", "electrophysiology"],
+    "Boris Barbour": ["computational neuroscience", "cerebellar circuits", "cerebellar cortex", "computational modeling", "electrophysiology"],
+    "Iris Salecker": ["developmental neurobiology", "developmental genetics", "visual circuits", "invertebrate neuroscience"],
+    "Nathalie Spassky": ["neural stem cells", "brain morphogenesis", "choroid plexus", "developmental biology"],
+    "Jean-Francois Brunet": ["developmental neurobiology", "neuronal diversity", "enteric nervous system", "brainstem circuits", "developmental genetics", "neural crest", "CCHS"],
+    "Cecile Charrier": ["brain evolution", "synaptogenesis", "cortical development", "developmental neurobiology"],
+    "Xavier Morin": ["cortical progenitors", "neuronal polarization", "developmental biology", "cortical development", "stem cell differentiation", "neuronal lineage"],
+    "Laurent Bourdieu": ["two-photon microscopy", "multiphoton microscopy", "whisker somatosensory system", "neural population dynamics", "fluorescence microscopy", "somatosensory"],
+    "German Sumbre": ["optogenetics", "calcium signaling", "whole-brain imaging", "animal behavior", "locomotor behavior", "neural dynamics"],
+    "David Holcman": ["calcium signaling", "membrane trafficking", "near-membrane dynamics", "statistical physics", "synapse dynamics", "EEG", "mean-field models"],
+    "Clement Lena": ["cortico-cerebellar interactions", "thalamocortical circuits", "electrophysiology", "motor control", "locomotion", "cerebellar circuits"],
+    "Stephane Nedelec": ["developmental biology", "neurodevelopmental disorders", "motor neuron disease", "transcription factors", "gene expression", "neuronal specification"],
+    "Pierre-Jean Corringer": ["electrophysiology", "ion channel structure", "allosteric modulation", "neuropharmacology", "patch-clamp"],
+    "Marie-Claude Potier": ["membrane trafficking", "lysosomal transport", "biomarkers", "neurodegeneration"],
+    "Philippe Fossati": ["prefrontal cortex", "cognitive control", "emotion", "neuroimaging", "clinical neuroscience", "psychiatric disorders"],
+    "Bassem Hassan": ["neuronal lineage", "cell division", "developmental neurobiology", "neurogenesis", "transcription factors", "visual system development", "clonal analysis"],
+    "Mehdi Touat": ["clinical trials", "brain tumor genetics"],
+    "Severine Boillee": ["glia-neuron interactions", "microglia activation", "ALS genetics", "FTD", "motor neuron disease"],
+    "Jean-Christophe Poncer": ["GABA receptors", "gephyrin scaffold", "inhibitory circuits", "seizure dynamics", "electrophysiology", "patch-clamp"],
+    "Richard Levy": ["prefrontal cortex", "motivation", "neuropsychology", "cognitive dysfunction", "basal ganglia", "FTD"],
+    "Hugues Chabriat": ["Notch3 signaling", "neuroimaging", "cerebrovascular disease", "brain imaging", "rare diseases"],
+    "Fanny Mochel": ["rare diseases", "clinical trials", "metabolic imaging", "energy metabolism", "white matter degeneration", "Huntington's disease"],
+    "Stephanie Baulac": ["somatic mosaicism", "brain organoids", "iPSC", "neurodevelopmental disorders", "cortical malformations", "single-cell transcriptomics", "mTOR signaling"],
+    "Emmanuel Flamand-Roze": ["dopamine", "corticostriatal circuits", "translational neuroscience"],
+    "Philippe Ravassard": ["viral vector engineering", "mouse models", "dopamine"],
+    "Alexandra Durr": ["Huntington's disease", "FTD", "rare diseases", "clinical trials", "disease progression modeling", "genetic variants"],
+    "Matthieu Peyre": ["genomics", "epigenetics", "rare diseases"],
+    "Jaime De Juan-Sanz": ["mitochondrial dysfunction", "calcium signaling", "energy metabolism", "neuroenergetics", "fluorescent reporters", "calcium sensors"],
+    "Bruno Stankoff": ["neuroinflammation", "oligodendrocytes", "brain imaging", "neuroimaging biomarkers", "functional imaging", "radiotracer development"],
+    "Denis Sheynikhovich": ["spatial learning", "head direction system", "basal ganglia models", "prefrontal cortex", "spatial cognition", "path integration"],
+    "Xavier Nicol": ["retinal ganglion cells", "calcium signaling", "developmental neuroscience", "visual system development", "neural development"],
+    "Filippo Del Bene": ["two-photon calcium imaging", "larval behavior", "visual perception", "neural coding", "animal behavior"],
+    "Olivier Goureau": ["gene therapy", "retinal ganglion cells", "retinal regeneration", "stem cell differentiation", "retinitis pigmentosa"],
+    "Alain Chedotal": ["iDISCO", "whole-brain imaging", "3D imaging", "developmental neuroscience", "neuronal wiring", "neural development", "neuroanatomy"],
+    "Isabelle Audo": ["genomics", "clinical ophthalmology", "rare diseases", "genetic variants", "retinal diseases"],
+    "Kate Grieve": ["optical methods", "3D imaging", "biomedical engineering"],
+    "Florian Sennlaub": ["retinal degeneration", "neuroinflammation", "microglia", "neuroimmunology", "brain innate immunity"],
+    "Valentina Emiliani": ["optogenetics", "two-photon microscopy", "light shaping", "multiphoton microscopy", "optical methods", "wavefront sensing"],
+    "Kristina Irsch": ["eye movements", "extraocular muscles", "visual perception"],
+    "Gilles Tessier": ["optical methods", "3D imaging", "fluorescence microscopy", "biomedical engineering"],
+    "Jean Livet": ["circuit tracing", "fluorescence microscopy", "connectomics", "developmental neuroscience", "neurogenesis"],
+    "Deniz Dalkara": ["gene therapy", "viral vectors", "retinal degeneration", "inherited retinal diseases", "retinitis pigmentosa"],
+    "Olivier Marre": ["retinal circuits", "retinal processing", "electrophysiology", "neural coding", "visual coding", "neuroprosthetics", "retinal encoding"],
+    "Veronique Izard": ["cognitive development", "infant cognition", "number cognition", "cognitive science", "neonatal cognition"],
+    "Mathieu Beraneck": ["spatial cognition", "visual-vestibular integration", "sensorimotor integration", "head direction system", "self-motion"],
+    "Louise Kirsch": ["multisensory perception", "interoception", "embodied cognition", "tactile perception", "self-referential processing", "social neuroscience"],
+    "Elsa Isingrini": ["mood disorders", "serotonin", "stress response", "neuropharmacology", "mouse models"],
+    "Sylvie Chokron": ["visual perception", "visual awareness", "cognitive rehabilitation", "attention disorders", "brain lesion studies", "neurorehabilitation"],
+    "Jeremie Barral": ["auditory neuroscience", "electrophysiology", "hair cell physiology", "hearing", "sensory coding"],
+    "Luc Arnal": ["auditory perception", "speech perception", "auditory scene analysis", "temporal processing", "auditory processing"],
+    "Aziz El Amraoui": ["hereditary deafness", "hair cell physiology", "hearing", "rare diseases", "congenital disorders", "developmental genetics"],
+    "Raphael Etournay": ["inner ear development", "developmental biology", "hearing"],
+    "Christine Petit": ["hearing", "gene identification", "rare diseases", "clinical genetics", "gene therapy for deafness", "neurogenetics", "inner ear genetics"],
+    "Nicolas Michalski": ["hearing", "neurotransmitter release", "electrophysiology", "synaptic physiology", "presynaptic mechanisms", "hair cell physiology"],
+    "Saaid Safieddine": ["hearing", "hair cell biology", "viral vectors", "neurotransmitter release", "synaptic vesicles", "gene therapy"],
+    "Keith Doelling": ["auditory cognition", "speech perception", "music cognition", "auditory perception", "temporal processing", "computational modeling"],
+    "Urs Bohm": ["optogenetics", "mouse models", "neuroendocrinology", "neuropeptides"],
+    "Zsolt Lenkei": ["membrane trafficking", "endocytosis", "signal transduction", "synaptic modulation", "cannabis vulnerability"],
+    "Alessandra Pierani": ["developmental neuroscience", "cortical neurogenesis", "neural progenitors", "cortical circuit assembly", "brain development", "developmental neurobiology"],
+    "Catherine Oppenheim": ["neuroimaging", "brain imaging", "MRI diagnostics", "cerebrovascular disease", "vascular cognitive impairment", "white matter lesions"],
+    "Maria Cecilia Angulo": ["glia-neuron interactions", "oligodendrocytes", "neuroglial interactions", "electrophysiology", "remyelination"],
+    "Heike Rebholz": ["mouse models", "movement disorders", "cyclic nucleotides", "signal transduction", "corticostriatal circuits", "dopaminergic neurons"],
+    "Anne Joutel": ["stroke genetics", "protein aggregation", "mouse models", "white matter lesions", "vascular cognitive impairment"],
+    "Marie-Odile Krebs": ["biomarkers", "clinical trials", "psychiatric genetics", "mental health", "psychopathology", "cognitive rehabilitation"],
+    "Gilles Huberfeld": ["electrophysiology", "hippocampus", "glioma", "GABAergic transmission"],
+    "Guillaume Turc": ["clinical trials", "stroke neuroimaging", "clinical neurology"],
+    "Thierry Galli": ["axon guidance", "endocytosis", "neuronal polarity", "synaptic vesicle recycling"],
+    "Antoine Drieu": ["neuroimmunology", "cerebrospinal fluid", "Alzheimer's disease", "aging", "mononuclear phagocytes", "brain-immune communication"],
+    "Nicolas Ramoz": ["schizophrenia", "depression", "addiction", "biomarkers", "neurodevelopmental disorders", "genomics"],
+    "Benoit Girard": ["reinforcement learning", "spiking neural networks", "motor control", "robotics", "computational modeling"],
+    "Nizar Ouarti": ["computer vision", "robotics"],
+    "Ludovic Saint-Bauzel": ["robotics", "assistive robotics"],
+    "Matthieu Cord": ["machine learning"],
+    "Brahim Tamadazte": ["robot control"],
+    "Jean-Francois Mangin": ["computational anatomy", "diffusion MRI", "neuroinformatics", "brain mapping", "morphometry", "medical image computing"],
+    "Sebastien Meriaux": ["blood-brain barrier", "brain tumors", "brain delivery", "brain imaging"],
+    "Edouard Duchesnay": ["scikit-learn", "statistical modeling", "computer-aided diagnosis", "disease progression modeling"],
+    "David Germanaud": ["brain morphometry", "morphometry", "pediatric neuroimaging", "brain morphogenesis", "perinatal brain", "infant brain development"],
+    "Christophe Pallier": ["speech processing", "language models", "speech perception", "cognitive science"],
+    "Nicolas Boulant": ["high-field MRI"],
+    "Philippe Ciuciu": ["MEG", "machine learning", "variational methods", "neuroimaging", "EEG"],
+    "Michel Bottlaender": ["dopamine", "Alzheimer's disease", "neurodegenerative diseases", "biomarkers"],
+    "Bechir Jarraya": ["deep brain stimulation", "fMRI", "thalamus", "brain dynamics", "brain-machine interfaces", "disorders of consciousness"],
+    "Charles Laidi": ["cerebellum", "schizophrenia", "neuroimaging", "social cognition", "diffusion MRI"],
+    "Bruno Cauli": ["patch-clamp", "electrophysiology", "neuropeptides", "cerebrovascular physiology", "GABAergic interneurons", "inhibitory circuits"],
+    "Christian Neri": ["protein aggregation", "neuronal survival", "gene expression", "neurodegenerative diseases", "invertebrate neuroscience"],
+    "Laure Rondi-Reig": ["place cells", "Purkinje cells", "hippocampus", "mouse models", "spatial cognition", "cortico-cerebellar interactions"],
+    "Stephanie Daumas": ["emotional memory", "learning and memory", "stress response", "stress neurobiology", "hippocampal memory", "fear conditioning", "mouse models", "aversive learning"],
+    "Fiona Francis": ["cortical development", "brain malformations", "developmental neuroscience", "brain morphogenesis", "neural progenitors", "developmental disorders"],
+    "Sebastien Parnaudeau": ["working memory", "cognitive circuits", "mouse models", "executive function", "cognitive control", "decision-making"],
+    "Elim Hong": ["stress response", "larval behavior", "internal states", "stress neurobiology", "calcium signaling", "optogenetics"],
+    "Martin Giurfa": ["numerical cognition", "mushroom bodies", "animal behavior", "perceptual learning", "learning and memory", "olfaction"],
+    "Julien Ferent": ["axon guidance molecules", "cortical development", "neural circuit assembly", "brain development", "neuronal wiring"],
+    "Catalina Betancur": ["SHANK3", "autism", "neurogenetics", "mouse models", "psychiatric genetics", "intellectual disability", "synapse development"],
+    "Corentin Le Magueresse": ["brain-immune interface", "neuroimmune interactions", "neurodevelopmental disorders", "brain innate immunity", "neuroimmunology", "glia-neuron interactions", "innate immunity"],
+    "Rebecca Piskorowski": ["hippocampus", "electrophysiology", "social cognition", "inhibitory circuits", "GABAergic interneurons"],
+    "Peter Vanhoutte": ["signal transduction", "basal ganglia", "neurodegeneration", "cell death", "corticostriatal circuits", "neurodegenerative diseases"],
+    "Gabrielle Girardeau": ["sleep and memory", "sleep", "hippocampus", "sleep oscillations", "sharp-wave ripples", "hippocampal oscillations", "fear conditioning", "place cells"],
+    "Ludovic Tricoire": ["GABAergic interneurons", "cortical circuits", "electrophysiology", "single-cell transcriptomics", "brain energy metabolism", "cortical inhibitory circuits", "neuronal diversity"],
+    "Loic Broix": ["axonal transport", "neuronal polarity", "synaptogenesis", "developmental neurobiology"],
+    "Nicolas Panayotis": ["neurodevelopmental disorders", "molecular signaling", "signal transduction", "synaptic plasticity"],
+    "Brandon Stell": ["electrophysiology", "retinal ganglion cells", "visual circuits", "retinal coding", "sensory coding", "retinal encoding"],
+    "Martin Oheim": ["neurotransmitter release", "optical methods", "calcium signaling", "exocytosis", "astrocyte-neuron interactions", "astroglial calcium"],
+    "Bruno Gasnier": ["vesicular transport", "membrane trafficking", "presynaptic mechanisms", "neurotransmitter release", "synaptic vesicle recycling"],
+    "Marc Guillon": ["optogenetics", "deep tissue imaging", "two-photon microscopy", "holographic stimulation", "wavefront shaping", "biomedical engineering"],
+    "Boris Lamotte d'Incamps": ["locomotion", "electrophysiology", "motor circuits", "spinal cord", "motor neurons"],
+    "Marco Diana": ["cerebellum", "electrophysiology", "Purkinje cells", "synaptic plasticity", "cerebellar cortex", "cerebellar motor control"],
+    "Serge Luquet": ["neuropeptides", "neuroendocrinology", "leptin signaling", "motivated behavior", "neuroendocrine circuits", "insulin resistance", "gut-brain axis"],
+    "Jeanne Amiel": ["clinical genetics", "neurogenetics", "enteric nervous system", "autonomic nervous system", "Phox2b", "gene identification", "rare diseases"],
+    "Vincent Cantagrel": ["neurogenetics", "developmental disorders", "clinical genetics", "inborn errors of metabolism", "neurometabolic diseases", "cerebellum", "neurodevelopmental disorders"],
+    "Nathalie Boddaert": ["neuroimaging", "clinical radiology", "neurodevelopmental disorders", "diffusion MRI", "infant brain imaging", "brain morphology"],
+    "Yves Ville": ["fetal brain imaging", "infant brain development", "clinical neurology"],
+    "Michela Deleidi": ["alpha-synuclein", "neuroinflammation", "neurodegenerative diseases", "dopaminergic neurons", "proteostasis", "iPSC", "cell therapy"],
+    "Sara Bizzotto": ["brain mosaicism", "somatic mutations", "neurodevelopmental disorders", "genomics", "cortical neurogenesis", "neurodevelopment"],
+    "Yanick Crow": ["interferon-stimulated genes", "neuroimmunology", "neuroimmune interactions", "rare diseases", "clinical genetics", "brain-immune interface"],
+    "Edor Kabashi": ["motor neuron degeneration", "frontotemporal dementia", "neurodegeneration", "zebrafish", "neurogenetics", "ALS", "animal models"],
+    "Mireille Laforge": ["microglia", "neuroimmunology", "neuroimmune interactions", "developmental immunity", "brain-immune interface"],
+    "Jessica Dubois": ["brain connectivity", "infant brain development", "brain development", "premature birth", "brain microstructure", "pediatric neuroimaging", "brain imaging"],
+    "Vincent El Ghouzzi": ["neurodevelopmental disorders", "cell division", "mitotic spindle", "cortical neurogenesis", "brain malformations", "developmental genetics"],
+    "Pierre Gressens": ["neuroinflammation", "brain development", "developmental neuroscience", "premature birth", "oligodendrocyte precursors", "perinatal brain"],
+    "Marie-Pia d'Ortho": ["sleep", "sleep-wake cycles", "clinical neuroscience"],
+    "Marc Dhenain": ["Alzheimer's disease", "neuroimaging", "animal models", "PET imaging", "neuroimaging biomarkers", "disease progression modeling", "neurodegeneration", "mouse models"],
+    "Alexis Bemelmans": ["viral vectors", "AAV gene therapy"],
+    "Julien Valette": ["neuroenergetics", "metabolic coupling", "astrocyte-neuron metabolism", "brain energy metabolism", "glia-neuron interactions", "MRI physics"],
+    "Ronald Melki": ["structural biology", "neurodegenerative diseases", "neurodegeneration", "proteostasis"],
+    "Romina Aron Badin": ["non-human primates", "deep brain stimulation", "neuroimaging", "neurodegenerative diseases", "clinical trials"],
+    "Glenn Dallerac": ["cognitive flexibility", "calcium signaling", "astrocyte signaling", "glia-neuron interactions", "cortical circuits"],
+    "Jean-Christophe Vergnaud": ["decision-making", "decision-making under uncertainty", "uncertainty", "value-based decision-making", "economic decisions"],
+    "Gilles Seraphin": ["visual cognition", "visual attention", "sensory perception"],
+    "Cyrille Bouvet": ["psychiatric disorders", "cognitive remediation"],
+    "Thibaut Brouillet": ["action perception", "perception", "embodied simulation", "sensorimotor integration"],
+    "Sebastien Deregnaucourt": ["songbird", "vocal communication", "avian models", "animal behavior"],
+    "Laurence Conty": ["attention", "eye tracking", "theory of mind"],
+    "Giovanni De Marco": ["motor control", "brain imaging", "embodied cognition", "motor circuits"],
+    "Patrick Mollaret": ["neurorehabilitation", "executive functions", "brain lesion studies", "cognitive dysfunction"]
+};
+
+// ========== MIGRATION ==========
+
+async function runMigration(dryRun) {
+  logEl.innerHTML = '';
+  const mode = dryRun ? 'DRY RUN' : 'LIVE MIGRATION';
+  log(`--- Keyword Enrichment (${mode}) ---`, 'info');
+  log('Loading all PIs from Firestore...', 'info');
+
+  const snap = await getDocs(collection(db, 'groups'));
+  const allPIs = snap.docs.map(d => ({ id: d.id, ...d.data() }));
+  log(`Loaded ${allPIs.length} PIs.`, 'info');
+  log('', '');
+
+  let updated = 0, skipped = 0, notFound = 0, totalAdded = 0;
+
+  // Process each PI in the additions map
+  for (const [piName, newKws] of Object.entries(KEYWORD_ADDITIONS)) {
+    const pi = allPIs.find(p => p.name === piName);
+    if (!pi) {
+      log(`  NOT FOUND: ${piName}`, 'error');
+      notFound++;
+      continue;
+    }
+
+    const currentKws = pi.keywords || [];
+    const currentSet = new Set(currentKws.map(k => k.trim().toLowerCase()));
+
+    // Filter out keywords already present
+    const toAdd = newKws.filter(k => !currentSet.has(k.trim().toLowerCase()));
+
+    if (toAdd.length === 0) {
+      log(`  SKIP (all already present): ${piName}`, 'skip');
+      skipped++;
+      continue;
+    }
+
+    const mergedKws = [...currentKws, ...toAdd];
+
+    log(`  ${piName}`, 'add');
+    log(`    Current (${currentKws.length}): ${currentKws.join(', ')}`, 'skip');
+    log(`    + Add (${toAdd.length}): ${toAdd.join(', ')}`, 'add');
+    log(`    = Total: ${mergedKws.length} keywords`, 'info');
+
+    if (!dryRun) {
+      try {
+        await updateDoc(doc(db, 'groups', pi.id), {
+          keywords: mergedKws,
+          updatedAt: serverTimestamp()
+        });
+        log(`    ✓ Updated in Firestore`, 'success');
+      } catch (e) {
+        log(`    ERROR: ${e.message}`, 'error');
+      }
+    }
+
+    updated++;
+    totalAdded += toAdd.length;
+  }
+
+  log('', '');
+  log('===== SUMMARY =====', 'info');
+  log(`  Mode: ${mode}`, 'info');
+  log(`  PIs updated: ${updated}`, 'success');
+  log(`  PIs skipped (already have all): ${skipped}`, 'skip');
+  log(`  PIs not found: ${notFound}`, notFound > 0 ? 'error' : 'info');
+  log(`  Total keywords added: ${totalAdded}`, 'add');
+
+  summaryEl.innerHTML = `<strong>${mode}</strong>: ${updated} PIs updated, ${totalAdded} keywords added, ${skipped} skipped, ${notFound} not found.`;
+}
+
+window.runMigration = runMigration;
+</script>
+</body>
+</html>
