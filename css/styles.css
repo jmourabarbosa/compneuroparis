@@ -349,10 +349,10 @@ img {
 }
 
 .welcome-section p {
-  font-size: 0.85rem;
+  font-size: 1rem;
   color: var(--color-text-secondary);
-  line-height: 1.6;
-  text-align: center;
+  line-height: 1.7;
+  text-align: justify;
   max-width: 720px;
   margin: 0 auto;
 }
