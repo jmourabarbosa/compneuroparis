@@ -55,10 +55,13 @@
   <!-- ========== SEARCH / FILTER ========== -->
   <section class="search-section" aria-label="Search and filter PIs">
     <div class="search-inner">
-      <div class="search-bar">
+      <form class="search-bar" autocomplete="off" onsubmit="return false">
+        <!-- Hidden decoys to absorb browser autofill -->
+        <input type="text" name="fake-user" style="display:none" tabindex="-1" autocomplete="username">
+        <input type="password" name="fake-pass" style="display:none" tabindex="-1" autocomplete="current-password">
         <svg class="search-icon" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><circle cx="11" cy="11" r="8"/><line x1="21" y1="21" x2="16.65" y2="16.65"/></svg>
-        <input type="search" id="search-input" name="pi-search" placeholder="Search PIs and institutes by name, keyword, or summary..." aria-label="Search PIs and institutes" autocomplete="nope" role="searchbox" data-form-type="other" data-lpignore="true" data-1p-ignore>
-      </div>
+        <input type="search" id="search-input" name="pi-search" placeholder="Search PIs and institutes by name, keyword, or summary..." aria-label="Search PIs and institutes" autocomplete="off" role="searchbox" data-form-type="other" data-lpignore="true" data-1p-ignore>
+      </form>
       <div id="keyword-filters" class="keyword-filters" aria-label="Filter by keyword"></div>
     </div>
   </section>
