@@ -1,0 +1,380 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<title>Keyword Enrichment — Cross-reference all PIs × all keywords</title>
+<style>
+  body { font-family: system-ui; max-width: 1100px; margin: 40px auto; padding: 0 20px; background: #111; color: #eee; }
+  button { padding: 10px 24px; font-size: 16px; cursor: pointer; border: none; border-radius: 6px; }
+  #loginBtn { background: #4285f4; color: white; }
+  #analyzeBtn { background: #f59e0b; color: #111; font-size: 18px; padding: 14px 32px; }
+  #analyzeBtn:disabled { background: #555; cursor: not-allowed; color: #999; }
+  #applyBtn { background: #34a853; color: white; font-size: 18px; padding: 14px 32px; margin-left: 12px; }
+  #applyBtn:disabled { background: #555; cursor: not-allowed; color: #999; }
+  #log { background: #1a1a1a; padding: 16px; border-radius: 8px; max-height: 800px; overflow-y: auto; font-family: monospace; font-size: 11px; white-space: pre-wrap; margin-top: 16px; }
+  .success { color: #34a853; }
+  .error { color: #ea4335; }
+  .info { color: #4285f4; }
+  .skip { color: #666; }
+  .add { color: #f59e0b; }
+  .fetch { color: #818cf8; }
+  input { padding: 8px 12px; font-size: 14px; border-radius: 4px; border: 1px solid #444; background: #222; color: #eee; width: 240px; }
+  #authSection { margin-bottom: 24px; }
+  p.desc { color: #aaa; line-height: 1.6; }
+  #progress { margin-top: 12px; font-size: 14px; color: #aaa; }
+  .progress-bar { height: 6px; background: #333; border-radius: 3px; margin-top: 6px; overflow: hidden; }
+  .progress-fill { height: 100%; background: #4285f4; transition: width 0.3s; }
+  #summary { margin-top: 16px; background: #1a2a1a; padding: 16px; border-radius: 8px; display: none; }
+  label { color: #aaa; font-size: 13px; }
+  select { padding: 4px 8px; background: #222; color: #eee; border: 1px solid #444; border-radius: 4px; }
+</style>
+</head>
+<body>
+<h1>Keyword Enrichment</h1>
+<p class="desc">
+  For every PI, checks all ~1400 keywords from the global pool against the PI's
+  <strong>summary</strong> and <strong>linked website content</strong>.<br>
+  Suggests adding keywords that appear in the PI's research description but aren't already assigned.
+</p>
+
+<div id="authSection">
+  <p id="authStatus">Not logged in</p>
+  <div id="loginForm">
+    <input type="email" id="email" placeholder="Admin email">
+    <input type="password" id="password" placeholder="Password">
+    <button id="loginBtn" onclick="doLogin()">Login</button>
+  </div>
+</div>
+
+<div style="margin-bottom: 12px;">
+  <label>Min keyword length to match: </label>
+  <select id="minLen">
+    <option value="4">4 chars</option>
+    <option value="5" selected>5 chars</option>
+    <option value="6">6 chars</option>
+  </select>
+  &nbsp;&nbsp;
+  <label>Max new keywords per PI: </label>
+  <select id="maxNew">
+    <option value="3">3</option>
+    <option value="5" selected>5</option>
+    <option value="8">8</option>
+    <option value="15">15</option>
+  </select>
+</div>
+
+<button id="analyzeBtn" disabled onclick="runAnalysis()">Analyze All PIs</button>
+<button id="applyBtn" disabled onclick="applyChanges()">Apply Suggestions</button>
+
+<div id="progress"></div>
+<div class="progress-bar"><div class="progress-fill" id="progressFill" style="width:0%"></div></div>
+<div id="summary"></div>
+<div id="log"></div>
+
+<script type="module">
+import { initializeApp } from 'https://www.gstatic.com/firebasejs/11.4.0/firebase-app.js';
+import { getAuth, signInWithEmailAndPassword, onAuthStateChanged } from 'https://www.gstatic.com/firebasejs/11.4.0/firebase-auth.js';
+import { getFirestore, collection, doc, updateDoc, serverTimestamp, getDocs } from 'https://www.gstatic.com/firebasejs/11.4.0/firebase-firestore.js';
+
+const firebaseConfig = {
+  apiKey: "AIzaSyCEUSVBEAPYfsoG00GKPqw_lHJQKelgVbk",
+  authDomain: "compneuroparis.firebaseapp.com",
+  projectId: "compneuroparis",
+  storageBucket: "compneuroparis.firebasestorage.app",
+  messagingSenderId: "768335946036",
+  appId: "1:768335946036:web:61184dde3b4b66c58bc561"
+};
+
+const app = initializeApp(firebaseConfig);
+const auth = getAuth(app);
+const db = getFirestore(app);
+
+const logEl = document.getElementById('log');
+const progressEl = document.getElementById('progress');
+const progressFill = document.getElementById('progressFill');
+const summaryEl = document.getElementById('summary');
+
+function log(msg, cls = '') {
+  const span = document.createElement('span');
+  span.className = cls;
+  span.textContent = msg + '\n';
+  logEl.appendChild(span);
+  logEl.scrollTop = logEl.scrollHeight;
+}
+
+function setProgress(current, total, label) {
+  const pct = Math.round((current / total) * 100);
+  progressEl.textContent = `${label}: ${current}/${total} (${pct}%)`;
+  progressFill.style.width = pct + '%';
+}
+
+onAuthStateChanged(auth, user => {
+  if (user) {
+    document.getElementById('authStatus').textContent = `Logged in as ${user.email}`;
+    document.getElementById('loginForm').style.display = 'none';
+    document.getElementById('analyzeBtn').disabled = false;
+  }
+});
+
+window.doLogin = async () => {
+  const email = document.getElementById('email').value;
+  const pw = document.getElementById('password').value;
+  try {
+    await signInWithEmailAndPassword(auth, email, pw);
+    log('Logged in!', 'success');
+  } catch (e) {
+    log('Login error: ' + e.message, 'error');
+  }
+};
+
+// ========== WEBSITE FETCHING ==========
+
+// Use a CORS proxy to fetch academic websites
+async function fetchWebsiteText(url) {
+  if (!url || url.length < 10) return '';
+  try {
+    // Try direct fetch first (works for sites with permissive CORS)
+    const controller = new AbortController();
+    const timeout = setTimeout(() => controller.abort(), 8000);
+
+    // Try via allorigins proxy
+    const proxyUrl = `https://api.allorigins.win/raw?url=${encodeURIComponent(url)}`;
+    const resp = await fetch(proxyUrl, { signal: controller.signal });
+    clearTimeout(timeout);
+
+    if (!resp.ok) return '';
+    const html = await resp.text();
+
+    // Extract visible text from HTML
+    const parser = new DOMParser();
+    const doc = parser.parseFromString(html, 'text/html');
+    // Remove scripts and styles
+    doc.querySelectorAll('script, style, nav, header, footer').forEach(el => el.remove());
+    const text = doc.body ? doc.body.textContent : '';
+    // Clean up whitespace and limit length
+    return text.replace(/\s+/g, ' ').trim().slice(0, 15000);
+  } catch (e) {
+    return ''; // silently fail
+  }
+}
+
+// ========== KEYWORD MATCHING ==========
+
+// Normalize a keyword for matching
+function normalize(s) {
+  return s.toLowerCase()
+    .replace(/['']/g, "'")
+    .replace(/[-–—]/g, ' ')
+    .replace(/[^a-z0-9 ']/g, '')
+    .trim();
+}
+
+// Check if a keyword matches within a text corpus
+function keywordMatchesText(keyword, textCorpus) {
+  const nkw = normalize(keyword);
+  const ntext = normalize(textCorpus);
+
+  // Direct substring match
+  if (ntext.includes(nkw)) return true;
+
+  // Try individual significant words from multi-word keywords
+  const words = nkw.split(/\s+/).filter(w => w.length >= 4);
+  if (words.length >= 2) {
+    // All significant words must appear in text
+    const allPresent = words.every(w => ntext.includes(w));
+    if (allPresent) return true;
+  }
+
+  return false;
+}
+
+// Keywords that are too generic and should not be auto-assigned
+const SKIP_KEYWORDS = new Set([
+  'behavior', 'brain', 'neurons', 'neural', 'cortex', 'learning',
+  'plasticity', 'memory', 'imaging', 'modeling', 'mouse', 'models',
+  'circuits', 'signals', 'processing', 'perception', 'coding',
+  'cognition', 'development', 'structure', 'function', 'activity',
+  'dynamics', 'mechanism', 'regulation', 'analysis', 'methods',
+  'system', 'network', 'human', 'brain imaging', 'neural circuits',
+  'cell', 'cells', 'signaling', 'receptor', 'protein',
+].map(normalize));
+
+// ========== ANALYSIS ==========
+
+let pendingChanges = []; // [{docId, name, currentKeywords, newKeywords}]
+
+async function runAnalysis() {
+  document.getElementById('analyzeBtn').disabled = true;
+  document.getElementById('applyBtn').disabled = true;
+  logEl.innerHTML = '';
+  pendingChanges = [];
+
+  const minLen = parseInt(document.getElementById('minLen').value);
+  const maxNew = parseInt(document.getElementById('maxNew').value);
+
+  log('--- Keyword Enrichment Analysis ---', 'info');
+  log('Loading all PIs from Firestore...', 'info');
+
+  const snap = await getDocs(collection(db, 'groups'));
+  const allPIs = snap.docs.map(d => ({ id: d.id, ...d.data() }));
+  log(`Loaded ${allPIs.length} PIs.`, 'info');
+
+  // Build global keyword pool
+  const globalKeywords = new Set();
+  allPIs.forEach(pi => {
+    (pi.keywords || []).forEach(k => {
+      const nk = k.trim().toLowerCase();
+      if (nk.length >= minLen && !SKIP_KEYWORDS.has(normalize(nk))) {
+        globalKeywords.add(nk);
+      }
+    });
+  });
+  const kwList = [...globalKeywords].sort();
+  log(`Global keyword pool: ${kwList.length} unique keywords (after filtering).`, 'info');
+  log('', '');
+
+  let totalAdded = 0;
+  let pisModified = 0;
+  let fetchOk = 0, fetchFail = 0;
+
+  for (let i = 0; i < allPIs.length; i++) {
+    const pi = allPIs[i];
+    const name = pi.name || '(unnamed)';
+    setProgress(i + 1, allPIs.length, `Analyzing ${name}`);
+
+    const currentKws = new Set((pi.keywords || []).map(k => k.trim().toLowerCase()));
+    const summary = pi.summary || '';
+
+    // Fetch website
+    let websiteText = '';
+    const links = pi.links || [];
+    const website = pi.website || (links.length > 0 ? links[0].url : '');
+    if (website) {
+      websiteText = await fetchWebsiteText(website);
+      if (websiteText.length > 100) {
+        fetchOk++;
+      } else {
+        fetchFail++;
+        websiteText = '';
+      }
+    } else {
+      fetchFail++;
+    }
+
+    // Build text corpus for this PI
+    const corpus = [
+      summary,
+      websiteText,
+      (pi.keywords || []).join(' '),
+    ].join(' ');
+
+    if (corpus.trim().length < 50) {
+      log(`  SKIP (no data): ${name}`, 'skip');
+      continue;
+    }
+
+    // Find matching keywords not yet assigned
+    const candidates = [];
+    for (const kw of kwList) {
+      if (currentKws.has(kw)) continue;
+      if (kw.length < minLen) continue;
+      if (keywordMatchesText(kw, corpus)) {
+        candidates.push(kw);
+      }
+    }
+
+    if (candidates.length === 0) continue;
+
+    // Limit to maxNew most relevant (prefer longer/more specific keywords)
+    const sorted = candidates.sort((a, b) => b.length - a.length).slice(0, maxNew);
+    const newKeywords = [...(pi.keywords || []), ...sorted.map(k => {
+      // Preserve original casing from global pool
+      for (const pi2 of allPIs) {
+        for (const origK of (pi2.keywords || [])) {
+          if (origK.trim().toLowerCase() === k) return origK.trim();
+        }
+      }
+      return k;
+    })];
+
+    log(`  ${name}`, 'add');
+    log(`    Current (${currentKws.size}): ${[...currentKws].join(', ')}`, 'skip');
+    log(`    + Add (${sorted.length}): ${sorted.join(', ')}`, 'add');
+    if (websiteText.length > 100) {
+      log(`    (website fetched: ${website.slice(0, 60)}...)`, 'fetch');
+    }
+    log('');
+
+    pendingChanges.push({
+      docId: pi.id,
+      name,
+      currentKeywords: pi.keywords || [],
+      newKeywords,
+      added: sorted
+    });
+
+    totalAdded += sorted.length;
+    pisModified++;
+  }
+
+  setProgress(allPIs.length, allPIs.length, 'Done');
+  log('', '');
+  log('===== SUMMARY =====', 'info');
+  log(`  PIs analyzed: ${allPIs.length}`, 'info');
+  log(`  Websites fetched: ${fetchOk} ok, ${fetchFail} failed/skipped`, 'fetch');
+  log(`  PIs with new keywords: ${pisModified}`, 'add');
+  log(`  Total keywords to add: ${totalAdded}`, 'add');
+  log('', '');
+
+  summaryEl.style.display = 'block';
+  summaryEl.innerHTML = `
+    <strong style="color:#34a853">Analysis complete.</strong><br>
+    ${pisModified} PIs would get new keywords (${totalAdded} total additions).<br>
+    ${fetchOk} websites fetched, ${fetchFail} skipped.<br><br>
+    <strong>Review the log above</strong>, then click <strong>Apply Suggestions</strong> to write to Firestore.
+  `;
+
+  document.getElementById('analyzeBtn').disabled = false;
+  if (pendingChanges.length > 0) {
+    document.getElementById('applyBtn').disabled = false;
+  }
+}
+
+async function applyChanges() {
+  if (pendingChanges.length === 0) {
+    log('No changes to apply.', 'skip');
+    return;
+  }
+
+  document.getElementById('applyBtn').disabled = true;
+  log('', '');
+  log('--- Applying keyword changes ---', 'info');
+
+  let ok = 0, errors = 0;
+  for (let i = 0; i < pendingChanges.length; i++) {
+    const ch = pendingChanges[i];
+    setProgress(i + 1, pendingChanges.length, `Updating ${ch.name}`);
+    try {
+      await updateDoc(doc(db, 'groups', ch.docId), {
+        keywords: ch.newKeywords,
+        updatedAt: serverTimestamp()
+      });
+      log(`  Updated: ${ch.name} (+${ch.added.length}: ${ch.added.join(', ')})`, 'success');
+      ok++;
+    } catch (e) {
+      log(`  ERROR (${ch.name}): ${e.message}`, 'error');
+      errors++;
+    }
+  }
+
+  log('', '');
+  log(`Applied: ${ok} updated, ${errors} errors.`, ok > 0 ? 'success' : 'error');
+  pendingChanges = [];
+  document.getElementById('applyBtn').disabled = true;
+}
+
+window.runAnalysis = runAnalysis;
+window.applyChanges = applyChanges;
+</script>
+</body>
+</html>
