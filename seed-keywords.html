@@ -199,7 +199,12 @@ const KEYWORD_RULES = {
     'behavioral science', 'behavioral test', 'behavioral disorder',
     'animal model', 'prey capture', 'feeding behavior',
     'spatial preference', 'fear', 'anxiety-like behavior',
-    'aversive learning', 'vocal development', 'larval behavior'
+    'aversive learning', 'vocal development', 'larval behavior',
+    'cognitive rehabilitation', 'neuropsychological', 'rehabilitation program',
+    'freely moving', 'in vivo behavior', 'clinical trial',
+    'cognitive performance', 'brain lesion stud', 'brain injury',
+    'experimental economics', 'patient study', 'neuropsychology',
+    'cognitive assessment', 'virtual navigation', 'therapeutic approach'
   ],
   'microscopy': [
     'microscopy', 'confocal', 'light sheet', 'super-resolution',
@@ -207,7 +212,9 @@ const KEYWORD_RULES = {
     'oct imaging', 'holographic imaging', 'digital holography',
     'fluorescence microscopy', 'tirf imaging', '3d microscopy',
     'wavefront shaping', 'wavefront sensing', 'deep tissue imaging',
-    'nanoparticle tracking', 'optical method'
+    'nanoparticle tracking', 'optical method', 'structural biology',
+    'cryo-em', 'electron microscopy', 'x-ray crystallography',
+    'tissue clearing', 'idisco', 'brainbow'
   ],
 
   // ── Brain Areas / Systems ──
@@ -302,7 +309,12 @@ const KEYWORD_RULES = {
     'gabaergic interneuron', 'cortical interneuron', 'interneuron',
     'feedforward inhibition', 'recurrent inhibition',
     'circuit architecture', 'incertocortical', 'neuronal wiring',
-    'connectivity logic'
+    'connectivity logic', 'neuronal activity', 'neural activity',
+    'neuronal ensemble', 'neural ensemble', 'circuit mechanism',
+    'neuronal population', 'population activity', 'network dynamics',
+    'neural substrate', 'modulate neuronal', 'neuronal circuit',
+    'gabaergic transmission', 'glutamatergic', 'cholinergic',
+    'serotonergic', 'dopaminergic neuron', 'noradrenergic'
   ],
   'neural coding': [
     'neural coding', 'population coding', 'neural representation',
@@ -316,14 +328,18 @@ const KEYWORD_RULES = {
     'decision-making', 'decision making', 'choice', 'value-based decision',
     'perceptual decision', 'economic decision', 'exploration-exploitation',
     'confidence', 'uncertainty', 'neuroeconomics', 'reward',
-    'motivation', 'effort', 'action selection', 'sensorimotor decision'
+    'motivation', 'effort', 'action selection', 'sensorimotor decision',
+    'cognitive control', 'inhibitory control', 'response selection',
+    'cost-benefit', 'foraging', 'risk'
   ],
   'memory': [
     'memory', 'engram', 'memory consolidation', 'memory formation',
     'memory recall', 'working memory', 'spatial memory',
     'episodic memory', 'memory trace', 'long-term memory',
     'aversive learning', 'emotional memory', 'memory replay',
-    'sleep replay', 'odor memory', 'fear memory'
+    'sleep replay', 'odor memory', 'fear memory',
+    'recognition memory', 'associative memory', 'memory retrieval',
+    'memory encoding', 'spatial navigation'
   ],
   'learning': [
     'learning', 'reinforcement learning', 'motor learning',
@@ -331,7 +347,9 @@ const KEYWORD_RULES = {
     'perceptual learning', 'skill acquisition', 'song learning',
     'vocal learning', 'concept learning', 'sequence learning',
     'adaptive', 'plasticity', 'belief updating', 'sensorimotor adaptation',
-    'cognitive flexibility', 'song crystallization'
+    'cognitive flexibility', 'song crystallization',
+    'training', 'habituation', 'sensitization',
+    'cognitive development', 'acquisition'
   ],
   'attention': [
     'attention', 'attentional', 'selective attention',
@@ -364,7 +382,10 @@ const KEYWORD_RULES = {
     'vestibular', 'time perception', 'temporal cognition',
     'temporal prediction', 'rhythm perception', 'temporal structure',
     'body perception', 'body ownership', 'rubber hand',
-    'sensory-guided', 'perceptual moment'
+    'sensory-guided', 'perceptual moment', 'sensory disorder',
+    'sensory neuron', 'mechanosensory', 'thermosensory',
+    'peripheral nerve', 'sensory receptor', 'sensory discrimination',
+    'perceptual learning', 'spatial cognition'
   ],
   'social cognition': [
     'social cognition', 'social neuroscience', 'social perception',
@@ -471,7 +492,10 @@ const KEYWORD_RULES = {
     'graph theory', 'brain network', 'functional connectivity',
     'structural connectivity', 'white matter', 'tractography',
     'long-range connection', 'brain-wide', 'whole-brain',
-    'axonal transport', 'commissural', 'wiring'
+    'axonal transport', 'commissural', 'wiring',
+    'brain architecture', 'neural pathway', 'projection neuron',
+    'cortico-', 'thalamocortical', 'corticostriatal',
+    'fronto-parietal', 'callosal'
   ],
   'brain-body interaction': [
     'interoception', 'brain-body', 'gut-brain', 'visceral',
@@ -516,7 +540,7 @@ const KEYWORD_RULES = {
 // Format: { "PI Name": { add: [...], remove: [...] } }
 const OVERRIDES = {
   // ── Fix false-positive "psychiatric disorders" from synaptic "depression" / "anxiety circuits" ──
-  'Jean-Christophe Poncer': { remove: ['psychiatric disorders'] }, // synaptic LTD, not mood
+  // Jean-Christophe Poncer: moved to bulk overrides below
   'Rebecca Piskorowski': { remove: ['psychiatric disorders'] }, // social memory, not disorder
   'Elim Hong': { remove: ['psychiatric disorders'], add: ['behavioral experiments'] }, // anxiety circuits in zebrafish, not clinical
 
@@ -527,7 +551,7 @@ const OVERRIDES = {
   'Tihana Jovanic': { remove: ['evolution'] },  // Drosophila circuits
   'Thomas Preat': { remove: ['evolution'] },  // Drosophila memory
   'Jean-Baptiste Masson': { remove: ['evolution'] },  // Drosophila computation
-  'Dafni Hadjieconomou': { remove: ['evolution'] },  // Drosophila gut-brain
+  // Dafni Hadjieconomou: moved to bulk overrides below
   'Edor Kabashi': { remove: ['evolution'] },  // zebrafish as ALS model
   'Christian Neri': { remove: ['evolution'] },  // C. elegans as disease model
   'Antonio Carlos Costa': { remove: ['evolution'] },  // C. elegans behavior physics
@@ -541,10 +565,10 @@ const OVERRIDES = {
   'Gabrielle Girardeau': { add: ['electrophysiology'] },
   'Michael Zugaro': { add: ['electrophysiology'] },
   'Daniel Shulz': { add: ['electrophysiology'] },
-  'Raouf Issa': { add: ['electrophysiology'] },
+  'Raouf Issa': { add: ['electrophysiology', 'neural coding'] },
   'Laurent Bourdieu': { add: ['electrophysiology', 'calcium imaging'] },
   'Florent Haiss': { add: ['electrophysiology', 'calcium imaging'] },
-  'Belen Pardi': { add: ['electrophysiology'] },
+  'Belen Pardi': { add: ['electrophysiology', 'neural coding'] },
   'Desdemona Fricker': { add: ['electrophysiology', 'patch clamp'] },
   'Sophie Bagur': { add: ['electrophysiology'] },
   'Philippe Faure': { add: ['electrophysiology', 'behavioral experiments'] },
@@ -562,17 +586,13 @@ const OVERRIDES = {
   'Glenn Dallerac': { add: ['calcium imaging'] },
 
   // ── Add behavioral experiments for systems/human PIs doing experiments ──
-  'Gisella Vetere': { add: ['behavioral experiments'] },
+  'Gisella Vetere': { add: ['behavioral experiments', 'memory'] },
   'Laure Rondi-Reig': { add: ['behavioral experiments'] },
-  'Stephanie Daumas': { add: ['behavioral experiments'] },
+  'Stephanie Daumas': { add: ['behavioral experiments', 'memory'] },
   'Coralie Chevallier': { add: ['behavioral experiments'] },
   'Catherine Tallon-Baudry': { add: ['behavioral experiments'] },
 
-  // ── Fix false-positive "brain-body interaction" for pure neurovascular PIs ──
-  'Hugues Chabriat': { remove: ['brain-body interaction'] }, // cerebrovascular disease, not interoception
-  'Guillaume Turc': { remove: ['brain-body interaction'] }, // stroke imaging
-  'Catherine Oppenheim': { remove: ['brain-body interaction'] }, // stroke MRI
-  'Anne Joutel': { remove: ['brain-body interaction'] }, // vascular disease genetics
+  // ── Neurovascular PIs: moved to bulk overrides below (Hugues Chabriat, Guillaume Turc, Catherine Oppenheim, Anne Joutel) ──
 
   // ── Add psychophysics for PIs who clearly do human perceptual experiments ──
   'Laura Dugue': { add: ['psychophysics'] },
@@ -581,6 +601,127 @@ const OVERRIDES = {
 
   // ── Fix false-positive "neurodegeneration" for non-disease PIs ──
   'Fani Koukouli': { remove: ['neurodegeneration'] }, // nicotinic receptors generally
+
+  // ── Boost under-matched PIs: add legitimate broad keywords ──
+
+  // Molecular/cellular PIs — add neural circuits, development, etc. where warranted
+  'Nathalie Rouach': { add: ['neural circuits', 'brain connectivity'] }, // astrocyte networks modulate neuronal activity
+  'Fekrije Selimi': { add: ['neural circuits', 'development'] }, // synaptogenesis, synaptic specificity
+  'Sabine Levi': { add: ['neural circuits'] }, // inhibitory synapse dynamics
+  'Pierre Paoletti': { add: ['neural circuits', 'learning'] }, // NMDA receptors central to circuits & plasticity
+  'David Holcman': { add: ['synaptic plasticity', 'neural circuits'] }, // models of dendritic spines, synaptic dynamics
+  'Pierre-Jean Corringer': { add: ['synaptic plasticity'] }, // nicotinic receptors, channel gating
+  'Jaime De Juan-Sanz': { add: ['neural circuits', 'microscopy'] }, // presynaptic mechanisms, synaptic energetics
+  'Thierry Galli': { add: ['neural circuits', 'synaptic plasticity'] }, // SNARE, neurite outgrowth, synaptic membrane
+  'Loic Broix': { add: ['development', 'synaptic plasticity'] }, // neuronal polarization, synaptic protein synthesis
+  'Bruno Gasnier': { add: ['neural circuits'] }, // vesicular neurotransmitter transport
+  'Zsolt Lenkei': { add: ['neural circuits'] }, // cannabinoid signaling in neuronal circuits
+  'Nicolas Panayotis': { add: ['neural circuits', 'development'] }, // BDNF/neurotrophin modulation
+  'Maria Cecilia Angulo': { add: ['neural circuits'] }, // NG2 glia-neuron synaptic contacts
+
+  // Clinical/cognitive PIs — add behavioral experiments, neuroimaging
+  'Marie-Odile Krebs': { add: ['behavioral experiments', 'neuroimaging'] }, // clinical neuroscience, cognitive remediation
+  'Cyrille Bouvet': { add: ['behavioral experiments'] }, // clinical psychology, therapeutic approaches
+  'Patrick Mollaret': { add: ['behavioral experiments'] }, // cognitive rehabilitation, brain injury
+  'Sylvie Chokron': { add: ['behavioral experiments', 'sensory processing'] }, // visual rehabilitation, neuropsychology
+  'Paolo Bartolomeo': { add: ['behavioral experiments', 'neuroimaging'] }, // brain lesion studies, spatial cognition
+  'Lionel Naccache': { add: ['behavioral experiments'] }, // neuropsychology, cognitive functions
+  'Jerome Sackur': { add: ['psychophysics', 'behavioral experiments'] }, // introspection, metacognition experiments
+  'Julie Grezes': { add: ['behavioral experiments'] }, // social perception experiments
+  'Liane Schmidt': { add: ['behavioral experiments'] }, // motivation, self-regulation experiments
+  'Lucie Berkovitch': { add: ['behavioral experiments', 'neuroimaging'] }, // computational psychiatry, patient studies
+
+  // Retina/auditory PIs — add development, neurogenetics, sensory processing
+  'Xavier Nicol': { add: ['neural circuits', 'brain connectivity'] }, // axon guidance, retinal topography maps
+  'Olivier Goureau': { add: ['neurogenetics'] }, // iPSC, cell therapy, photoreceptor differentiation
+  'Deniz Dalkara': { add: ['microscopy'] }, // viral vector engineering, retinal delivery
+  'Isabelle Audo': { add: ['gene therapy'] }, // inherited retinal diseases, clinical genetics
+  'Florian Sennlaub': { add: ['neurodegeneration'] }, // retinal degeneration, macular degeneration
+  'Aziz El Amraoui': { add: ['development', 'sensory processing'] }, // hair cell biology, stereocilia
+  'Raphael Etournay': { add: ['microscopy'] }, // biophysical mechanisms, tissue mechanics
+  'Nicolas Michalski': { add: ['electrophysiology', 'neural circuits'] }, // ribbon synapse physiology
+
+  // Imaging/methods PIs — add relevant method + topic keywords
+  'Gilles Tessier': { add: ['neuroimaging'] }, // 3D microscopy for neuroscience
+  'Sebastien Meriaux': { add: ['microscopy'] }, // contrast agents, nanoparticle technology
+  'Nicolas Boulant': { add: ['microscopy'] }, // RF coil design, MRI physics
+  'Michel Bottlaender': { add: ['Parkinson\'s disease'] }, // PET radiotracers, neurochemical changes
+  'Julien Valette': { add: ['neuroimaging', 'brain connectivity'] }, // MR spectroscopy, metabolic coupling
+
+  // Neuro-oncology/clinical — add relevant keywords
+  'Hugues Chabriat': { remove: ['brain-body interaction'], add: ['neuroimaging', 'neurodegeneration'] }, // cerebrovascular disease imaging
+  'Catherine Oppenheim': { remove: ['brain-body interaction'], add: ['microscopy'] }, // diffusion MRI methods
+  'Anne Joutel': { remove: ['brain-body interaction'], add: ['neuroimaging'] }, // CADASIL, cerebral small vessel disease
+  // Bruno Stankoff: already has neuroimaging via patterns
+
+  // Systems neuro PIs — add sensory processing, memory, neural coding
+  'Roberto Casati': { add: ['sensory processing', 'attention'] }, // philosophy of perception, spatial cognition
+  'Veronique Izard': { add: ['behavioral experiments', 'sensory processing'] }, // infant cognition experiments
+  'Mathieu Beraneck': { add: ['neural circuits', 'brain connectivity'] }, // vestibular compensation, multisensory integration
+  'Kristina Irsch': { add: ['behavioral experiments', 'sensory processing'] }, // eye tracking, visual rehabilitation
+  'Louise Kirsch': { add: ['behavioral experiments', 'psychophysics'] }, // body perception, multisensory self
+  'Virginie van Wassenhove': { add: ['psychophysics'] }, // temporal cognition, multisensory perception
+  'Fabrizio De Vico Fallani': { add: ['computational modeling'] }, // network science, graph theory
+
+  // Development PIs — add neurogenetics, neural circuits
+  'Alessandra Pierani': { add: ['neurogenetics', 'neural circuits'] }, // cortical patterning, neuronal migration
+  'Xavier Morin': { add: ['neurogenetics'] }, // cell division, neural progenitors
+  'Vincent El Ghouzzi': { add: ['microscopy'] }, // centrosome biology, cortical progenitors
+  'Nathalie Spassky': { add: ['microscopy'] }, // cilia, ependymal cells
+  'Valerie Mezger': { add: ['neural circuits'] }, // epigenetic mechanisms in neurodevelopment
+
+  // Clinical genetics — add relevant clinical/method keywords
+  'Anne-Catherine Bachoud-Levi': { add: ['behavioral experiments', 'neuroimaging'] }, // cognitive deficits assessment, cell therapy
+  'Fanny Mochel': { add: ['neuroimaging'] }, // biomarkers, brain energy metabolism
+  'Stephanie Baulac': { add: ['microscopy'] }, // somatic mutations, brain mosaicism
+  'Alexandra Durr': { add: ['behavioral experiments'] }, // genetic counseling, phenotyping
+  // Emmanuel Flamand-Roze: see fix false-positive section below
+  'Marie-Claude Potier': { add: ['neurogenetics', 'microscopy'] }, // amyloid processing, lipid rafts
+  'Jean-Christophe Poncer': { remove: ['psychiatric disorders'], add: ['electrophysiology', 'neural circuits'] }, // synaptic LTD, GABAergic
+  'Jeanne Amiel': { add: ['brain connectivity'] }, // neural crest derivatives, congenital
+
+  // Computational/physics PIs
+  'Roberto Toro': { add: ['neuroimaging', 'neurogenetics'] }, // brain morphology, morphometry
+  // Matthieu Cord: see fix false-positive section below
+  'Thibaut Brouillet': { add: ['behavioral experiments', 'sensory processing'] }, // embodied cognition, action-perception
+  'Christophe Pallier': { add: ['behavioral experiments'] }, // language experiments, sentence comprehension
+
+  // Misc remaining
+  'Dafni Hadjieconomou': { remove: ['evolution'], add: ['neural circuits', 'behavioral experiments'] }, // gut-brain circuits
+  'Ariel Di Nardo': { add: ['neurogenetics', 'synaptic plasticity'] }, // mTOR signaling, critical periods
+  'Ludovic Saint-Bauzel': { add: ['motor control', 'brain-computer interfaces'] }, // medical robotics, neurorehabilitation
+  'Brahim Tamadazte': { add: ['motor control', 'microscopy'] }, // micro-robotics, microsurgery
+  'Elsa Isingrini': { add: ['behavioral experiments', 'neural circuits'] }, // animal models, monoamine signaling
+  'Antoine Drieu': { add: ['glia', 'development'] }, // meningeal immunity, dural macrophages
+  // Ronald Melki: see fix false-positive section below
+  'Alain Chedotal': { add: ['microscopy', 'connectomics'] }, // tissue clearing, 3D brain mapping
+  'Jean-Christophe Vergnaud': { add: ['computational modeling'] }, // neuroeconomics, expected utility
+  'Aleksandra Deczkowska': { add: ['neurodegeneration'] }, // aging, brain-immune, microglia
+  'Mehdi Touat': { add: ['neuroimaging'] }, // genomic profiling, precision oncology
+  'Matthieu Peyre': { add: ['neuroimaging'] }, // tumor microenvironment, brain tumor biology
+  'Peter Vanhoutte': { add: ['neural circuits', 'neurogenetics'] }, // ERK signaling, striatal neurons
+  'Yves Ville': { add: ['development'] }, // fetal medicine, prenatal brain
+
+  // Fix false-positive: 'language' from 'body language' or 'prion-like spreading'
+  'Ronald Melki': { add: ['microscopy'], remove: ['language'] }, // protein aggregation, not language research
+  'Emmanuel Flamand-Roze': { add: ['behavioral experiments', 'neuroimaging'], remove: ['glia'] }, // movement disorders, not glia
+  'Guillaume Turc': { remove: ['brain-body interaction', 'microscopy'] }, // stroke neuroimaging
+  'Serge Luquet': { remove: ['thalamus'], add: ['neural circuits'] }, // hypothalamus circuits, not thalamus
+  'Matthieu Cord': { add: ['computational modeling'], remove: ['neural circuits'] }, // AI/ML, not biological circuits
+
+  // ── Final batch: add behavioral experiments for human/animal experiment PIs ──
+  'Etienne Koechlin': { add: ['behavioral experiments'] }, // prefrontal fMRI tasks
+  'Stanislas Dehaene': { add: ['behavioral experiments'] }, // number/reading experiments
+  'Franck Ramus': { add: ['behavioral experiments'] }, // dyslexia/language testing
+  'Daniel Pressnitzer': { add: ['behavioral experiments'] }, // auditory psychophysics experiments
+  'Pascal Mamassian': { add: ['behavioral experiments'] }, // visual perception experiments
+  'Thomas Andrillon': { add: ['behavioral experiments'] }, // sleep/consciousness experiments
+  'Delphine Oudiette': { add: ['behavioral experiments'] }, // lucid dream experiments
+  'Laurence Conty': { add: ['behavioral experiments'] }, // eye gaze, joint attention experiments
+  'Marc Dhenain': { add: ['behavioral experiments'] }, // Alzheimer mouse models
+  'Bechir Jarraya': { add: ['behavioral experiments'] }, // NHP behavioral tasks
+
+  'Kate Grieve': { remove: ['learning'] }, // retinal imaging, not learning
 };
 
 // ========== DETECTION LOGIC ==========
