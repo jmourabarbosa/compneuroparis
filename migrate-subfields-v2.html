@@ -1,0 +1,218 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<title>Migrate PI Subfields v2 — Add Clinical + Re-evaluate</title>
+<style>
+  body { font-family: system-ui; max-width: 800px; margin: 40px auto; padding: 0 20px; background: #111; color: #eee; }
+  button { padding: 10px 24px; font-size: 16px; cursor: pointer; border: none; border-radius: 6px; }
+  #loginBtn { background: #4285f4; color: white; }
+  #migrateBtn { background: #34a853; color: white; font-size: 18px; padding: 14px 32px; }
+  #migrateBtn:disabled { background: #555; cursor: not-allowed; color: #999; }
+  #dryRunBtn { background: #f59e0b; color: #111; font-size: 18px; padding: 14px 32px; margin-left: 12px; }
+  #dryRunBtn:disabled { background: #555; cursor: not-allowed; color: #999; }
+  #log { background: #1a1a1a; padding: 16px; border-radius: 8px; max-height: 600px; overflow-y: auto; font-family: monospace; font-size: 13px; white-space: pre-wrap; margin-top: 16px; }
+  .success { color: #34a853; }
+  .error { color: #ea4335; }
+  .info { color: #4285f4; }
+  .skip { color: #999; }
+  .clinical { color: #60a5fa; }
+  input { padding: 8px 12px; font-size: 14px; border-radius: 4px; border: 1px solid #444; background: #222; color: #eee; width: 240px; }
+  #authSection { margin-bottom: 24px; }
+  p.desc { color: #aaa; line-height: 1.6; }
+</style>
+</head>
+<body>
+<h1>Migrate PI Subfields v2</h1>
+<p class="desc">
+  Adds the new <strong style="color:#60a5fa">clinical</strong> subfield and re-evaluates all ~250 PIs across
+  6 categories: computational, systems, human, molecular, developmental, clinical.<br>
+  Clinical = diagnosis, treatment, clinical trials, patient studies, neuropsychological rehabilitation, sleep medicine, clinical neurology.
+</p>
+
+<div id="authSection">
+  <p id="authStatus">Not logged in</p>
+  <div id="loginForm">
+    <input type="email" id="email" placeholder="Admin email">
+    <input type="password" id="password" placeholder="Password">
+    <button id="loginBtn" onclick="doLogin()">Login</button>
+  </div>
+</div>
+
+<button id="dryRunBtn" disabled onclick="runMigration(true)">Dry Run (Preview)</button>
+<button id="migrateBtn" disabled onclick="runMigration(false)">Run Migration</button>
+<div id="log"></div>
+
+<script type="module">
+import { initializeApp } from 'https://www.gstatic.com/firebasejs/11.4.0/firebase-app.js';
+import { getAuth, signInWithEmailAndPassword, onAuthStateChanged } from 'https://www.gstatic.com/firebasejs/11.4.0/firebase-auth.js';
+import { getFirestore, collection, doc, updateDoc, serverTimestamp, query, where, getDocs } from 'https://www.gstatic.com/firebasejs/11.4.0/firebase-firestore.js';
+
+const firebaseConfig = {
+  apiKey: "AIzaSyCEUSVBEAPYfsoG00GKPqw_lHJQKelgVbk",
+  authDomain: "compneuroparis.firebaseapp.com",
+  projectId: "compneuroparis",
+  storageBucket: "compneuroparis.firebasestorage.app",
+  messagingSenderId: "768335946036",
+  appId: "1:768335946036:web:61184dde3b4b66c58bc561"
+};
+
+const app = initializeApp(firebaseConfig);
+const auth = getAuth(app);
+const db = getFirestore(app);
+
+const logEl = document.getElementById('log');
+function log(msg, cls = '') {
+  const span = document.createElement('span');
+  span.className = cls;
+  span.textContent = msg + '\n';
+  logEl.appendChild(span);
+  logEl.scrollTop = logEl.scrollHeight;
+}
+
+onAuthStateChanged(auth, user => {
+  if (user) {
+    document.getElementById('authStatus').textContent = `Logged in as ${user.email}`;
+    document.getElementById('loginForm').style.display = 'none';
+    document.getElementById('migrateBtn').disabled = false;
+    document.getElementById('dryRunBtn').disabled = false;
+  }
+});
+
+window.doLogin = async () => {
+  const email = document.getElementById('email').value;
+  const pw = document.getElementById('password').value;
+  try {
+    await signInWithEmailAndPassword(auth, email, pw);
+    log('Logged in!', 'success');
+  } catch (e) {
+    log('Login error: ' + e.message, 'error');
+  }
+};
+
+// ========== MIGRATION MAP ==========
+// Maps PI name → new subfields array
+// Only PIs that need changes are listed here.
+// Primary subfield = first element in array.
+
+const migrations = {
+
+  // ===== NEW CLINICAL PRIMARY =====
+  // These PIs are primarily clinicians / translational researchers
+
+  "Lionel Naccache":          ["clinical", "human"],         // was: human — consciousness disorders, ICU neurology
+  "Paolo Bartolomeo":         ["clinical", "human"],         // was: human — hemispatial neglect, brain lesion studies
+  "Philippe Fossati":         ["clinical", "human"],         // was: human — psychiatry, depression, mood disorders
+  "Richard Levy":             ["clinical", "human"],         // was: human — behavioral neurology, frontal lobe
+  "Hugues Chabriat":          ["clinical", "molecular"],     // was: molecular, human — CADASIL, cerebrovascular disease
+  "Emmanuel Flamand-Roze":    ["clinical", "human"],         // was: human — movement disorders, clinical neurology
+  "Alexandra Durr":           ["clinical", "molecular"],     // was: molecular, human — genetic neurodegenerative diseases
+  "Bruno Stankoff":           ["clinical", "molecular"],     // was: molecular, human — multiple sclerosis, neuroimaging
+  "Stephanie Baulac":         ["clinical", "molecular"],     // was: molecular — epilepsy genetics, clinical genetics
+  "Fanny Mochel":             ["clinical", "molecular"],     // was: molecular — neurometabolic diseases
+  "Matthieu Peyre":           ["clinical", "molecular"],     // was: molecular — neurosurgery, neuro-oncology
+  "Marie-Odile Krebs":        ["clinical", "human"],         // was: human — psychiatry, schizophrenia
+  "Guillaume Turc":           ["clinical", "human"],         // was: human — stroke, vascular neurology
+  "Catherine Oppenheim":      ["clinical", "human"],         // was: human — neuroradiology, stroke imaging
+  "Gilles Huberfeld":         ["clinical", "systems"],       // was: systems, human — epilepsy, clinical neurophysiology
+  "Sylvie Chokron":           ["clinical", "human"],         // was: human — blindsight, neurorehabilitation
+  "Anne-Catherine Bachoud-Levi": ["clinical", "human"],      // was: human — Huntington's, speech & language therapy
+  "Nathalie Boddaert":        ["clinical", "human"],         // was: human — pediatric neuroradiology
+  "Yves Ville":               ["clinical", "human"],         // was: human — fetal medicine, prenatal neurology
+  "Marie-Pia d'Ortho":        ["clinical", "human"],         // was: human — sleep medicine, sleep disorders
+  "Mehdi Touat":              ["clinical", "molecular"],     // was: molecular — neuro-oncology, brain tumors
+
+  // ===== CLINICAL AS SECONDARY =====
+  // These PIs do significant translational/clinical work alongside their primary research
+
+  "Charles Laidi":            ["computational", "clinical"],  // was: computational, human — computational psychiatry, clinical imaging
+  "Lucie Berkovitch":         ["computational", "clinical"],  // was: computational, human — psychedelics therapy, schizophrenia
+  "Elsa Isingrini":           ["systems", "clinical"],        // was: systems, human — stress/depression neurobiology
+  "Bechir Jarraya":           ["computational", "clinical"],  // was: computational, human — neurosurgery, DBS, brain-computer interface
+  "David Germanaud":          ["human", "clinical"],          // was: human — pediatric neurology, brain malformations
+  "Jessica Dubois":           ["human", "clinical"],          // was: human — neonatal neuroimaging, prematurity
+  "Pierre Gressens":          ["developmental", "clinical"],  // was: developmental, molecular — neonatal brain injury
+  "Jeanne Amiel":             ["developmental", "clinical"],  // was: developmental, molecular — congenital malformations
+  "Nicolas Ramoz":            ["molecular", "clinical"],      // was: molecular, human — psychiatric genetics
+  "Brian Lau":                ["systems", "clinical"],        // was: systems, computational — deep brain stimulation
+
+  // ===== OTHER CORRECTIONS =====
+  // Fix some PIs whose primary subfield should be adjusted
+
+  "Franck Ramus":             ["human", "clinical"],          // was: human — dyslexia, neurodevelopmental disorders (has clinical component)
+  "Delphine Oudiette":        ["human", "clinical"],          // was: human — sleep disorders, narcolepsy research
+  "Isabelle Audo":            ["clinical", "molecular"],      // was: molecular — inherited retinal diseases, clinical ophthalmology
+  "Christine Petit":          ["molecular", "clinical"],      // was: molecular — deafness genetics, cochlear implants
+  "Edor Kabashi":             ["molecular", "clinical"],      // was: molecular — ALS/FTD, translational models
+  "Yanick Crow":              ["molecular", "clinical"],      // was: molecular — Aicardi-Goutieres syndrome, neuroinflammation
+  "Deniz Dalkara":            ["molecular", "clinical"],      // was: molecular — gene therapy for retinal diseases
+  "Romina Aron Badin":        ["systems", "clinical"],        // was: systems — primate models for clinical translation
+};
+
+async function runMigration(dryRun) {
+  document.getElementById('migrateBtn').disabled = true;
+  document.getElementById('dryRunBtn').disabled = true;
+  logEl.innerHTML = '';
+
+  const mode = dryRun ? 'DRY RUN' : 'LIVE';
+  log(`--- Starting Subfield Migration v2 (${mode}) ---`, 'info');
+  log(`Total entries in migration map: ${Object.keys(migrations).length}`, 'info');
+  log('', '');
+
+  let updated = 0, notFound = 0, skipped = 0, errors = 0;
+
+  for (const [name, newSubfields] of Object.entries(migrations)) {
+    try {
+      const q = query(collection(db, 'groups'), where('name', '==', name));
+      const snap = await getDocs(q);
+      if (snap.empty) {
+        log(`  NOT FOUND: ${name}`, 'error');
+        notFound++;
+        continue;
+      }
+      const docSnap = snap.docs[0];
+      const data = docSnap.data();
+      const current = Array.isArray(data.subfields) ? data.subfields : (data.subfield ? [data.subfield] : []);
+
+      // Check if already correct
+      if (JSON.stringify(current) === JSON.stringify(newSubfields)) {
+        log(`  Skip (already correct): ${name} [${current.join(', ')}]`, 'skip');
+        skipped++;
+        continue;
+      }
+
+      const hasClinical = newSubfields.includes('clinical');
+      const cls = hasClinical ? 'clinical' : 'success';
+
+      if (dryRun) {
+        log(`  WOULD UPDATE: ${name}  [${current.join(', ')}] → [${newSubfields.join(', ')}]`, cls);
+      } else {
+        await updateDoc(doc(db, 'groups', docSnap.id), {
+          subfields: newSubfields,
+          subfield: newSubfields[0],
+          updatedAt: serverTimestamp()
+        });
+        log(`  Updated: ${name}  [${current.join(', ')}] → [${newSubfields.join(', ')}]`, cls);
+      }
+      updated++;
+    } catch (e) {
+      log(`  ERROR (${name}): ${e.message}`, 'error');
+      errors++;
+    }
+  }
+
+  log('', '');
+  log(`Migration ${mode} complete!`, 'info');
+  log(`  Updated: ${updated}`, 'success');
+  log(`  Skipped (already correct): ${skipped}`, 'skip');
+  log(`  Not found: ${notFound}`, notFound > 0 ? 'error' : 'info');
+  log(`  Errors: ${errors}`, errors > 0 ? 'error' : 'info');
+
+  document.getElementById('migrateBtn').disabled = false;
+  document.getElementById('dryRunBtn').disabled = false;
+}
+
+window.runMigration = runMigration;
+</script>
+</body>
+</html>
