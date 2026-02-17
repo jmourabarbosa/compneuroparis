@@ -27,10 +27,11 @@
 <body>
 <h1>Migrate PI Subfields v3</h1>
 <p class="desc">
-  Full keyword-based re-evaluation of all PIs. For each PI, subfields are assigned
-  based on which sections best match their keywords (primary, secondary, optional tertiary).<br>
-  This builds on v2 (which added clinical) and adds ~50 additional corrections:
-  missing secondaries, primary swaps, and new tertiary assignments.
+  Full re-evaluation using <strong>method-first</strong> rule: your primary section = what you do day-to-day.<br>
+  <strong>Computational primary</strong> = purely builds models/theory/algorithms (no wet lab).<br>
+  If you run human experiments (fMRI, EEG, behavior) → <strong>human primary</strong>.<br>
+  If you run animal experiments → <strong>systems primary</strong>.<br>
+  ~90 PIs updated: method-first swaps, clinical additions, missing secondaries.
 </p>
 
 <div id="authSection">
@@ -129,16 +130,16 @@ const migrations = {
   "Isabelle Audo":              ["clinical", "molecular"],       // inherited retinal diseases, clinical genetics
 
   // =====================================================================
-  //  SECTION 2: CLINICAL AS SECONDARY (from v2, some corrections)
+  //  SECTION 2: CLINICAL AS SECONDARY
   // =====================================================================
 
-  "Charles Laidi":              ["computational", "clinical"],    // computational psychiatry, bipolar, autism neuroimaging
-  "Lucie Berkovitch":           ["computational", "clinical"],    // psychedelics therapy, schizophrenia
-  "Bechir Jarraya":             ["computational", "clinical"],    // neurosurgery, DBS, brain-computer interface
-  "Elsa Isingrini":             ["systems", "clinical"],          // stress/depression neurobiology
-  "Brian Lau":                  ["systems", "clinical"],          // deep brain stimulation
+  "Bechir Jarraya":             ["clinical", "computational"],    // neurosurgeon, DBS, BCI (runs surgery, not models)
+  "Charles Laidi":              ["human", "clinical", "computational"], // clinical imaging + computational psychiatry (runs fMRI)
+  "Lucie Berkovitch":           ["human", "clinical", "computational"], // psychedelics trials, schizophrenia (runs clinical + human experiments)
+  "Elsa Isingrini":             ["systems", "clinical"],          // stress/depression neurobiology (animal experiments)
+  "Brian Lau":                  ["systems", "clinical"],          // deep brain stimulation (animal + clinical electrophysiology)
   "Romina Aron Badin":          ["systems", "clinical"],          // primate models for clinical translation
-  "David Germanaud":            ["human", "clinical"],            // pediatric neurology, brain malformations
+  "David Germanaud":            ["human", "clinical"],            // pediatric neurology, brain malformations (human imaging)
   "Pierre Gressens":            ["developmental", "clinical"],    // perinatal brain injury, neonatal neuroprotection
   "Jeanne Amiel":               ["developmental", "clinical"],    // congenital disorders, Hirschsprung
   "Nicolas Ramoz":              ["molecular", "clinical"],        // psychiatric genetics, autism, ADHD
@@ -146,7 +147,7 @@ const migrations = {
   "Edor Kabashi":               ["molecular", "clinical"],        // ALS genetics, motor neuron disease
   "Yanick Crow":                ["molecular", "clinical"],        // Aicardi-Goutieres syndrome, interferonopathies
   "Deniz Dalkara":              ["molecular", "clinical"],        // AAV gene therapy, retinal diseases
-  "Franck Ramus":               ["human", "clinical"],            // dyslexia, neurodevelopmental disorders
+  "Franck Ramus":               ["human", "clinical"],            // dyslexia, neurodevelopmental disorders (human studies)
 
   // =====================================================================
   //  SECTION 3: NEW — Add clinical secondary to molecular PIs
@@ -170,69 +171,81 @@ const migrations = {
   "Marc Dhenain":               ["molecular", "clinical"],        // was: systems — Alzheimer's imaging, amyloid PET, tau
 
   // =====================================================================
-  //  SECTION 4: NEW — Add missing secondary subfields
+  //  SECTION 4: METHOD-FIRST PRIMARY SWAPS
+  //  Experimentalists move out of computational into their experiment type.
+  //  Computational primary = purely builds models/theory/algorithms.
   // =====================================================================
 
-  // --- Computational: add systems secondary ---
-  "Alex Cayco Gajic":           ["computational", "systems"],     // was: computational — cerebellum, motor learning
-  "Alain Destexhe":             ["computational", "systems"],     // was: computational — thalamocortical dynamics, sleep oscillations
-  "Ulisse Ferrari":             ["computational", "systems"],     // was: computational — retinal encoding, population coding
+  // --- Was computational primary, but runs human experiments (fMRI/EEG/MEG/behavior) ---
+  "Etienne Koechlin":           ["human", "computational"],       // was: computational, human — runs fMRI experiments on prefrontal cortex
+  "Valentin Wyart":             ["human", "computational"],       // was: computational, human — runs EEG experiments on decision-making
+  "Stefano Palminteri":         ["human", "computational"],       // was: computational, human — runs behavioral experiments on RL
+  "Mathias Pessiglione":        ["human", "computational"],       // was: computational, human — runs fMRI experiments on motivation
+  "Florent Meyniel":            ["human", "computational"],       // was: computational, human — runs fMRI experiments on uncertainty
+  "Sophie Herbst":              ["human", "computational"],       // was: computational, human — runs EEG/MEG experiments on temporal predictions
+  "Virginie van Wassenhove":    ["human", "computational"],       // was: computational, human — runs MEG experiments on time perception
+  "Laura Dugue":                ["human", "computational"],       // was: computational, human — runs TMS experiments on perception
+  "Thomas Andrillon":           ["human", "computational"],       // was: human, computational — runs EEG experiments (already human primary)
+  "Liane Schmidt":              ["human", "computational"],       // was: human, computational — runs human behavioral experiments
+  "Jacobo Sitt":                ["human", "computational", "clinical"], // was: computational, human — runs EEG on patients with consciousness disorders
 
-  // --- Computational: add clinical secondary ---
-  "Olivier Colliot":            ["computational", "clinical"],    // was: computational — ML for neurodegenerative diseases
-  "Ninon Burgos":               ["computational", "clinical"],    // was: computational — computer-aided diagnosis, anomaly detection
-  "Stanley Durrleman":          ["computational", "clinical"],    // was: computational — disease progression modeling, neurodegeneration
-  "Jacobo Sitt":                ["computational", "clinical"],    // was: computational, human — disorders of consciousness
-  "Edouard Duchesnay":          ["computational", "clinical"],    // was: computational — neuroimaging biomarkers, psychiatric disorders
-
-  // --- Computational: add human secondary ---
-  "Marie-Constance Corsi":      ["computational", "human"],       // was: computational — BCI with EEG, human participants
-  "Jean-Francois Mangin":       ["computational", "human"],       // was: computational — brain morphometry, cortical folding
-  "Philippe Ciuciu":            ["computational", "human"],       // was: computational — fMRI analysis, brain decoding
-
-  // --- Systems: add molecular secondary ---
-  "Alberto Bacci":              ["systems", "molecular"],         // was: systems — GABAergic interneurons, synaptic plasticity
-  "Laurent Venance":            ["systems", "molecular"],         // was: systems — STDP, corticostriatal circuits
-
-  // --- Systems: add computational secondary ---
-  "Gilles Tessier":             ["systems", "computational"],     // was: systems — holographic imaging, digital holography
-  "Sebastien Meriaux":          ["systems", "computational"],     // was: systems — high-field MRI, functional imaging
-
-  // --- Systems: add clinical secondary ---
-  "Michel Bottlaender":         ["systems", "clinical"],          // was: systems — PET imaging, radiopharmacology, aging brain
-
-  // --- Systems: add developmental secondary ---
-  "Pierre-Marie Lledo":         ["systems", "developmental"],     // was: systems — olfaction, adult neurogenesis
-
-  // --- Molecular: add developmental secondary ---
-  "Isabelle Brunet":            ["molecular", "developmental"],   // was: molecular — neurovascular development, axon guidance
-  "Valerie Mezger":             ["molecular", "developmental"],   // was: molecular — neurodevelopment, epigenetics, chromatin
-
-  // --- Molecular: add systems secondary ---
-  "Nicolas Michalski":          ["molecular", "systems"],         // was: molecular — auditory synapse, ribbon synapse, cochlear
-
-  // --- Developmental: fix secondary to clinical ---
-  "Vincent Cantagrel":          ["developmental", "clinical"],    // was: developmental, molecular — brain malformations, rare diseases
+  // --- Was computational primary, but runs animal experiments ---
+  "Claire Eschbach":            ["systems", "computational"],     // was: computational, systems — Drosophila larva circuit experiments
 
   // =====================================================================
-  //  SECTION 5: NEW — Primary subfield swaps
-  //  These PIs are in the wrong primary section based on their keywords
+  //  SECTION 5: COMPUTATIONAL — keep as primary (pure modelers/theorists)
+  //  These stay computational because they primarily build models/methods.
+  //  Adding missing secondary subfields.
   // =====================================================================
 
-  "Virginie van Wassenhove":    ["human", "computational"],       // was: computational, human — MEG, time perception (human experiments)
-  "Laura Dugue":                ["human", "computational"],       // was: computational, human — TMS, perception (human experiments)
+  "Alex Cayco Gajic":           ["computational", "systems"],     // cerebellum models — purely computational
+  "Alain Destexhe":             ["computational", "systems"],     // thalamocortical models — purely computational
+  "Ulisse Ferrari":             ["computational", "systems"],     // retinal encoding models — purely computational
+  "Olivier Colliot":            ["computational", "clinical"],    // ML methods for neurodegenerative diseases
+  "Ninon Burgos":               ["computational", "clinical"],    // DL for computer-aided diagnosis
+  "Stanley Durrleman":          ["computational", "clinical"],    // disease progression modeling
+  "Edouard Duchesnay":          ["computational", "clinical"],    // ML for neuroimaging biomarkers
+  "Marie-Constance Corsi":      ["computational", "human"],       // BCI methods development with EEG
+  "Jean-Francois Mangin":       ["computational", "human"],       // brain morphometry pipelines
+  "Philippe Ciuciu":            ["computational", "human"],       // fMRI signal processing methods
+  "Christian Neri":             ["computational", "molecular"],    // systems biology of Huntington's (keep)
 
   // =====================================================================
-  //  SECTION 6: NEW — Add secondary to human PIs
+  //  SECTION 6: SYSTEMS — add missing secondary subfields
   // =====================================================================
 
-  "Ghislaine Dehaene-Lambertz": ["human", "developmental"],       // was: human — infant brain development, neonatal cognition
-  "Veronique Izard":            ["human", "developmental"],       // was: human — infant development, numerical cognition
-  "Jessica Dubois":             ["human", "developmental", "clinical"], // was: human, clinical — infant brain imaging, prematurity
-  "Jean-Christophe Vergnaud":   ["human", "computational"],       // was: human — neuroeconomics, behavioral economics
-  "Cyrille Bouvet":             ["human", "clinical"],            // was: human — clinical psychology, schizophrenia
-  "Patrick Mollaret":           ["human", "clinical"],            // was: human — neuropsychology, cognitive rehabilitation, brain injury
-  "Delphine Oudiette":          ["human"],                        // was: human, clinical (v2) — sleep/dreams research, not clinical
+  "Alberto Bacci":              ["systems", "molecular"],         // GABAergic interneurons, synaptic plasticity
+  "Laurent Venance":            ["systems", "molecular"],         // STDP, corticostriatal circuits
+  "Gilles Tessier":             ["systems", "computational"],     // holographic imaging, digital holography
+  "Sebastien Meriaux":          ["systems", "computational"],     // high-field MRI, functional imaging
+  "Michel Bottlaender":         ["systems", "clinical"],          // PET imaging, radiopharmacology, aging brain
+  "Pierre-Marie Lledo":         ["systems", "developmental"],     // olfaction, adult neurogenesis
+
+  // =====================================================================
+  //  SECTION 7: MOLECULAR — add missing secondary subfields
+  // =====================================================================
+
+  "Isabelle Brunet":            ["molecular", "developmental"],   // neurovascular development, axon guidance
+  "Valerie Mezger":             ["molecular", "developmental"],   // neurodevelopment, epigenetics, chromatin
+  "Nicolas Michalski":          ["molecular", "systems"],         // auditory synapse, ribbon synapse, cochlear
+
+  // =====================================================================
+  //  SECTION 8: DEVELOPMENTAL — fix secondary
+  // =====================================================================
+
+  "Vincent Cantagrel":          ["developmental", "clinical"],    // brain malformations, intellectual disability, rare diseases
+
+  // =====================================================================
+  //  SECTION 9: HUMAN — add/fix secondary subfields
+  // =====================================================================
+
+  "Ghislaine Dehaene-Lambertz": ["human", "developmental"],       // infant brain development, neonatal cognition
+  "Veronique Izard":            ["human", "developmental"],       // infant development, numerical cognition
+  "Jessica Dubois":             ["human", "developmental", "clinical"], // infant brain imaging, prematurity
+  "Jean-Christophe Vergnaud":   ["human", "computational"],       // neuroeconomics, behavioral economics
+  "Cyrille Bouvet":             ["human", "clinical"],            // clinical psychology, schizophrenia
+  "Patrick Mollaret":           ["human", "clinical"],            // neuropsychology, cognitive rehabilitation, brain injury
+  "Delphine Oudiette":          ["human"],                        // sleep/dreams research — not clinical
 };
 
 async function runMigration(dryRun) {
