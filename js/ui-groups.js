@@ -8,7 +8,19 @@ let activeKeyword = null;
 let searchText = '';
 let activeInstitute = null;
 
-const SUBFIELDS = ['computational', 'systems', 'human', 'molecular', 'developmental'];
+const SUBFIELDS = ['computational', 'systems', 'human', 'molecular', 'developmental', 'clinical'];
+
+const SUBFIELD_LABELS = {
+  computational: 'Computational',
+  systems: 'Systems',
+  human: 'Human',
+  molecular: 'Molecular',
+  developmental: 'Developmental',
+  clinical: 'Clinical'
+};
+
+let filterHiring = false;
+let filterValidated = false;
 
 // Normalize old string or new array format
 function toArray(val) { return Array.isArray(val) ? val : (val ? [val] : []); }
@@ -198,12 +210,21 @@ function renderGroups() {
       ].join(' ');
       if (!fuzzyMatch(haystack, searchText)) return false;
     }
+    // Hiring filter
+    if (filterHiring) {
+      const isHiring = g.hiring || allJobs.some(j => j.piId === g.id);
+      if (!isHiring) return false;
+    }
+    // Validated filter
+    if (filterValidated) {
+      if (!g.claimedBy) return false;
+    }
     return true;
   });
 
   // Partition by subfield into primary (first in array) and secondary
-  const primaryBySubfield = { computational: [], systems: [], human: [], molecular: [], developmental: [] };
-  const secondaryBySubfield = { computational: [], systems: [], human: [], molecular: [], developmental: [] };
+  const primaryBySubfield = { computational: [], systems: [], human: [], molecular: [], developmental: [], clinical: [] };
+  const secondaryBySubfield = { computational: [], systems: [], human: [], molecular: [], developmental: [], clinical: [] };
   filtered.forEach(g => {
     const sfs = toArray(g.subfields || g.subfield);
     const validSfs = sfs.filter(sf => primaryBySubfield[sf]);
@@ -232,9 +253,7 @@ function renderGroups() {
 
   let totalVisible = 0;
 
-  const isSearching = searchText || activeKeyword || activeInstitute;
-
-  const SUBFIELD_LABELS = { computational: 'Computational', systems: 'Systems', human: 'Human', molecular: 'Molecular', developmental: 'Developmental' };
+  const isSearching = searchText || activeKeyword || activeInstitute || filterHiring || filterValidated;
 
   SUBFIELDS.forEach(sf => {
     const { grid, count, countSecondary, el } = sections[sf];
@@ -245,12 +264,12 @@ function renderGroups() {
 
     const primary = primaryBySubfield[sf];
     const secondary = secondaryBySubfield[sf];
-    const total = primary.length + secondary.length;
+    const total = primary.length + (isSearching ? 0 : secondary.length);
 
     count.textContent = primary.length;
-    countSecondary.textContent = secondary.length > 0 ? `+${secondary.length}` : '';
+    countSecondary.textContent = (!isSearching && secondary.length > 0) ? `+${secondary.length}` : '';
 
-    if (isSearching && total === 0) {
+    if (isSearching && primary.length === 0) {
       el.classList.add('section-hidden');
     } else {
       el.classList.remove('section-hidden');
@@ -261,8 +280,8 @@ function renderGroups() {
         totalVisible += primary.length;
       }
 
-      // Build "Also does X neuroscience" collapsible sub-section
-      if (secondary.length > 0) {
+      // Build "Also does X neuroscience" collapsible sub-section (only when not searching)
+      if (!isSearching && secondary.length > 0) {
         const alsoSection = document.createElement('div');
         alsoSection.className = 'also-does-section collapsed';
 
@@ -288,7 +307,7 @@ function renderGroups() {
     }
 
     // Auto-expand sections with results when searching, collapse otherwise
-    if (isSearching && total > 0) {
+    if (isSearching && primary.length > 0) {
       el.classList.remove('collapsed');
       sections[sf].header.setAttribute('aria-expanded', 'true');
     } else {
@@ -356,9 +375,14 @@ function createCard(group) {
   const sf = sfs[0] || 'computational';
   card.dataset.subfield = sf;
 
-  const keywordHTML = (group.keywords || [])
-    .map(k => `<span class="keyword-pill">${escapeHTML(k)}</span>`)
-    .join('');
+  const MAX_VISIBLE_KEYWORDS = 5;
+  const keywords = group.keywords || [];
+  const pills = keywords.map(k => `<button class="keyword-pill" data-keyword="${escapeHTML(k)}">${escapeHTML(k)}</button>`);
+  const visiblePills = pills.slice(0, MAX_VISIBLE_KEYWORDS).join('');
+  const overflowHTML = pills.length > MAX_VISIBLE_KEYWORDS
+    ? `<span class="keywords-overflow keywords-hidden">${pills.slice(MAX_VISIBLE_KEYWORDS).join('')}</span><button class="keyword-more">+${pills.length - MAX_VISIBLE_KEYWORDS}</button>`
+    : '';
+  const keywordHTML = visiblePills + overflowHTML;
 
   const institutes = toArray(group.institutes || group.institute);
   const instituteHTML = institutes.length > 0
@@ -372,10 +396,14 @@ function createCard(group) {
   const isHiring = group.hiring || allJobs.some(j => j.piId === group.id);
   const jobBadgeHTML = isHiring ? '<span class="card-job-badge">Hiring</span>' : '';
 
+  const sfLabel = SUBFIELD_LABELS[sf] || sf;
+  const sfBadgeHTML = `<span class="card-subfield-badge" data-subfield="${escapeHTML(sf)}">${escapeHTML(sfLabel)}</span>`;
+
   card.innerHTML = `
     <div class="card-body">
       <div class="card-name-row">
         <h3 class="card-name">${escapeHTML(group.name)}</h3>
+        ${sfBadgeHTML}
         ${jobBadgeHTML}
         ${managedHTML}
       </div>
@@ -384,11 +412,24 @@ function createCard(group) {
     </div>
   `;
 
-  // Click card to open PI detail (skip if clicking a link or button)
+  // Click card to open PI detail (skip if clicking a link, keyword pill, or more button)
   card.addEventListener('click', (e) => {
-    if (e.target.closest('a') || e.target.closest('button')) return;
+    if (e.target.closest('a') || e.target.closest('.keyword-pill') || e.target.closest('.keyword-more')) return;
     openPiDetail(group);
   });
+
+  // Toggle "+N more" keywords
+  const moreBtn = card.querySelector('.keyword-more');
+  if (moreBtn) {
+    moreBtn.addEventListener('click', (e) => {
+      e.stopPropagation();
+      const overflow = card.querySelector('.keywords-overflow');
+      overflow.classList.toggle('keywords-hidden');
+      moreBtn.textContent = overflow.classList.contains('keywords-hidden')
+        ? `+${pills.length - MAX_VISIBLE_KEYWORDS}`
+        : 'show less';
+    });
+  }
 
   return card;
 }
@@ -413,7 +454,7 @@ async function openPiDetail(group) {
   ).join('');
 
   piDetailKeywords.innerHTML = (group.keywords || [])
-    .map(k => `<span class="keyword-pill">${escapeHTML(k)}</span>`)
+    .map(k => `<button class="keyword-pill" data-keyword="${escapeHTML(k)}">${escapeHTML(k)}</button>`)
     .join('');
 
   piDetailSummary.textContent = group.summary || '';
@@ -814,6 +855,23 @@ function escapeHTML(str) {
 
 export function initSearch() {
   searchInput.addEventListener('input', filterGroups);
+
+  // Delegated click handler for keyword pills everywhere on the page
+  document.addEventListener('click', (e) => {
+    const pill = e.target.closest('.keyword-pill[data-keyword]');
+    if (!pill) return;
+    e.stopPropagation();
+    const kw = pill.dataset.keyword;
+
+    // Close any open modal
+    modalPiDetail.classList.add('hidden');
+    modalInstDetail.classList.add('hidden');
+    modalJobDetail.classList.add('hidden');
+
+    // Set search input to keyword and filter
+    searchInput.value = kw;
+    filterGroups();
+  });
 }
 
 // Institutes public section
@@ -1457,5 +1515,21 @@ export function initSections() {
   // Institute filter clear
   instituteFilterClear.addEventListener('click', () => {
     setInstituteFilter(activeInstitute); // toggle off
+  });
+
+  // Filter toggles
+  const btnFilterHiring = document.getElementById('filter-hiring');
+  const btnFilterValidated = document.getElementById('filter-validated');
+
+  btnFilterHiring.addEventListener('click', () => {
+    filterHiring = !filterHiring;
+    btnFilterHiring.classList.toggle('active', filterHiring);
+    renderGroups();
+  });
+
+  btnFilterValidated.addEventListener('click', () => {
+    filterValidated = !filterValidated;
+    btnFilterValidated.classList.toggle('active', filterValidated);
+    renderGroups();
   });
 }

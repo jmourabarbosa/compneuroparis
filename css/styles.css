@@ -30,6 +30,9 @@
   --color-developmental: #059669;
   --color-developmental-light: #D1FAE5;
   --color-developmental-dark: #065F46;
+  --color-clinical: #2563EB;
+  --color-clinical-light: #DBEAFE;
+  --color-clinical-dark: #1E40AF;
   --color-institutes: #374151;
   --color-institutes-light: #F3F4F6;
   --color-institutes-dark: #111827;
@@ -435,6 +438,12 @@ img {
   --sf-color: var(--color-developmental);
   --sf-color-light: var(--color-developmental-light);
   --sf-color-dark: var(--color-developmental-dark);
+}
+
+.subfield-section[data-subfield="clinical"] {
+  --sf-color: var(--color-clinical);
+  --sf-color-light: var(--color-clinical-light);
+  --sf-color-dark: var(--color-clinical-dark);
 }
 
 .subfield-section[data-subfield="institutes"] {
@@ -928,6 +937,14 @@ img {
   border-left: 3px solid var(--color-molecular);
 }
 
+.group-card[data-subfield="developmental"] {
+  border-left: 3px solid var(--color-developmental);
+}
+
+.group-card[data-subfield="clinical"] {
+  border-left: 3px solid var(--color-clinical);
+}
+
 .card-photo {
   width: 100%;
   height: 180px;
@@ -964,6 +981,42 @@ img {
   font-weight: 500;
   background: #f0f0f0;
   color: #666;
+  border: none;
+  font-family: var(--font);
+  cursor: pointer;
+  transition: background 0.15s, color 0.15s;
+}
+
+.keyword-pill:hover {
+  background: var(--color-primary-light);
+  color: var(--color-primary-dark);
+}
+
+.keyword-more {
+  display: inline-block;
+  padding: 0.15rem 0.55rem;
+  border-radius: 999px;
+  font-size: 0.7rem;
+  font-weight: 600;
+  background: none;
+  color: var(--color-primary);
+  border: 1px dashed var(--color-primary);
+  font-family: var(--font);
+  cursor: pointer;
+  transition: background 0.15s, color 0.15s;
+}
+
+.keyword-more:hover {
+  background: var(--color-primary-light);
+  color: var(--color-primary-dark);
+}
+
+.keywords-overflow {
+  display: contents;
+}
+
+.keywords-overflow.keywords-hidden {
+  display: none;
 }
 
 .card-name-row {
@@ -1665,6 +1718,16 @@ img {
   color: var(--color-molecular-dark);
 }
 
+.pi-detail-subfield-badge[data-subfield="developmental"] {
+  background: var(--color-developmental-light);
+  color: var(--color-developmental-dark);
+}
+
+.pi-detail-subfield-badge[data-subfield="clinical"] {
+  background: var(--color-clinical-light);
+  color: var(--color-clinical-dark);
+}
+
 .pi-detail-summary {
   font-size: 0.9rem;
   color: var(--color-text-secondary);
@@ -2028,6 +2091,78 @@ img {
   outline: none;
   border-color: var(--color-danger);
   box-shadow: 0 0 0 3px rgba(220, 38, 38, 0.1);
+}
+
+/* ========== CARD SUBFIELD BADGE ========== */
+.card-subfield-badge {
+  font-size: 0.6rem;
+  font-weight: 600;
+  padding: 0.1rem 0.4rem;
+  border-radius: 999px;
+  text-transform: capitalize;
+  white-space: nowrap;
+  flex-shrink: 0;
+}
+
+.card-subfield-badge[data-subfield="computational"] {
+  background: var(--color-computational-light);
+  color: var(--color-computational-dark);
+}
+
+.card-subfield-badge[data-subfield="systems"] {
+  background: var(--color-systems-light);
+  color: var(--color-systems-dark);
+}
+
+.card-subfield-badge[data-subfield="human"] {
+  background: var(--color-human-light);
+  color: var(--color-human-dark);
+}
+
+.card-subfield-badge[data-subfield="molecular"] {
+  background: var(--color-molecular-light);
+  color: var(--color-molecular-dark);
+}
+
+.card-subfield-badge[data-subfield="developmental"] {
+  background: var(--color-developmental-light);
+  color: var(--color-developmental-dark);
+}
+
+.card-subfield-badge[data-subfield="clinical"] {
+  background: var(--color-clinical-light);
+  color: var(--color-clinical-dark);
+}
+
+/* ========== FILTER TOGGLES ========== */
+.filter-toggles {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.5rem;
+  margin-top: 0.75rem;
+}
+
+.filter-toggle {
+  padding: 0.3rem 0.75rem;
+  border: 1.5px solid var(--color-border);
+  border-radius: 999px;
+  background: var(--color-surface);
+  font-family: var(--font);
+  font-size: 0.8rem;
+  color: var(--color-text-secondary);
+  cursor: pointer;
+  transition: all 0.2s;
+}
+
+.filter-toggle:hover {
+  border-color: var(--color-primary);
+  color: var(--color-primary);
+}
+
+.filter-toggle.active {
+  background: var(--color-primary);
+  border-color: var(--color-primary);
+  color: white;
 }
 
 /* ========== RESPONSIVE ========== */

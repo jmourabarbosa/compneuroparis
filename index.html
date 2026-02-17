@@ -60,6 +60,10 @@
         <input type="search" id="search-input" placeholder="Search PIs and institutes by name, keyword, or summary..." aria-label="Search PIs and institutes" autocomplete="off">
       </div>
       <div id="keyword-filters" class="keyword-filters" aria-label="Filter by keyword"></div>
+      <div class="filter-toggles" id="filter-toggles">
+        <button class="filter-toggle" id="filter-hiring">Only Hiring</button>
+        <button class="filter-toggle" id="filter-validated">Only Validated</button>
+      </div>
     </div>
   </section>
 
@@ -129,6 +133,18 @@
     <div class="subfield-section collapsed" data-subfield="developmental">
       <button class="subfield-header" aria-expanded="false">
         <h2>Developmental</h2>
+        <span class="subfield-count">0</span>
+        <span class="subfield-count-secondary"></span>
+        <svg class="subfield-arrow" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><polyline points="6 9 12 15 18 9"/></svg>
+      </button>
+      <div class="subfield-content">
+        <div class="groups-grid"></div>
+      </div>
+    </div>
+
+    <div class="subfield-section collapsed" data-subfield="clinical">
+      <button class="subfield-header" aria-expanded="false">
+        <h2>Clinical</h2>
         <span class="subfield-count">0</span>
         <span class="subfield-count-secondary"></span>
         <svg class="subfield-arrow" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><polyline points="6 9 12 15 18 9"/></svg>
@@ -209,7 +225,10 @@
             <input type="url" id="job-link" placeholder="https://...">
           </div>
           <div id="job-form-message" class="form-message hidden" role="alert"></div>
-          <button type="submit" id="btn-job-submit" class="btn btn-primary">Post Job</button>
+          <div style="display:flex;gap:0.5rem">
+            <button type="submit" id="btn-job-submit" class="btn btn-primary">Post Job</button>
+            <button type="button" id="btn-cancel-job-form" class="btn btn-outline">Cancel</button>
+          </div>
         </form>
       </div>
       <div id="contact-form-wrapper" class="hidden">
@@ -225,7 +244,10 @@
             <textarea id="contact-message" rows="4" placeholder="Your message..." required></textarea>
           </div>
           <div id="contact-form-message" class="form-message hidden" role="alert"></div>
-          <button type="submit" id="btn-contact-submit" class="btn btn-primary btn-full">Send Message</button>
+          <div style="display:flex;gap:0.5rem">
+            <button type="submit" id="btn-contact-submit" class="btn btn-primary btn-full">Send Message</button>
+            <button type="button" id="btn-cancel-contact" class="btn btn-outline">Cancel</button>
+          </div>
         </form>
       </div>
       <div id="institute-form-wrapper" class="hidden">
@@ -279,7 +301,10 @@
             <input type="url" id="inst-sub-logo-url" name="logoURL" placeholder="https://example.com/logo.png">
           </div>
           <div id="inst-form-message" class="form-message hidden" role="alert"></div>
-          <button type="submit" id="btn-inst-submit" class="btn btn-primary">Submit for Review</button>
+          <div style="display:flex;gap:0.5rem">
+            <button type="submit" id="btn-inst-submit" class="btn btn-primary">Submit for Review</button>
+            <button type="button" id="btn-cancel-institute-form" class="btn btn-outline">Cancel</button>
+          </div>
         </form>
       </div>
       <div id="submission-form-wrapper" class="hidden">
@@ -327,6 +352,7 @@
               <option value="human">Human</option>
               <option value="molecular">Molecular</option>
               <option value="developmental">Developmental</option>
+              <option value="clinical">Clinical</option>
             </select>
             <div class="secondary-subfields">
               <span class="secondary-label">Also list under:</span>
@@ -335,6 +361,7 @@
               <label class="subfield-checkbox"><input type="checkbox" name="sub-secondary" value="human"> Human</label>
               <label class="subfield-checkbox"><input type="checkbox" name="sub-secondary" value="molecular"> Molecular</label>
               <label class="subfield-checkbox"><input type="checkbox" name="sub-secondary" value="developmental"> Developmental</label>
+              <label class="subfield-checkbox"><input type="checkbox" name="sub-secondary" value="clinical"> Clinical</label>
             </div>
           </div>
           <div class="form-group">
@@ -386,7 +413,10 @@
         </div>
 
         <div id="form-message" class="form-message hidden" role="alert"></div>
-        <button type="submit" id="btn-submit" class="btn btn-primary">Submit for Review</button>
+        <div style="display:flex;gap:0.5rem">
+          <button type="submit" id="btn-submit" class="btn btn-primary">Submit for Review</button>
+          <button type="button" id="btn-cancel-form" class="btn btn-outline">Cancel</button>
+        </div>
       </form>
       </div>
     </div>
@@ -595,6 +625,7 @@
               <option value="human">Human</option>
               <option value="molecular">Molecular</option>
               <option value="developmental">Developmental</option>
+              <option value="clinical">Clinical</option>
             </select>
             <div class="secondary-subfields">
               <span class="secondary-label">Also list under:</span>
@@ -603,6 +634,7 @@
               <label class="subfield-checkbox"><input type="checkbox" name="edit-secondary" value="human"> Human</label>
               <label class="subfield-checkbox"><input type="checkbox" name="edit-secondary" value="molecular"> Molecular</label>
               <label class="subfield-checkbox"><input type="checkbox" name="edit-secondary" value="developmental"> Developmental</label>
+              <label class="subfield-checkbox"><input type="checkbox" name="edit-secondary" value="clinical"> Clinical</label>
             </div>
           </div>
           <div class="form-group">
@@ -915,6 +947,7 @@
             <option value="human">Human</option>
             <option value="molecular">Molecular</option>
             <option value="developmental">Developmental</option>
+            <option value="clinical">Clinical</option>
           </select>
           <div class="secondary-subfields">
             <span class="secondary-label">Also list under:</span>
@@ -923,6 +956,7 @@
             <label class="subfield-checkbox"><input type="checkbox" name="review-secondary" value="human"> Human</label>
             <label class="subfield-checkbox"><input type="checkbox" name="review-secondary" value="molecular"> Molecular</label>
             <label class="subfield-checkbox"><input type="checkbox" name="review-secondary" value="developmental"> Developmental</label>
+            <label class="subfield-checkbox"><input type="checkbox" name="review-secondary" value="clinical"> Clinical</label>
           </div>
         </div>
         <div class="form-group">

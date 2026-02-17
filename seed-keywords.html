@@ -1,0 +1,507 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<title>Seed Broad Keywords</title>
+<style>
+  body { font-family: system-ui; max-width: 1200px; margin: 40px auto; padding: 0 20px; background: #111; color: #eee; }
+  button { padding: 10px 24px; font-size: 16px; cursor: pointer; border: none; border-radius: 6px; }
+  #loginBtn { background: #4285f4; color: white; }
+  #seedBtn { background: #34a853; color: white; font-size: 18px; padding: 14px 32px; }
+  #previewBtn { background: #8b5cf6; color: white; font-size: 18px; padding: 14px 32px; }
+  #seedBtn:disabled, #previewBtn:disabled { background: #555; cursor: not-allowed; color: #999; }
+  #log { background: #1a1a1a; padding: 16px; border-radius: 8px; max-height: 400px; overflow-y: auto; font-family: monospace; font-size: 13px; white-space: pre-wrap; margin-top: 16px; }
+  .success { color: #34a853; }
+  .error { color: #ea4335; }
+  .info { color: #4285f4; }
+  input { padding: 8px 12px; font-size: 14px; border-radius: 4px; border: 1px solid #444; background: #222; color: #eee; width: 240px; }
+  #authSection { margin-bottom: 24px; }
+  table { width: 100%; border-collapse: collapse; margin-top: 16px; font-size: 13px; }
+  th, td { border: 1px solid #333; padding: 6px 8px; text-align: left; vertical-align: top; }
+  th { background: #222; position: sticky; top: 0; }
+  .kw-new { color: #34a853; font-weight: 600; }
+  .kw-existing { color: #888; }
+  #previewTable { max-height: 600px; overflow-y: auto; margin-top: 16px; }
+  .stats { margin-top: 16px; padding: 12px 16px; background: #1a1a1a; border-radius: 8px; font-size: 14px; }
+  .stats span { margin-right: 16px; }
+</style>
+</head>
+<body>
+<h1>Seed Broad Keywords (Feb 2026)</h1>
+<p style="color:#aaa;">Detects broad keywords from each PI's existing keywords + summary using pattern matching. Merges with existing keywords (no duplicates). Preview before applying.</p>
+
+<div id="authSection">
+  <p id="authStatus">Not logged in</p>
+  <div id="loginForm">
+    <input type="email" id="email" placeholder="Admin email">
+    <input type="password" id="password" placeholder="Password">
+    <button id="loginBtn" onclick="doLogin()">Login</button>
+  </div>
+</div>
+
+<button id="previewBtn" disabled onclick="runPreview()">Preview Keyword Changes</button>
+<button id="seedBtn" disabled onclick="runSeed()" style="margin-left:12px;">Apply Keywords to Firestore</button>
+
+<div class="stats" id="stats" style="display:none;"></div>
+<div id="previewTable"></div>
+<div id="log"></div>
+
+<script type="module">
+import { initializeApp } from 'https://www.gstatic.com/firebasejs/11.4.0/firebase-app.js';
+import { getAuth, signInWithEmailAndPassword, onAuthStateChanged } from 'https://www.gstatic.com/firebasejs/11.4.0/firebase-auth.js';
+import { getFirestore, collection, updateDoc, doc, serverTimestamp, getDocs, orderBy, query } from 'https://www.gstatic.com/firebasejs/11.4.0/firebase-firestore.js';
+
+const firebaseConfig = {
+  apiKey: "AIzaSyCEUSVBEAPYfsoG00GKPqw_lHJQKelgVbk",
+  authDomain: "compneuroparis.firebaseapp.com",
+  projectId: "compneuroparis",
+  storageBucket: "compneuroparis.firebasestorage.app",
+  messagingSenderId: "768335946036",
+  appId: "1:768335946036:web:61184dde3b4b66c58bc561"
+};
+
+const app = initializeApp(firebaseConfig);
+const auth = getAuth(app);
+const db = getFirestore(app);
+
+const logEl = document.getElementById('log');
+function log(msg, cls = '') {
+  const span = document.createElement('span');
+  span.className = cls;
+  span.textContent = msg + '\n';
+  logEl.appendChild(span);
+  logEl.scrollTop = logEl.scrollHeight;
+}
+
+let currentUser = null;
+
+onAuthStateChanged(auth, user => {
+  currentUser = user;
+  if (user) {
+    document.getElementById('authStatus').textContent = `Logged in as ${user.email}`;
+    document.getElementById('loginForm').style.display = 'none';
+    document.getElementById('previewBtn').disabled = false;
+  }
+});
+
+window.doLogin = async () => {
+  const email = document.getElementById('email').value;
+  const pw = document.getElementById('password').value;
+  try {
+    await signInWithEmailAndPassword(auth, email, pw);
+    log('Logged in!', 'success');
+  } catch (e) {
+    log('Login error: ' + e.message, 'error');
+  }
+};
+
+// ========== BROAD KEYWORD RULES ==========
+// Each broad keyword maps to an array of patterns (lowercase).
+// A pattern matches if it appears as a substring in the PI's combined text
+// (existing keywords + summary, all lowercased).
+
+const KEYWORD_RULES = {
+  // ── Techniques / Methods ──
+  'electrophysiology': [
+    'electrophysiology', 'patch clamp', 'whole-cell recording', 'extracellular recording',
+    'neuropixels', 'multi-electrode', 'neural recording', 'single-unit',
+    'voltage clamp', 'current clamp'
+  ],
+  'calcium imaging': [
+    'calcium imaging', 'two-photon calcium', 'gcamp', 'calcium indicator',
+    'genetically encoded calcium'
+  ],
+  'optogenetics': [
+    'optogenetics', 'optogenetic', 'channelrhodopsin', 'halorhodopsin',
+    'opsin', 'light-activated'
+  ],
+  'fMRI': [
+    'fmri', 'functional mri', 'functional magnetic resonance', 'bold signal',
+    'bold imaging'
+  ],
+  'EEG/MEG': [
+    'eeg', 'meg', 'electroencephalogra', 'magnetoencephalogra',
+    'event-related potential', 'erp', 'electrophysiological signatures'
+  ],
+  'two-photon microscopy': [
+    'two-photon', '2-photon', 'multiphoton'
+  ],
+  'patch clamp': [
+    'patch clamp', 'patch-clamp', 'whole-cell'
+  ],
+  'psychophysics': [
+    'psychophysics', 'psychophysical', 'psychoacoustics', 'psychoacoustic'
+  ],
+  'computational modeling': [
+    'computational model', 'computational neuroscience', 'mathematical model',
+    'mean-field', 'network model', 'dynamical systems', 'biophysical model',
+    'theoretical neuroscience', 'neural network theory', 'stochastic processes',
+    'statistical physics', 'computational approach'
+  ],
+  'machine learning': [
+    'machine learning', 'deep learning', 'neural network simulator',
+    'artificial intelligence', 'scikit-learn', 'unsupervised learning',
+    'supervised learning', 'random forest', 'gradient descent',
+    'convolutional neural', 'transformer model', 'language model'
+  ],
+  'brain-computer interfaces': [
+    'brain-computer interface', 'bci', 'brain-machine interface',
+    'neurofeedback', 'neural prosthe'
+  ],
+  'ultrasound imaging': [
+    'ultrasound', 'functional ultrasound', 'ultrafast doppler'
+  ],
+  'connectomics': [
+    'connectomics', 'connectome', 'connectivity reconstruction',
+    'electron microscopy reconstruction'
+  ],
+  'neuroimaging': [
+    'neuroimaging', 'brain imaging', 'medical image', 'brain mapping',
+    'tissue clearing', 'whole-brain mapping', 'light sheet microscopy',
+    'idisco', '3d imaging'
+  ],
+  'behavioral experiments': [
+    'behavioral experiment', 'behaving mice', 'behavioral approach',
+    'behavioral analysis', 'behavioral task', 'behavioral paradigm',
+    'behaving animal'
+  ],
+  'microscopy': [
+    'microscopy', 'confocal', 'light sheet', 'super-resolution',
+    'voltage imaging', 'imaging technique'
+  ],
+
+  // ── Brain Areas / Systems ──
+  'cortex': [
+    'cortex', 'cortical', 'neocortex', 'neocortical', 'prefrontal',
+    'somatosensory cortex', 'visual cortex', 'auditory cortex',
+    'barrel cortex', 'motor cortex', 'frontal cortex', 'parietal cortex'
+  ],
+  'hippocampus': [
+    'hippocampus', 'hippocampal', 'place cell', 'grid cell',
+    'entorhinal', 'subicul', 'ca1', 'ca3', 'dentate gyrus'
+  ],
+  'cerebellum': [
+    'cerebellum', 'cerebellar', 'purkinje cell', 'granule cell',
+    'climbing fiber', 'mossy fiber'
+  ],
+  'basal ganglia': [
+    'basal ganglia', 'striatum', 'striatal', 'corticostriatal',
+    'substantia nigra', 'globus pallidus', 'subthalamic'
+  ],
+  'retina': [
+    'retina', 'retinal', 'ganglion cell'
+  ],
+  'visual system': [
+    'visual system', 'visual cortex', 'visual perception', 'visual processing',
+    'visual awareness', 'visual attention', 'v1 ', 'primary visual',
+    'object representation', 'visual scene'
+  ],
+  'auditory system': [
+    'auditory', 'hearing', 'audition', 'cochlea', 'cochlear',
+    'tonotop', 'sound processing', 'auditory scene'
+  ],
+  'olfactory system': [
+    'olfaction', 'olfactory', 'odor', 'smell'
+  ],
+  'spinal cord': [
+    'spinal cord', 'spinal circuit', 'spinal neuron',
+    'locomotion circuit', 'cerebrospinal fluid-contacting'
+  ],
+  'brainstem': [
+    'brainstem', 'brain stem', 'hindbrain', 'medulla', 'pons'
+  ],
+  'thalamus': [
+    'thalamus', 'thalamic', 'thalamocortical', 'lateral geniculate'
+  ],
+
+  // ── Topics ──
+  'synaptic plasticity': [
+    'synaptic plasticity', 'long-term potentiation', 'long-term depression',
+    'ltp', 'ltd', 'spike-timing dependent plasticity', 'stdp',
+    'hebbian', 'homeostatic plasticity', 'potentiation', 'synaptogenesis'
+  ],
+  'neural circuits': [
+    'neural circuit', 'microcircuit', 'circuit assembly', 'circuit function',
+    'circuit dynamics', 'cortical circuit', 'local circuit',
+    'inhibitory circuit', 'excitatory circuit'
+  ],
+  'neural coding': [
+    'neural coding', 'population coding', 'neural representation',
+    'neural decoding', 'information processing', 'rate coding',
+    'spike coding', 'temporal coding', 'population dynamics',
+    'tuning curve'
+  ],
+  'decision-making': [
+    'decision-making', 'decision making', 'choice', 'value-based decision',
+    'perceptual decision', 'economic decision', 'exploration-exploitation',
+    'confidence', 'uncertainty'
+  ],
+  'memory': [
+    'memory', 'engram', 'memory consolidation', 'memory formation',
+    'memory recall', 'working memory', 'spatial memory',
+    'episodic memory', 'memory trace'
+  ],
+  'learning': [
+    'learning', 'reinforcement learning', 'motor learning',
+    'associative learning', 'conditioning', 'reward learning',
+    'perceptual learning', 'skill acquisition'
+  ],
+  'attention': [
+    'attention', 'attentional', 'selective attention',
+    'spatial attention', 'visual attention'
+  ],
+  'language': [
+    'language', 'speech', 'linguistic', 'dyslexia', 'reading',
+    'phonolog', 'syntax', 'semantic', 'word', 'sentence',
+    'language acquisition', 'language processing', 'psycholinguist'
+  ],
+  'motor control': [
+    'motor control', 'locomotion', 'movement', 'motor cortex',
+    'motor learning', 'gait', 'posture', 'action sequence',
+    'sensorimotor', 'motor planning', 'reaching', 'grasping'
+  ],
+  'sensory processing': [
+    'sensory processing', 'sensory perception', 'tactile',
+    'somatosensory', 'multisensory', 'sensory coding',
+    'sensory integration', 'sensory system'
+  ],
+  'social cognition': [
+    'social cognition', 'social neuroscience', 'social perception',
+    'social motivation', 'social learning', 'theory of mind',
+    'social interaction', 'social decision', 'social signal',
+    'emotion', 'body language'
+  ],
+  'development': [
+    'development', 'developmental', 'neurogenesis', 'differentiation',
+    'embryonic', 'postnatal', 'progenitor', 'cortical development',
+    'brain development', 'neurodevelopment', 'neural tube',
+    'cell division', 'cell fate', 'migration'
+  ],
+  'neurodegeneration': [
+    'neurodegeneration', 'neurodegenerative', 'alzheimer', 'parkinson',
+    'huntington', 'amyotrophic lateral sclerosis', 'als ',
+    'dementia', 'tauopathy', 'synuclein', 'disease progression model'
+  ],
+  "Alzheimer's disease": [
+    'alzheimer'
+  ],
+  "Parkinson's disease": [
+    'parkinson', 'deep brain stimulation'
+  ],
+  'epilepsy': [
+    'epilepsy', 'epileptic', 'seizure', 'convuls'
+  ],
+  'psychiatric disorders': [
+    'psychiatric', 'schizophrenia', 'autism', 'depression',
+    'anxiety', 'addiction', 'compulsive', 'obsessive',
+    'computational psychiatry', 'bipolar', 'psychosis',
+    'anhedonia', 'substance abuse', 'nicotine addiction'
+  ],
+  'sleep': [
+    'sleep', 'dream', 'insomnia', 'arousal state',
+    'slow-wave', 'rem sleep', 'sharp-wave ripple', 'sleep spindle',
+    'wakefulness'
+  ],
+  'circadian rhythms': [
+    'circadian', 'biological clock', 'circadian rhythm'
+  ],
+  'pain': [
+    'pain', 'nociception', 'nociceptor', 'analges'
+  ],
+  'glia': [
+    'glia', 'glial', 'astrocyte', 'microglia', 'oligodendrocyte',
+    'astroglia', 'astroglial', 'connexin', 'gap junction',
+    'schwann cell', 'ependymal', 'neuroglial'
+  ],
+  'neuroimmunology': [
+    'neuroimmun', 'immune', 'inflammat', 'cytokine',
+    'blood-brain barrier', 'choroid plexus', 'neuroinflam'
+  ],
+  'neurogenetics': [
+    'genetic', 'gene ', 'genes ', 'mutation', 'transcription factor',
+    'transgenic', 'crispr', 'epigenetic', 'chromatin',
+    'gene expression', 'genome', 'shank3', 'phenotyp',
+    'human-specific gene'
+  ],
+  'brain connectivity': [
+    'connectivity', 'connectome', 'network neuroscience',
+    'graph theory', 'brain network', 'functional connectivity',
+    'structural connectivity', 'white matter', 'tractography'
+  ],
+  'brain-body interaction': [
+    'interoception', 'brain-body', 'gut-brain', 'visceral',
+    'heartbeat', 'gastric', 'enteric', 'brain-body interaction',
+    'embodied', 'neurovascular', 'breathing rhythm', 'respiratory'
+  ],
+  'evolution': [
+    'evolution', 'evolutionary', 'phylogenet', 'comparative',
+    'cortical evolution', 'brain evolution'
+  ],
+  'consciousness': [
+    'consciousness', 'conscious perception', 'conscious access',
+    'global workspace', 'global neuronal workspace',
+    'disorders of consciousness', 'subliminal', 'unconscious',
+    'awareness', 'lucid dream'
+  ]
+};
+
+// ========== MANUAL OVERRIDES ==========
+// For PIs where auto-detection misses important keywords or adds wrong ones.
+// Format: { "PI Name": { add: [...], remove: [...] } }
+const OVERRIDES = {
+  // The pattern matcher may tag "depression" (mood disorder) for synaptic "depression" (LTD).
+  // We handle this by only matching "depression" in psychiatric context, not synaptic.
+  // If needed, add specific overrides here.
+};
+
+// ========== DETECTION LOGIC ==========
+
+function detectBroadKeywords(pi) {
+  const existingKws = (pi.keywords || []).map(k => k.toLowerCase());
+  const summary = (pi.summary || '').toLowerCase();
+  const combined = [...existingKws, summary].join(' ');
+
+  const detected = [];
+
+  for (const [broadKw, patterns] of Object.entries(KEYWORD_RULES)) {
+    const matches = patterns.some(p => combined.includes(p));
+    if (matches) detected.push(broadKw);
+  }
+
+  // Apply overrides
+  const override = OVERRIDES[pi.name];
+  if (override) {
+    if (override.add) override.add.forEach(k => { if (!detected.includes(k)) detected.push(k); });
+    if (override.remove) override.remove.forEach(k => {
+      const idx = detected.indexOf(k);
+      if (idx >= 0) detected.splice(idx, 1);
+    });
+  }
+
+  return detected;
+}
+
+function mergeKeywords(existing, broad) {
+  const lowerSet = new Set(existing.map(k => k.trim().toLowerCase()));
+  const merged = [...existing];
+  for (const bk of broad) {
+    if (!lowerSet.has(bk.toLowerCase())) {
+      merged.push(bk);
+      lowerSet.add(bk.toLowerCase());
+    }
+  }
+  return merged;
+}
+
+// ========== PREVIEW ==========
+
+let previewData = null; // Array of { id, name, existing, broad, merged, newCount }
+
+window.runPreview = async () => {
+  document.getElementById('previewBtn').disabled = true;
+  log('Fetching all PIs from Firestore...', 'info');
+
+  try {
+    const q = query(collection(db, 'groups'), orderBy('name'));
+    const snap = await getDocs(q);
+    const groups = snap.docs.map(d => ({ id: d.id, ...d.data() }));
+    log(`Fetched ${groups.length} PIs.`, 'success');
+
+    previewData = groups.map(g => {
+      const existing = g.keywords || [];
+      const broad = detectBroadKeywords(g);
+      const merged = mergeKeywords(existing, broad);
+      const newKws = merged.filter(k => !existing.map(e => e.toLowerCase()).includes(k.toLowerCase()));
+      return { id: g.id, name: g.name, institutes: g.institutes || [g.institute || ''], existing, broad, merged, newKws };
+    });
+
+    // Stats
+    const totalNew = previewData.reduce((s, p) => s + p.newKws.length, 0);
+    const avgTotal = (previewData.reduce((s, p) => s + p.merged.length, 0) / previewData.length).toFixed(1);
+    const minTotal = Math.min(...previewData.map(p => p.merged.length));
+    const maxTotal = Math.max(...previewData.map(p => p.merged.length));
+
+    // Broad keyword coverage stats
+    const broadCounts = {};
+    for (const bk of Object.keys(KEYWORD_RULES)) broadCounts[bk] = 0;
+    previewData.forEach(p => p.broad.forEach(bk => { broadCounts[bk] = (broadCounts[bk] || 0) + 1; }));
+    const sortedBroad = Object.entries(broadCounts).sort((a, b) => b[1] - a[1]);
+
+    const statsEl = document.getElementById('stats');
+    statsEl.style.display = 'block';
+    statsEl.innerHTML = `
+      <div><strong>Summary:</strong> <span>${previewData.length} PIs</span> <span>${totalNew} new keywords to add</span> <span>Avg ${avgTotal} keywords/PI (min ${minTotal}, max ${maxTotal})</span></div>
+      <details style="margin-top:8px;">
+        <summary style="cursor:pointer;color:#4285f4;">Broad keyword coverage (click to expand)</summary>
+        <div style="margin-top:8px;columns:3;column-gap:24px;font-size:12px;">
+          ${sortedBroad.map(([k, c]) => `<div style="break-inside:avoid;"><span style="color:${c > 0 ? '#34a853' : '#ea4335'}">${c}</span> ${k}</div>`).join('')}
+        </div>
+      </details>
+    `;
+
+    // Preview table
+    const tableEl = document.getElementById('previewTable');
+    let html = '<table><thead><tr><th>#</th><th>PI Name</th><th>Institute</th><th>Existing Keywords</th><th>New Broad Keywords</th><th>Total</th></tr></thead><tbody>';
+    previewData.forEach((p, i) => {
+      const existingHtml = p.existing.map(k => `<span class="kw-existing">${esc(k)}</span>`).join(', ');
+      const newHtml = p.newKws.map(k => `<span class="kw-new">${esc(k)}</span>`).join(', ');
+      html += `<tr>
+        <td>${i + 1}</td>
+        <td>${esc(p.name)}</td>
+        <td style="font-size:11px;">${esc(Array.isArray(p.institutes) ? p.institutes.join(', ') : p.institutes)}</td>
+        <td>${existingHtml || '<em style="color:#666">none</em>'}</td>
+        <td>${newHtml || '<em style="color:#666">none</em>'}</td>
+        <td>${p.merged.length}</td>
+      </tr>`;
+    });
+    html += '</tbody></table>';
+    tableEl.innerHTML = html;
+
+    document.getElementById('seedBtn').disabled = false;
+    log('Preview ready. Review the table, then click "Apply Keywords to Firestore".', 'info');
+  } catch (e) {
+    log('Error: ' + e.message, 'error');
+  } finally {
+    document.getElementById('previewBtn').disabled = false;
+  }
+};
+
+function esc(s) {
+  const d = document.createElement('div');
+  d.textContent = s;
+  return d.innerHTML;
+}
+
+// ========== APPLY ==========
+
+window.runSeed = async () => {
+  if (!previewData) { log('Run preview first!', 'error'); return; }
+
+  document.getElementById('seedBtn').disabled = true;
+  log(`\nApplying keywords to ${previewData.length} PIs...`, 'info');
+
+  let updated = 0, skipped = 0, errors = 0;
+
+  for (const p of previewData) {
+    if (p.newKws.length === 0) {
+      skipped++;
+      continue;
+    }
+    try {
+      await updateDoc(doc(db, 'groups', p.id), {
+        keywords: p.merged,
+        updatedAt: serverTimestamp()
+      });
+      log(`  Updated: ${p.name} (+${p.newKws.length} keywords)`, 'success');
+      updated++;
+    } catch (e) {
+      log(`  Error updating ${p.name}: ${e.message}`, 'error');
+      errors++;
+    }
+  }
+
+  log(`\nDone! Updated ${updated}, skipped ${skipped} (no new keywords), errors ${errors}.`, 'info');
+};
+</script>
+</body>
+</html>

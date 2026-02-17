@@ -55,6 +55,17 @@ export function initForm() {
   const jobFormWrapper = document.getElementById('job-form-wrapper');
   const btnShowJobForm = document.getElementById('btn-show-job-form');
 
+  function showAllButtons() {
+    btnShowForm.classList.remove('hidden');
+    btnShowInstForm.classList.remove('hidden');
+    btnShowContact.classList.remove('hidden');
+    btnShowJobForm.classList.remove('hidden');
+    formWrapper.classList.add('hidden');
+    instFormWrapper.classList.add('hidden');
+    contactFormWrapper.classList.add('hidden');
+    jobFormWrapper.classList.add('hidden');
+  }
+
   function hideAllForms() {
     formWrapper.classList.add('hidden');
     instFormWrapper.classList.add('hidden');
@@ -86,6 +97,12 @@ export function initForm() {
     jobFormWrapper.classList.remove('hidden');
     populateJobPiSelector();
   });
+
+  // Cancel buttons
+  document.getElementById('btn-cancel-form').addEventListener('click', showAllButtons);
+  document.getElementById('btn-cancel-institute-form').addEventListener('click', showAllButtons);
+  document.getElementById('btn-cancel-job-form').addEventListener('click', showAllButtons);
+  document.getElementById('btn-cancel-contact').addEventListener('click', showAllButtons);
 
   // Contact form
   document.getElementById('contact-form').addEventListener('submit', async (e) => {
