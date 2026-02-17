@@ -19,7 +19,7 @@
 </head>
 <body>
 <h1>Seed C-BRAINS Network PIs (Feb 2026)</h1>
-<p style="color:#aaa;">~149 PIs from DIM C-BRAINS network. Skips existing, updates photos on existing PIs without one.</p>
+<p style="color:#aaa;">Updates photo URLs only for existing C-BRAINS PIs. Does not create or modify other fields.</p>
 
 <div id="authSection">
   <p id="authStatus">Not logged in</p>
@@ -30,7 +30,7 @@
   </div>
 </div>
 
-<button id="seedBtn" disabled onclick="runSeed()">Seed C-BRAINS PIs</button>
+<button id="seedBtn" disabled onclick="runSeed()">Update C-BRAINS Photos</button>
 <div id="log"></div>
 
 <script type="module">
@@ -1652,62 +1652,45 @@ async function seedNewInstitutes() {
 }
 
 async function seedPIs() {
-  log('--- Seeding C-BRAINS PIs ---', 'info');
-  let created = 0, updated = 0, skipped = 0, errors = 0;
+  log('--- Updating C-BRAINS PI photos ---', 'info');
+  let updated = 0, skipped = 0, notfound = 0, errors = 0;
   for (const pi of pis) {
+    if (!pi.photoURL) {
+      log(`  Skip (no photo in seed): ${pi.name}`);
+      skipped++;
+      continue;
+    }
     const q = query(collection(db, 'groups'), where('name', '==', pi.name));
     const snap = await getDocs(q);
-    if (snap.size > 0) {
-      const existing = snap.docs[0];
-      const data = existing.data();
-      const needsPhoto = pi.photoURL && (!data.photoURL || data.photoURL === '');
-      if (needsPhoto) {
-        try {
-          await updateDoc(doc(db, 'groups', existing.id), {
-            photoURL: pi.photoURL,
-            updatedAt: serverTimestamp()
-          });
-          log(`  Updated photo: ${pi.name}`, 'success');
-          updated++;
-        } catch (e) {
-          log(`  ERROR updating ${pi.name}: ${e.message}`, 'error');
-          errors++;
-        }
-      } else {
-        log(`  Skip (exists): ${pi.name}`);
-        skipped++;
-      }
+    if (snap.size === 0) {
+      log(`  Not found in DB: ${pi.name}`, 'error');
+      notfound++;
+      continue;
+    }
+    const existing = snap.docs[0];
+    const data = existing.data();
+    if (data.photoURL === pi.photoURL) {
+      log(`  Skip (photo already set): ${pi.name}`);
+      skipped++;
       continue;
     }
     try {
-      await addDoc(collection(db, 'groups'), {
-        name: pi.name,
-        keywords: pi.keywords,
-        summary: pi.summary,
-        links: pi.links,
-        photoURL: pi.photoURL || '',
-        subfields: pi.subfields,
-        institutes: pi.institutes,
-        subfield: pi.subfields[0],
-        institute: pi.institutes[0],
-        creatorUid: currentUser.uid,
-        createdAt: serverTimestamp(),
-        updatedAt: serverTimestamp()
+      await updateDoc(doc(db, 'groups', existing.id), {
+        photoURL: pi.photoURL
       });
-      log(`  Created: ${pi.name}`, 'success');
-      created++;
+      log(`  Updated photo: ${pi.name}`, 'success');
+      updated++;
     } catch (e) {
-      log(`  ERROR creating ${pi.name}: ${e.message}`, 'error');
+      log(`  ERROR updating ${pi.name}: ${e.message}`, 'error');
       errors++;
     }
   }
-  log(`\nDone! Created ${created}, updated photos ${updated}, skipped ${skipped}, errors ${errors}.`, 'info');
+  log(`\nDone! Updated ${updated}, skipped ${skipped}, not found ${notfound}, errors ${errors}.`, 'info');
 }
 
 window.runSeed = async () => {
   document.getElementById('seedBtn').disabled = true;
   try {
-    await seedNewInstitutes();
     await seedPIs();
   } catch (e) {
     log('ERROR: ' + e.message, 'error');
