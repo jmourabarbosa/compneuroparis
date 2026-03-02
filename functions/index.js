@@ -13,6 +13,8 @@ const transporter = nodemailer.createTransport({
 });
 
 const FROM = `Neuroscience in Paris <${process.env.EMAIL_USER}>`;
+const SITE_URL = "https://jmourabarbosa.github.io/compneuroparis";
+const ADMIN_LINK = `<p><a href="${SITE_URL}/#admin">Open admin panel</a></p>`;
 
 async function sendEmail(to, subject, html) {
   try {
@@ -47,7 +49,7 @@ async function getAdminEmails() {
 async function notifyAdmins(subject, html) {
   const emails = await getAdminEmails();
   for (const email of emails) {
-    await sendEmail(email, subject, html);
+    await sendEmail(email, subject, html + ADMIN_LINK);
   }
 }
 
@@ -360,7 +362,7 @@ exports.onGroupUpdate = functions.firestore
       profileChangeEmail,
       `Profile edited by user: ${name}`,
       `<p>A non-admin user has edited the profile for <strong>${name}</strong>.</p>
-       <p><strong>Changed:</strong> ${changedFields}</p>`,
+       <p><strong>Changed:</strong> ${changedFields}</p>` + ADMIN_LINK,
     );
   });
 
