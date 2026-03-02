@@ -11,6 +11,7 @@ import {
   initEditUserForm, initSettings
 } from './ui-admin.js';
 import { fetchPendingSubmissions, fetchPendingClaims as dbFetchPendingClaims, fetchPendingInstitutes as dbFetchPendingInstitutes, fetchOpenReports, fetchOpenMessages as dbFetchOpenMessages } from './db.js';
+import { initCreatorPanel } from './ui-creator.js';
 
 // ========== DOM REFS ==========
 const btnAdminLogin = document.getElementById('btn-admin-login');
@@ -336,6 +337,7 @@ initPiDetail();
 initInstituteDetail();
 initJobDetail();
 initJobForm();
+initCreatorPanel();
 
 // Load jobs first (needed for Hiring badges on PI cards), then groups + institutes, then deep links
 loadPublicJobs()

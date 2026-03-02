@@ -1589,6 +1589,31 @@ img {
   flex-shrink: 0;
 }
 
+.badge-claimed,
+.badge-created {
+  display: inline-block;
+  padding: 0.1rem 0.45rem;
+  border-radius: 999px;
+  font-size: 0.7rem;
+  font-weight: 600;
+  margin-left: 0.35rem;
+  vertical-align: middle;
+}
+
+.badge-claimed {
+  background: #DBEAFE;
+  color: #1E40AF;
+}
+
+.badge-created {
+  background: #D1FAE5;
+  color: #065F46;
+}
+
+.text-muted {
+  color: var(--color-text-secondary);
+}
+
 .add-admin-form {
   margin-top: 1.5rem;
   padding-top: 1.25rem;

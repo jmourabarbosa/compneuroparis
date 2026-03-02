@@ -40,6 +40,7 @@
         </div>
         <div id="creator-bar" class="admin-bar hidden">
           <span id="creator-email" class="admin-email"></span>
+          <button id="btn-creator-panel" class="btn btn-primary btn-sm">My Panel</button>
           <button id="btn-creator-logout" class="btn btn-outline btn-sm">Logout</button>
         </div>
       </div>
@@ -613,6 +614,56 @@
           </div>
           <button id="btn-save-settings" class="btn btn-primary btn-sm">Save Settings</button>
           <div id="settings-message" class="form-message hidden" role="alert" style="margin-top:.5rem"></div>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- ========== CREATOR PANEL MODAL ========== -->
+  <div id="modal-creator" class="modal-overlay hidden" role="dialog" aria-modal="true" aria-label="My Panel">
+    <div class="modal modal-lg">
+      <div class="modal-header">
+        <h3>My Panel</h3>
+        <button class="modal-close" data-close-modal="modal-creator" aria-label="Close">&times;</button>
+      </div>
+      <div class="modal-body">
+        <div class="tabs" role="tablist">
+          <button class="tab active" data-tab="ctab-pages" role="tab" aria-selected="true">My Pages</button>
+          <button class="tab" data-tab="ctab-institutes" role="tab" aria-selected="false">My Institutions</button>
+          <button class="tab" data-tab="ctab-jobs" role="tab" aria-selected="false">My Job Ads</button>
+        </div>
+
+        <!-- My Pages Tab -->
+        <div id="ctab-pages" class="tab-panel active" role="tabpanel">
+          <div id="creator-pages-loading" class="loading-state">
+            <div class="spinner"></div>
+          </div>
+          <div id="creator-pages-empty" class="empty-state hidden">
+            <p>You haven't claimed or created any PI pages yet.</p>
+          </div>
+          <div id="creator-pages-list" class="admin-list"></div>
+        </div>
+
+        <!-- My Institutions Tab -->
+        <div id="ctab-institutes" class="tab-panel" role="tabpanel">
+          <div id="creator-institutes-loading" class="loading-state">
+            <div class="spinner"></div>
+          </div>
+          <div id="creator-institutes-empty" class="empty-state hidden">
+            <p>You haven't claimed any institutions yet.</p>
+          </div>
+          <div id="creator-institutes-list" class="admin-list"></div>
+        </div>
+
+        <!-- My Job Ads Tab -->
+        <div id="ctab-jobs" class="tab-panel" role="tabpanel">
+          <div id="creator-jobs-loading" class="loading-state">
+            <div class="spinner"></div>
+          </div>
+          <div id="creator-jobs-empty" class="empty-state hidden">
+            <p>You haven't posted any job ads yet.</p>
+          </div>
+          <div id="creator-jobs-list" class="admin-list"></div>
         </div>
       </div>
     </div>

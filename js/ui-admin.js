@@ -126,18 +126,23 @@ let approvedInstituteNames = new Set();
 // ========== TABS ==========
 
 export function initTabs() {
-  document.querySelectorAll('.tab').forEach(tab => {
+  const adminModal = document.getElementById('modal-admin');
+  if (!adminModal) return;
+  const tabs = adminModal.querySelectorAll('.tab');
+  const panels = adminModal.querySelectorAll('.tab-panel');
+
+  tabs.forEach(tab => {
     tab.addEventListener('click', () => {
       const target = tab.dataset.tab;
       // Update tabs
-      document.querySelectorAll('.tab').forEach(t => {
+      tabs.forEach(t => {
         t.classList.remove('active');
         t.setAttribute('aria-selected', 'false');
       });
       tab.classList.add('active');
       tab.setAttribute('aria-selected', 'true');
       // Update panels
-      document.querySelectorAll('.tab-panel').forEach(p => p.classList.remove('active'));
+      panels.forEach(p => p.classList.remove('active'));
       document.getElementById(target).classList.add('active');
 
       // Auto-load reports/messages/users/settings when tab is selected

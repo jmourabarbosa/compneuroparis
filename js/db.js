@@ -436,6 +436,12 @@ export async function fetchJobsByPi(piId) {
   return snapshot.docs.map(d => ({ id: d.id, ...d.data() }));
 }
 
+export async function fetchJobsByPoster(uid) {
+  const q = query(collection(db, 'jobs'), where('postedBy', '==', uid));
+  const snapshot = await getDocs(q);
+  return snapshot.docs.map(d => ({ id: d.id, ...d.data() }));
+}
+
 export async function updateJob(id, data) {
   await updateDoc(doc(db, 'jobs', id), {
     ...data,
