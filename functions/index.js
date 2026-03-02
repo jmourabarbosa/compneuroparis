@@ -15,6 +15,7 @@ const transporter = nodemailer.createTransport({
 const FROM = `Neuroscience in Paris <${process.env.EMAIL_USER}>`;
 const SITE_URL = "https://jmourabarbosa.github.io/compneuroparis";
 const ADMIN_LINK = `<p><a href="${SITE_URL}/#admin">Open admin panel</a></p>`;
+const NOTIFY_EMAIL = "neuroinparis@gmail.com";
 
 async function sendEmail(to, subject, html) {
   try {
@@ -47,7 +48,8 @@ async function getAdminEmails() {
 }
 
 async function notifyAdmins(subject, html) {
-  const emails = await getAdminEmails();
+  const adminEmails = await getAdminEmails();
+  const emails = [...new Set([NOTIFY_EMAIL, ...adminEmails])];
   for (const email of emails) {
     await sendEmail(email, subject, html + ADMIN_LINK);
   }
@@ -338,12 +340,6 @@ exports.onGroupUpdate = functions.firestore
     // Skip if editor is an admin
     if (await isCallerAdmin(editorUid)) return;
 
-    // Fetch the configured alert email
-    const settingsSnap = await admin.firestore().collection("settings").doc("notifications").get();
-    if (!settingsSnap.exists) return;
-    const profileChangeEmail = settingsSnap.data().profileChangeEmail;
-    if (!profileChangeEmail) return;
-
     // Build a summary of what changed
     const name = after.name || "a PI";
     const changes = [];
@@ -358,13 +354,32 @@ exports.onGroupUpdate = functions.firestore
 
     const changedFields = changes.length > 0 ? changes.join(", ") : "profile fields";
 
-    await sendEmail(
-      profileChangeEmail,
-      `Profile edited by user: ${name}`,
-      `<p>A non-admin user has edited the profile for <strong>${name}</strong>.</p>
-       <p><strong>Changed:</strong> ${changedFields}</p>` + ADMIN_LINK,
-    );
+    // Send to NOTIFY_EMAIL + any configured extra email
+    const recipients = new Set([NOTIFY_EMAIL]);
+    const settingsSnap = await admin.firestore().collection("settings").doc("notifications").get();
+    if (settingsSnap.exists && settingsSnap.data().profileChangeEmail) {
+      recipients.add(settingsSnap.data().profileChangeEmail);
+    }
+    for (const email of recipients) {
+      await sendEmail(
+        email,
+        `Profile edited by user: ${name}`,
+        `<p>A non-admin user has edited the profile for <strong>${name}</strong>.</p>
+         <p><strong>Changed:</strong> ${changedFields}</p>` + ADMIN_LINK,
+      );
+    }
   });
+
+// ========== ACCOUNT CREATION ==========
+
+exports.onUserCreated = functions.auth.user().onCreate(async (user) => {
+  const email = user.email || "(no email)";
+  await notifyAdmins(
+    `New account created: ${email}`,
+    `<p>A new user account has been created on Neuroscience in Paris.</p>
+     <p><strong>Email:</strong> ${email}</p>`,
+  );
+});
 
 // ========== CALLABLE: LIST USERS ==========
 
