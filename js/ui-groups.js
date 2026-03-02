@@ -745,7 +745,7 @@ export function initPiDetail() {
     const cb = e.target;
     cb.disabled = true;
     try {
-      await updateGroup(currentDetailGroup.id, { hiring: cb.checked });
+      await updateGroup(currentDetailGroup.id, { hiring: cb.checked, lastEditedBy: getCurrentUser()?.uid });
       currentDetailGroup.hiring = cb.checked;
       // Update the local allGroups cache
       const cached = allGroups.find(g => g.id === currentDetailGroup.id);

@@ -63,6 +63,11 @@ service cloud.firestore {
         || (request.auth != null && resource.data.postedBy == request.auth.uid);
     }
 
+    // Settings: admin-only read/write
+    match /settings/{docId} {
+      allow read, write: if isAdmin();
+    }
+
     // Admins: users can check their own admin status, admins can read all and write
     match /admins/{uid} {
       allow read: if isAdmin() || (request.auth != null && request.auth.uid == uid);

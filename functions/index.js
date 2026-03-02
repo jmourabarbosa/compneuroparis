@@ -39,21 +39,41 @@ async function isCallerAdmin(uid) {
   return snap.exists;
 }
 
+async function getAdminEmails() {
+  const snapshot = await admin.firestore().collection("admins").get();
+  return snapshot.docs.map((d) => d.data().email).filter(Boolean);
+}
+
+async function notifyAdmins(subject, html) {
+  const emails = await getAdminEmails();
+  for (const email of emails) {
+    await sendEmail(email, subject, html);
+  }
+}
+
 // ========== SUBMISSIONS ==========
 
 exports.onSubmissionCreated = functions.firestore
   .document("submissions/{id}")
   .onCreate(async (snap) => {
     const data = snap.data();
-    const email = data.submitterEmail || await getEmailFromUid(data.creatorUid);
-    if (!email) return;
-
     const name = data.name || "a PI";
-    await sendEmail(
-      email,
-      `We received your PI submission for ${name}`,
-      `<p>Thank you for submitting <strong>${name}</strong> to Neuroscience in Paris.</p>
-       <p>Our team will review your submission and you'll receive an email once a decision is made.</p>`,
+
+    // Notify submitter
+    const email = data.submitterEmail || await getEmailFromUid(data.creatorUid);
+    if (email) {
+      await sendEmail(
+        email,
+        `We received your PI submission for ${name}`,
+        `<p>Thank you for submitting <strong>${name}</strong> to Neuroscience in Paris.</p>
+         <p>Our team will review your submission and you'll receive an email once a decision is made.</p>`,
+      );
+    }
+
+    // Notify admins
+    await notifyAdmins(
+      `New PI submission: ${name}`,
+      `<p>A new PI submission for <strong>${name}</strong> needs review.</p>`,
     );
   });
 
@@ -92,15 +112,23 @@ exports.onClaimCreated = functions.firestore
   .document("claims/{id}")
   .onCreate(async (snap) => {
     const data = snap.data();
-    const email = data.claimantEmail;
-    if (!email) return;
-
     const targetName = data.targetName || "a PI profile";
-    await sendEmail(
-      email,
-      `We received your claim for ${targetName}`,
-      `<p>Thank you for submitting your claim for <strong>${targetName}</strong> on Neuroscience in Paris.</p>
-       <p>Our team will review your claim and you'll receive an email once a decision is made.</p>`,
+
+    // Notify claimant
+    const email = data.claimantEmail;
+    if (email) {
+      await sendEmail(
+        email,
+        `We received your claim for ${targetName}`,
+        `<p>Thank you for submitting your claim for <strong>${targetName}</strong> on Neuroscience in Paris.</p>
+         <p>Our team will review your claim and you'll receive an email once a decision is made.</p>`,
+      );
+    }
+
+    // Notify admins
+    await notifyAdmins(
+      `New claim: ${targetName}`,
+      `<p>A new claim for <strong>${targetName}</strong> needs review.</p>`,
     );
   });
 
@@ -150,15 +178,23 @@ exports.onInstituteCreated = functions.firestore
     // Skip if auto-approved (no confirmation needed for instant approvals)
     if (data.status === "approved") return;
 
-    const email = await getEmailFromUid(data.proposedBy);
-    if (!email) return;
-
     const name = data.name || "an institution";
-    await sendEmail(
-      email,
-      `We received your institution proposal for ${name}`,
-      `<p>Thank you for proposing <strong>${name}</strong> to Neuroscience in Paris.</p>
-       <p>Our team will review your proposal and you'll receive an email once a decision is made.</p>`,
+
+    // Notify proposer
+    const email = await getEmailFromUid(data.proposedBy);
+    if (email) {
+      await sendEmail(
+        email,
+        `We received your institution proposal for ${name}`,
+        `<p>Thank you for proposing <strong>${name}</strong> to Neuroscience in Paris.</p>
+         <p>Our team will review your proposal and you'll receive an email once a decision is made.</p>`,
+      );
+    }
+
+    // Notify admins
+    await notifyAdmins(
+      `New institute proposal: ${name}`,
+      `<p>A new institution proposal for <strong>${name}</strong> needs review.</p>`,
     );
   });
 
@@ -197,15 +233,22 @@ exports.onReportCreated = functions.firestore
   .document("reports/{id}")
   .onCreate(async (snap) => {
     const data = snap.data();
-    // Skip if anonymous
-    if (!data.reporterEmail) return;
-
     const targetName = data.targetName || "a listing";
-    await sendEmail(
-      data.reporterEmail,
-      `We received your report on ${targetName}`,
-      `<p>Thank you for reporting an issue with <strong>${targetName}</strong> on Neuroscience in Paris.</p>
-       <p>Our team will review your report and take appropriate action.</p>`,
+
+    // Notify reporter (skip if anonymous)
+    if (data.reporterEmail) {
+      await sendEmail(
+        data.reporterEmail,
+        `We received your report on ${targetName}`,
+        `<p>Thank you for reporting an issue with <strong>${targetName}</strong> on Neuroscience in Paris.</p>
+         <p>Our team will review your report and take appropriate action.</p>`,
+      );
+    }
+
+    // Notify admins
+    await notifyAdmins(
+      `New report: ${targetName}`,
+      `<p>A new report on <strong>${targetName}</strong> needs review.</p>`,
     );
   });
 
@@ -239,13 +282,21 @@ exports.onMessageCreated = functions.firestore
   .document("messages/{id}")
   .onCreate(async (snap) => {
     const data = snap.data();
-    if (!data.email) return;
 
-    await sendEmail(
-      data.email,
-      "We received your message",
-      `<p>Thank you for contacting Neuroscience in Paris.</p>
-       <p>Our team will review your message and respond if needed.</p>`,
+    // Notify sender
+    if (data.email) {
+      await sendEmail(
+        data.email,
+        "We received your message",
+        `<p>Thank you for contacting Neuroscience in Paris.</p>
+         <p>Our team will review your message and respond if needed.</p>`,
+      );
+    }
+
+    // Notify admins
+    await notifyAdmins(
+      "New contact message",
+      `<p>A new contact message needs review.</p>`,
     );
   });
 
@@ -265,6 +316,51 @@ exports.onMessageStatusChange = functions.firestore
       email,
       "Your message has been reviewed",
       `<p>Your message to Neuroscience in Paris has been reviewed by our team. Thank you for reaching out.</p>`,
+    );
+  });
+
+// ========== PROFILE CHANGE ALERTS ==========
+
+exports.onGroupUpdate = functions.firestore
+  .document("groups/{id}")
+  .onUpdate(async (change) => {
+    const before = change.before.data();
+    const after = change.after.data();
+
+    // Only proceed if lastEditedBy actually changed (skip system updates like claim approvals)
+    if ((before.lastEditedBy || null) === (after.lastEditedBy || null)) return;
+
+    const editorUid = after.lastEditedBy;
+    if (!editorUid) return;
+
+    // Skip if editor is an admin
+    if (await isCallerAdmin(editorUid)) return;
+
+    // Fetch the configured alert email
+    const settingsSnap = await admin.firestore().collection("settings").doc("notifications").get();
+    if (!settingsSnap.exists) return;
+    const profileChangeEmail = settingsSnap.data().profileChangeEmail;
+    if (!profileChangeEmail) return;
+
+    // Build a summary of what changed
+    const name = after.name || "a PI";
+    const changes = [];
+    if (before.name !== after.name) changes.push("name");
+    if (before.summary !== after.summary) changes.push("summary");
+    if (before.photoURL !== after.photoURL) changes.push("photo");
+    if (JSON.stringify(before.keywords) !== JSON.stringify(after.keywords)) changes.push("keywords");
+    if (JSON.stringify(before.links) !== JSON.stringify(after.links)) changes.push("links");
+    if (JSON.stringify(before.subfields) !== JSON.stringify(after.subfields)) changes.push("subfields");
+    if (JSON.stringify(before.institutes) !== JSON.stringify(after.institutes)) changes.push("institutes");
+    if (before.hiring !== after.hiring) changes.push("hiring status");
+
+    const changedFields = changes.length > 0 ? changes.join(", ") : "profile fields";
+
+    await sendEmail(
+      profileChangeEmail,
+      `Profile edited by user: ${name}`,
+      `<p>A non-admin user has edited the profile for <strong>${name}</strong>.</p>
+       <p><strong>Changed:</strong> ${changedFields}</p>`,
     );
   });
 
@@ -355,8 +451,23 @@ exports.deleteUser = functions.https.onCall(async (data, context) => {
   // Delete from admins collection if exists
   await firestore.collection("admins").doc(uid).delete();
 
+  // Grab email before deleting, so we can notify
+  const userToDelete = await admin.auth().getUser(uid);
+  const deletedEmail = userToDelete.email;
+
   // Delete from Firebase Auth
   await admin.auth().deleteUser(uid);
+
+  // Notify the user
+  if (deletedEmail) {
+    await sendEmail(
+      deletedEmail,
+      "Your account on Neuroscience in Paris has been removed",
+      `<p>Your account on Neuroscience in Paris has been removed by an administrator.</p>
+       <p>Any profile claims associated with your account have been revoked.</p>
+       <p>If you believe this is an error, please contact us through the website.</p>`,
+    );
+  }
 
   return { success: true };
 });
@@ -407,6 +518,24 @@ exports.updateUser = functions.https.onCall(async (data, context) => {
     }
   }
 
+  // Notify the user about profile changes
+  const changes = [];
+  if (updatePayload.email) changes.push(`email changed to <strong>${email}</strong>`);
+  if (updatePayload.displayName !== undefined) changes.push(`display name changed to <strong>${displayName || "(empty)"}</strong>`);
+
+  if (changes.length > 0) {
+    const notifyEmail = oldUser.email;
+    if (notifyEmail) {
+      await sendEmail(
+        notifyEmail,
+        "Your account on Neuroscience in Paris has been updated",
+        `<p>An administrator has made the following changes to your account:</p>
+         <ul>${changes.map((c) => `<li>${c}</li>`).join("")}</ul>
+         <p>If you did not expect this, please contact us through the website.</p>`,
+      );
+    }
+  }
+
   return { success: true };
 });
 
@@ -425,6 +554,16 @@ exports.verifyUser = functions.https.onCall(async (data, context) => {
     throw new functions.https.HttpsError("invalid-argument", "uid is required.");
   }
 
+  const userToVerify = await admin.auth().getUser(uid);
   await admin.auth().updateUser(uid, { emailVerified: true });
+
+  if (userToVerify.email) {
+    await sendEmail(
+      userToVerify.email,
+      "Your email has been verified on Neuroscience in Paris",
+      `<p>An administrator has manually verified your email on Neuroscience in Paris. You now have full access to the platform.</p>`,
+    );
+  }
+
   return { success: true };
 });

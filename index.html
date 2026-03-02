@@ -509,6 +509,7 @@
           <button class="tab" data-tab="tab-reports" role="tab" aria-selected="false">Reports</button>
           <button class="tab" data-tab="tab-messages" role="tab" aria-selected="false">Messages</button>
           <button class="tab" data-tab="tab-users" role="tab" aria-selected="false">Users</button>
+          <button class="tab" data-tab="tab-settings" role="tab" aria-selected="false">Settings</button>
         </div>
 
         <!-- Pending Submissions Tab -->
@@ -600,6 +601,18 @@
             <p>No registered users.</p>
           </div>
           <div id="users-list" class="admin-list"></div>
+        </div>
+
+        <!-- Settings Tab -->
+        <div id="tab-settings" class="tab-panel" role="tabpanel">
+          <h4 style="margin-bottom:.5rem">Email Alerts</h4>
+          <div class="form-group">
+            <label for="settings-profile-email">Profile change alert email</label>
+            <p class="form-help" style="font-size:.85rem;color:#666;margin:0 0 .25rem">When a non-admin user edits a PI profile, send an alert to this address.</p>
+            <input type="email" id="settings-profile-email" placeholder="admin@example.com" style="max-width:360px">
+          </div>
+          <button id="btn-save-settings" class="btn btn-primary btn-sm">Save Settings</button>
+          <div id="settings-message" class="form-message hidden" role="alert" style="margin-top:.5rem"></div>
         </div>
       </div>
     </div>

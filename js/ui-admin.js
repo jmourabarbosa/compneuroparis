@@ -8,7 +8,8 @@ import {
   fetchOpenReports, resolveReport,
   fetchOpenMessages, resolveMessage,
   listAllUsers, deleteUserAccount, updateUserAccount, verifyUserAccount,
-  fetchGroupsClaimedBy, fetchInstitutesClaimedBy, revokeClaim
+  fetchGroupsClaimedBy, fetchInstitutesClaimedBy, revokeClaim,
+  fetchNotificationSettings, updateNotificationSettings
 } from './db.js';
 import { getCurrentUser, createAdminUser } from './auth.js';
 import { loadGroups, loadPublicInstitutes } from './ui-groups.js';
@@ -139,13 +140,15 @@ export function initTabs() {
       document.querySelectorAll('.tab-panel').forEach(p => p.classList.remove('active'));
       document.getElementById(target).classList.add('active');
 
-      // Auto-load reports/messages/users when tab is selected
+      // Auto-load reports/messages/users/settings when tab is selected
       if (target === 'tab-reports') {
         loadReports();
       } else if (target === 'tab-messages') {
         loadMessages();
       } else if (target === 'tab-users') {
         loadUsers();
+      } else if (target === 'tab-settings') {
+        loadSettings();
       }
     });
   });
@@ -489,7 +492,7 @@ export function initEditForm() {
 
     const photoURL = editPhotoURL.value.trim();
     const hiring = document.getElementById('edit-hiring-checkbox').checked;
-    const updateData = { name, keywords, summary, links, photoURL, subfields, subfield: subfields[0], institutes: editSelectedInstitutes, institute: editSelectedInstitutes[0] || '', hiring };
+    const updateData = { name, keywords, summary, links, photoURL, subfields, subfield: subfields[0], institutes: editSelectedInstitutes, institute: editSelectedInstitutes[0] || '', hiring, lastEditedBy: getCurrentUser()?.uid };
 
     const submitBtn = editForm.querySelector('button[type="submit"]');
     submitBtn.disabled = true;
@@ -1197,6 +1200,38 @@ export function initEditUserForm() {
       showMsg(editUserMessage, 'Error updating user: ' + (err.message || err), 'error');
     } finally {
       submitBtn.disabled = false;
+    }
+  });
+}
+
+// ========== SETTINGS TAB ==========
+
+async function loadSettings() {
+  try {
+    const settings = await fetchNotificationSettings();
+    document.getElementById('settings-profile-email').value = settings.profileChangeEmail || '';
+  } catch (err) {
+    console.error('Error loading settings:', err);
+  }
+}
+
+export function initSettings() {
+  document.getElementById('btn-save-settings').addEventListener('click', async () => {
+    const btn = document.getElementById('btn-save-settings');
+    const msg = document.getElementById('settings-message');
+    const email = document.getElementById('settings-profile-email').value.trim();
+
+    btn.disabled = true;
+    msg.classList.add('hidden');
+
+    try {
+      await updateNotificationSettings({ profileChangeEmail: email });
+      showMsg(msg, 'Settings saved.', 'success');
+    } catch (err) {
+      console.error('Error saving settings:', err);
+      showMsg(msg, 'Error saving settings.', 'error');
+    } finally {
+      btn.disabled = false;
     }
   });
 }

@@ -447,6 +447,17 @@ export async function deleteJob(id) {
   await deleteDoc(doc(db, 'jobs', id));
 }
 
+// ========== SETTINGS ==========
+
+export async function fetchNotificationSettings() {
+  const snap = await getDoc(doc(db, 'settings', 'notifications'));
+  return snap.exists() ? snap.data() : {};
+}
+
+export async function updateNotificationSettings(data) {
+  await setDoc(doc(db, 'settings', 'notifications'), data, { merge: true });
+}
+
 // ========== USER MANAGEMENT (CALLABLE) ==========
 
 export async function listAllUsers() {
