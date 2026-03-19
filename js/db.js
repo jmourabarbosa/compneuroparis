@@ -135,10 +135,46 @@ export async function createInstitute(name, proposedByUid, { website = '', summa
 }
 
 export async function updateInstitute(id, data) {
-  await updateDoc(doc(db, 'institutes', id), {
+  const instituteRef = doc(db, 'institutes', id);
+  const instituteSnap = await getDoc(instituteRef);
+  if (!instituteSnap.exists()) throw new Error('Institute not found');
+
+  const existingInstitute = instituteSnap.data();
+  const previousName = existingInstitute.name || '';
+  const nextName = data.name || previousName;
+
+  await updateDoc(instituteRef, {
     ...data,
     updatedAt: serverTimestamp()
   });
+
+  if (previousName && nextName && previousName !== nextName) {
+    const groupsSnap = await getDocs(collection(db, 'groups'));
+    const updates = groupsSnap.docs
+      .filter(groupDoc => {
+        const groupData = groupDoc.data();
+        const institutes = Array.isArray(groupData.institutes)
+          ? groupData.institutes
+          : (groupData.institute ? [groupData.institute] : []);
+        return institutes.includes(previousName);
+      })
+      .map(groupDoc => {
+        const groupData = groupDoc.data();
+        const institutes = Array.isArray(groupData.institutes)
+          ? groupData.institutes.map(name => (name === previousName ? nextName : name))
+          : [];
+        const updateData = {
+          institutes,
+          updatedAt: serverTimestamp()
+        };
+        if ((groupData.institute || '') === previousName) {
+          updateData.institute = nextName;
+        }
+        return updateDoc(groupDoc.ref, updateData);
+      });
+
+    await Promise.all(updates);
+  }
 }
 
 export async function deleteInstitute(id) {
