@@ -348,11 +348,12 @@
           </div>
         </div>
 
-      <form id="submission-form" class="submission-form" novalidate>
-        <div class="form-group">
-          <label for="sub-name">PI Name <span class="required">*</span></label>
-          <input type="text" id="sub-name" name="name" required>
-        </div>
+        <form id="submission-form" class="submission-form" novalidate>
+          <div class="form-group">
+            <label for="sub-name">PI Name <span class="required">*</span></label>
+            <input type="text" id="sub-name" name="name" required>
+            <div id="submission-duplicate-warning" class="form-message info hidden" role="alert"></div>
+          </div>
         <div class="form-row">
           <div class="form-group">
             <label for="sub-primary-subfield">Primary subfield <span class="required">*</span></label>

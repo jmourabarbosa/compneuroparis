@@ -1,4 +1,4 @@
-import { createSubmission, createGroup, fetchApprovedInstitutes, createInstitute, createMessage, fetchGroupsClaimedBy, createJob } from './db.js';
+import { createSubmission, createGroup, fetchApprovedInstitutes, createInstitute, createMessage, fetchGroupsClaimedBy, createJob, fetchGroups } from './db.js';
 import { getCurrentUser, getIsAdmin, createAccount, login, logout, resetPassword, isEmailVerified, resendVerification, getAuthErrorMessage } from './auth.js';
 import { loadGroups, loadPublicInstitutes, loadPublicJobs } from './ui-groups.js';
 
@@ -6,8 +6,10 @@ const form = document.getElementById('submission-form');
 const formWrapper = document.getElementById('submission-form-wrapper');
 const btnShowForm = document.getElementById('btn-show-form');
 const formMessage = document.getElementById('form-message');
+const submissionDuplicateWarning = document.getElementById('submission-duplicate-warning');
 const linksContainer = document.getElementById('links-container');
 const btnAddLink = document.getElementById('btn-add-link');
+const subNameInput = document.getElementById('sub-name');
 
 // Institute submission form
 const instForm = document.getElementById('institute-submission-form');
@@ -37,6 +39,7 @@ const subInstituteNewFields = document.getElementById('sub-institute-new-fields'
 // Multi-institute state
 let selectedInstitutes = [];
 let newInstituteData = {}; // { name: website } for proposed new institutes
+let cachedExistingGroups = [];
 
 // Auth elements
 const subAuthForm = document.getElementById('submission-auth-form');
@@ -149,6 +152,10 @@ export function initForm() {
   });
 
   form.addEventListener('submit', handleSubmit);
+  subNameInput.addEventListener('input', () => {
+    void updateDuplicatePiWarning(subNameInput.value);
+  });
+  void preloadExistingGroups();
 
   // Auto-disable primary subfield in secondary checkboxes
   subPrimarySubfield.addEventListener('change', () => {
@@ -192,6 +199,61 @@ export function initForm() {
 
   // Load institute options on init
   loadInstituteOptions();
+}
+
+async function preloadExistingGroups() {
+  try {
+    cachedExistingGroups = await fetchGroups();
+    await updateDuplicatePiWarning(subNameInput.value);
+  } catch (err) {
+    console.error('Error loading groups for duplicate detection:', err);
+  }
+}
+
+function normalizeName(value) {
+  return (value || '')
+    .normalize('NFD')
+    .replace(/[\u0300-\u036f]/g, '')
+    .toLowerCase()
+    .replace(/[^a-z0-9\s]/g, ' ')
+    .replace(/\s+/g, ' ')
+    .trim();
+}
+
+function tokenizeName(value) {
+  return normalizeName(value).split(' ').filter(Boolean);
+}
+
+function findPotentialDuplicateGroups(name) {
+  const normalizedName = normalizeName(name);
+  const nameTokens = tokenizeName(name);
+  if (!normalizedName || nameTokens.length === 0) return [];
+
+  return cachedExistingGroups.filter(group => {
+    const groupNormalizedName = normalizeName(group.name);
+    const groupTokens = tokenizeName(group.name);
+    if (!groupNormalizedName) return false;
+    if (groupNormalizedName === normalizedName) return true;
+    if (groupNormalizedName.includes(normalizedName) || normalizedName.includes(groupNormalizedName)) return true;
+    const overlapCount = nameTokens.filter(token => groupTokens.includes(token)).length;
+    return overlapCount >= Math.min(2, nameTokens.length, groupTokens.length);
+  });
+}
+
+async function updateDuplicatePiWarning(name) {
+  if (!submissionDuplicateWarning) return;
+
+  const matches = findPotentialDuplicateGroups(name).slice(0, 3);
+  if (matches.length === 0) {
+    submissionDuplicateWarning.classList.add('hidden');
+    submissionDuplicateWarning.textContent = '';
+    return;
+  }
+
+  const label = matches.map(group => group.name).join(', ');
+  submissionDuplicateWarning.textContent = `A similar PI page already exists (${label}). If this is your page, please search for it and use the claim flow instead of creating a new one.`;
+  submissionDuplicateWarning.className = 'form-message info';
+  submissionDuplicateWarning.classList.remove('hidden');
 }
 
 export async function loadInstituteOptions() {
@@ -589,6 +651,8 @@ async function handleSubmit(e) {
     }
 
     form.reset();
+    submissionDuplicateWarning.classList.add('hidden');
+    submissionDuplicateWarning.textContent = '';
     subInstituteNewFields.classList.add('hidden');
     subInstituteNewName.value = '';
     subInstituteNewWebsite.value = '';
