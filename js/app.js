@@ -370,9 +370,7 @@ loadPublicJobs()
 
 // Handle #admin deep link (wait for auth to resolve)
 authReady.then(() => {
-  if (isAdminWorkspace && !adminBar.classList.contains('hidden')) {
-    openAdminWorkspace();
-  } else if (window.location.hash === '#admin') {
+  if (window.location.hash === '#admin') {
     // Only open if user is already logged in as admin
     if (!adminBar.classList.contains('hidden')) {
       btnAdminPanel.click();
