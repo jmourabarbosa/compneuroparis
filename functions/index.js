@@ -1,6 +1,7 @@
 const functions = require("firebase-functions");
 const admin = require("firebase-admin");
 const nodemailer = require("nodemailer");
+const { planClaimReconciliation } = require("./ownership-logic");
 
 admin.initializeApp();
 
@@ -53,6 +54,36 @@ async function notifyAdmins(subject, html) {
   for (const email of emails) {
     await sendEmail(email, subject, html + ADMIN_LINK);
   }
+}
+
+async function reconcileClaimsForTarget(targetId, claimantUid = null) {
+  const firestore = admin.firestore();
+  const [targetClaimsSnap, legacyClaimsSnap] = await Promise.all([
+    firestore.collection("claims").where("targetId", "==", targetId).get(),
+    firestore.collection("claims").where("piId", "==", targetId).get(),
+  ]);
+
+  const claimDocs = new Map();
+  for (const snap of [targetClaimsSnap, legacyClaimsSnap]) {
+    for (const claimDoc of snap.docs) {
+      claimDocs.set(claimDoc.id, claimDoc);
+    }
+  }
+
+  const { promotedPendingClaim, updates } = planClaimReconciliation(
+    [...claimDocs.values()].map((claimDoc) => ({ id: claimDoc.id, ...claimDoc.data() })),
+    claimantUid,
+  );
+
+  for (const update of updates) {
+    const claimDoc = claimDocs.get(update.id);
+    await claimDoc.ref.update({
+      status: update.status,
+      [update.timestampField]: admin.firestore.FieldValue.serverTimestamp(),
+    });
+  }
+
+  return { promotedPendingClaim };
 }
 
 // ========== SUBMISSIONS ==========
@@ -583,4 +614,77 @@ exports.verifyUser = functions.https.onCall(async (data, context) => {
   }
 
   return { success: true };
+});
+
+// ========== CALLABLE: SET GROUP CLAIM ==========
+
+exports.setGroupClaim = functions.https.onCall(async (data, context) => {
+  if (!context.auth) {
+    throw new functions.https.HttpsError("unauthenticated", "Must be logged in.");
+  }
+  if (!(await isCallerAdmin(context.auth.uid))) {
+    throw new functions.https.HttpsError("permission-denied", "Admin access required.");
+  }
+
+  const { groupId, claimantUid = null } = data || {};
+  if (!groupId) {
+    throw new functions.https.HttpsError("invalid-argument", "groupId is required.");
+  }
+
+  const firestore = admin.firestore();
+  const groupRef = firestore.collection("groups").doc(groupId);
+  const groupSnap = await groupRef.get();
+  if (!groupSnap.exists) {
+    throw new functions.https.HttpsError("not-found", "PI page not found.");
+  }
+
+  const group = groupSnap.data();
+  const previousClaimedBy = group.claimedBy || null;
+  let nextClaimedBy = null;
+  let nextClaimedByEmail = "";
+
+  if (claimantUid) {
+    let claimantUser;
+    try {
+      claimantUser = await admin.auth().getUser(claimantUid);
+    } catch (err) {
+      throw new functions.https.HttpsError("invalid-argument", "Assigned account was not found.");
+    }
+    if (!claimantUser.email) {
+      throw new functions.https.HttpsError("invalid-argument", "Assigned account must have an email.");
+    }
+    nextClaimedBy = claimantUser.uid;
+    nextClaimedByEmail = claimantUser.email;
+  }
+
+  if (nextClaimedBy) {
+    await groupRef.update({
+      claimedBy: nextClaimedBy,
+      claimedByEmail: nextClaimedByEmail,
+      updatedAt: admin.firestore.FieldValue.serverTimestamp(),
+    });
+  } else {
+    await groupRef.update({
+      claimedBy: admin.firestore.FieldValue.delete(),
+      claimedByEmail: admin.firestore.FieldValue.delete(),
+      updatedAt: admin.firestore.FieldValue.serverTimestamp(),
+    });
+  }
+
+  const { promotedPendingClaim } = await reconcileClaimsForTarget(groupId, nextClaimedBy);
+
+  if (nextClaimedBy && previousClaimedBy !== nextClaimedBy && !promotedPendingClaim) {
+    await sendEmail(
+      nextClaimedByEmail,
+      `You have been granted ownership of ${group.name || "a PI page"}`,
+      `<p>An administrator has granted your account ownership of the PI page for <strong>${group.name || "this PI"}</strong> on Neuroscience in Paris.</p>
+       <p>You can now edit the profile and manage related actions from your account.</p>`,
+    );
+  }
+
+  return {
+    success: true,
+    claimedBy: nextClaimedBy,
+    claimedByEmail: nextClaimedByEmail,
+  };
 });

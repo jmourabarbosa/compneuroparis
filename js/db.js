@@ -4,6 +4,7 @@ import {
 } from 'https://www.gstatic.com/firebasejs/11.4.0/firebase-firestore.js';
 import { getFunctions, httpsCallable } from 'https://www.gstatic.com/firebasejs/11.4.0/firebase-functions.js';
 import { db } from './firebase-config.js';
+import { buildApprovedGroupData } from './ownership-utils.mjs';
 
 const functions = getFunctions();
 
@@ -72,30 +73,7 @@ export async function approveSubmission(submissionId, adminUid, overrideData = n
   if (!subSnap.exists()) throw new Error('Submission not found');
 
   const data = subSnap.data();
-  const src = overrideData || data;
-
-  // Normalize array helper
-  const toArr = v => Array.isArray(v) ? v : (v ? [v] : []);
-
-  // Resolve subfields/institutes from override or original data
-  const subfields = toArr(src.subfields || src.subfield || data.subfields || data.subfield || ['computational']);
-  const institutes = toArr(src.institutes || src.institute || data.institutes || data.institute);
-
-  // Create group from submission (use overrideData if provided, always copy creatorUid)
-  await createGroup({
-    name: src.name,
-    keywords: src.keywords || [],
-    summary: src.summary || '',
-    links: src.links || [],
-    photoURL: src.photoURL || '',
-    // New array fields
-    subfields,
-    institutes,
-    // Backward compat single-value fields
-    subfield: subfields[0] || 'computational',
-    institute: institutes[0] || '',
-    ...(data.creatorUid ? { creatorUid: data.creatorUid } : {})
-  });
+  await createGroup(buildApprovedGroupData(data, overrideData));
 
   // Mark submission as approved
   await updateDoc(subDoc, {
@@ -283,6 +261,15 @@ export async function revokeClaim(targetId, type = 'pi') {
       revokedAt: serverTimestamp()
     });
   }
+}
+
+export async function setGroupClaimAdmin(groupId, claimantUid = '') {
+  const fn = httpsCallable(functions, 'setGroupClaim');
+  const result = await fn({
+    groupId,
+    claimantUid: claimantUid || null
+  });
+  return result.data;
 }
 
 export async function fetchMyClaimForTarget(uid, targetId) {
@@ -486,4 +473,3 @@ export async function verifyUserAccount(uid) {
   const fn = httpsCallable(functions, 'verifyUser');
   await fn({ uid });
 }
-

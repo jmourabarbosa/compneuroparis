@@ -1,0 +1,8 @@
+{
+  "scripts": {
+    "test": "node --test tests/*.test.mjs && npm --prefix functions test"
+  },
+  "devDependencies": {
+    "firebase-tools": "^15.6.0"
+  }
+}

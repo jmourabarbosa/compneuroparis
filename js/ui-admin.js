@@ -9,9 +9,9 @@ import {
   fetchOpenMessages, resolveMessage,
   listAllUsers, deleteUserAccount, updateUserAccount, verifyUserAccount,
   fetchGroupsClaimedBy, fetchInstitutesClaimedBy, revokeClaim,
-  fetchNotificationSettings, updateNotificationSettings
+  fetchNotificationSettings, updateNotificationSettings, setGroupClaimAdmin
 } from './db.js';
-import { getCurrentUser, createAdminUser } from './auth.js';
+import { getCurrentUser, getIsAdmin, createAdminUser } from './auth.js';
 import { loadGroups, loadPublicInstitutes } from './ui-groups.js';
 import { getSubfieldsFromPicker, setSubfieldDropdown, syncSecondaryCheckboxes } from './ui-form.js';
 import { loadInstituteOptions } from './ui-form.js';
@@ -53,6 +53,11 @@ const editPhotoURL = document.getElementById('edit-photo-url');
 const editPhotoCurrentDiv = document.getElementById('edit-photo-current');
 const editPhotoImg = document.getElementById('edit-photo-img');
 const editMessage = document.getElementById('edit-message');
+const editClaimSection = document.getElementById('edit-claim-section');
+const editClaimCurrent = document.getElementById('edit-claim-current');
+const editClaimedBySelect = document.getElementById('edit-claimed-by-select');
+const btnEditClaimSave = document.getElementById('btn-edit-claim-save');
+const editClaimMessage = document.getElementById('edit-claim-message');
 const editPrimarySubfield = document.getElementById('edit-primary-subfield');
 const editInstituteSelect = document.getElementById('edit-institute-select');
 const editInstitutePills = document.getElementById('edit-institute-pills');
@@ -115,6 +120,7 @@ const editUserClaimed = document.getElementById('edit-user-claimed');
 const editUserClaimedList = document.getElementById('edit-user-claimed-list');
 
 let currentSubmission = null;
+let currentEditGroup = null;
 
 function notifyAdminDataChanged() {
   document.dispatchEvent(new CustomEvent('admin-data-changed'));
@@ -358,7 +364,7 @@ export async function loadManageGroups() {
         </div>
       `;
 
-      item.querySelector('.btn-edit').addEventListener('click', () => showEditModal(g));
+      item.querySelector('.btn-edit').addEventListener('click', () => { void showEditModal(g); });
       item.querySelector('.btn-delete').addEventListener('click', () => handleDelete(g));
       manageList.appendChild(item);
     });
@@ -368,7 +374,57 @@ export async function loadManageGroups() {
   }
 }
 
-function showEditModal(group) {
+function updateClaimSectionSummary(group) {
+  if (!group?.claimedBy) {
+    editClaimCurrent.textContent = 'Currently unclaimed.';
+    return;
+  }
+  const email = group.claimedByEmail || 'unknown email';
+  editClaimCurrent.textContent = `Currently claimed by ${email}.`;
+}
+
+async function populateClaimantOptions(group) {
+  editClaimMessage.classList.add('hidden');
+  editClaimedBySelect.disabled = true;
+  editClaimedBySelect.innerHTML = '';
+
+  const unclaimedOption = document.createElement('option');
+  unclaimedOption.value = '';
+  unclaimedOption.textContent = 'Unclaimed';
+  editClaimedBySelect.appendChild(unclaimedOption);
+
+  try {
+    const users = await listAllUsers();
+    users
+      .slice()
+      .sort((a, b) => (a.email || '').localeCompare(b.email || ''))
+      .forEach(user => {
+        const opt = document.createElement('option');
+        opt.value = user.uid;
+        const verifiedLabel = user.emailVerified ? '' : ' (unverified)';
+        opt.textContent = `${user.email || user.uid}${user.displayName ? ` (${user.displayName})` : ''}${verifiedLabel}`;
+        editClaimedBySelect.appendChild(opt);
+      });
+
+    if (group.claimedBy && !users.some(user => user.uid === group.claimedBy)) {
+      const missingOpt = document.createElement('option');
+      missingOpt.value = group.claimedBy;
+      missingOpt.textContent = group.claimedByEmail
+        ? `${group.claimedByEmail} (account not found)`
+        : `${group.claimedBy} (account not found)`;
+      editClaimedBySelect.appendChild(missingOpt);
+    }
+
+    editClaimedBySelect.value = group.claimedBy || '';
+    editClaimedBySelect.disabled = false;
+  } catch (err) {
+    console.error('Error loading claimable users:', err);
+    showMsg(editClaimMessage, 'Error loading user accounts.', 'error');
+  }
+}
+
+async function showEditModal(group) {
+  currentEditGroup = { ...group };
   editId.value = group.id;
   editName.value = group.name || '';
   editKeywords.value = (group.keywords || []).join(', ');
@@ -405,11 +461,21 @@ function showEditModal(group) {
   document.getElementById('edit-hiring-checkbox').checked = !!group.hiring;
 
   editMessage.classList.add('hidden');
+  updateClaimSectionSummary(group);
+  if (getIsAdmin()) {
+    editClaimSection.classList.remove('hidden');
+    await populateClaimantOptions(group);
+  } else {
+    editClaimSection.classList.add('hidden');
+    editClaimMessage.classList.add('hidden');
+    editClaimedBySelect.innerHTML = '<option value="">Unclaimed</option>';
+    editClaimedBySelect.value = '';
+  }
   modalEdit.classList.remove('hidden');
 }
 
 export function showEditModalForCreator(group) {
-  showEditModal(group);
+  void showEditModal(group);
 }
 
 function addEditLinkRow(label = '', url = '') {
@@ -469,6 +535,42 @@ export function initEditForm() {
   btnEditAddLink.addEventListener('click', () => addEditLinkRow());
   editInstituteSelect.addEventListener('change', () => {
     handleEditAddInstitute();
+  });
+  btnEditClaimSave.addEventListener('click', async () => {
+    if (!currentEditGroup) return;
+
+    const nextClaimantUid = editClaimedBySelect.value;
+    const currentClaimantUid = currentEditGroup.claimedBy || '';
+    editClaimMessage.classList.add('hidden');
+
+    if (nextClaimantUid === currentClaimantUid) {
+      showMsg(editClaimMessage, 'No claimant change to save.', 'success');
+      return;
+    }
+
+    btnEditClaimSave.disabled = true;
+    try {
+      const result = await setGroupClaimAdmin(currentEditGroup.id, nextClaimantUid);
+      currentEditGroup.claimedBy = result.claimedBy || '';
+      currentEditGroup.claimedByEmail = result.claimedByEmail || '';
+      updateClaimSectionSummary(currentEditGroup);
+      editClaimedBySelect.value = result.claimedBy || '';
+      showMsg(
+        editClaimMessage,
+        result.claimedBy
+          ? 'Claimant updated successfully.'
+          : 'Claim removed. This PI page is now unclaimed.',
+        'success'
+      );
+      await loadManageGroups();
+      await loadGroups();
+      notifyAdminDataChanged();
+    } catch (err) {
+      console.error('Set claimant error:', err);
+      showMsg(editClaimMessage, err.message || 'Error updating claimant.', 'error');
+    } finally {
+      btnEditClaimSave.disabled = false;
+    }
   });
 
   editForm.addEventListener('submit', async (e) => {

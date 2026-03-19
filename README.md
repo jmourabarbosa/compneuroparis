@@ -98,6 +98,19 @@ Add documents to the `groups` collection in Firestore:
 3. Set source to "Deploy from a branch", select `main` / `/ (root)`
 4. The site will be live at `https://jmourabarbosa.github.io/compneuroparis/`
 
+## Testing
+
+Run the automated ownership tests with:
+
+```bash
+npm test
+```
+
+This currently covers:
+
+- auto-claim behavior when a user-submitted PI is approved
+- claimant reconciliation rules for admin ownership assignment and clearing
+
 ## File Structure
 
 ```
