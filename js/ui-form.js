@@ -1,5 +1,5 @@
 import { createSubmission, createGroup, fetchApprovedInstitutes, createInstitute, createMessage, fetchGroupsClaimedBy, createJob } from './db.js';
-import { getCurrentUser, getIsAdmin, createAccount, login, logout, resetPassword, isEmailVerified, resendVerification } from './auth.js';
+import { getCurrentUser, getIsAdmin, createAccount, login, logout, resetPassword, isEmailVerified, resendVerification, getAuthErrorMessage } from './auth.js';
 import { loadGroups, loadPublicInstitutes, loadPublicJobs } from './ui-groups.js';
 
 const form = document.getElementById('submission-form');
@@ -182,13 +182,13 @@ export function initForm() {
       showAuthMsg('Please enter your email address first.', 'error');
       return;
     }
-    try {
-      await resetPassword(email);
-      showAuthMsg('Password reset email sent. Check your inbox.', 'success');
-    } catch (err) {
-      showAuthMsg(err.message || 'Error sending reset email.', 'error');
-    }
-  });
+  try {
+    await resetPassword(email);
+    showAuthMsg('Password reset email sent. Check your inbox.', 'success');
+  } catch (err) {
+    showAuthMsg(getAuthErrorMessage(err, 'Error sending reset email.'), 'error');
+  }
+});
 
   // Load institute options on init
   loadInstituteOptions();
@@ -309,7 +309,7 @@ async function handleInstSubAuth(isCreate) {
       await login(email, password);
     }
   } catch (err) {
-    showInstAuthMsg(err.message || 'Authentication failed.', 'error');
+    showInstAuthMsg(getAuthErrorMessage(err, 'Authentication failed.'), 'error');
   } finally {
     btnInstSubCreate.disabled = false;
     btnInstSubLogin.disabled = false;
@@ -395,7 +395,7 @@ async function handleCreateAccount() {
     await createAccount(email, password);
     showAuthMsg('Account created! A verification email has been sent. Please check your inbox and verify before submitting.', 'success');
   } catch (err) {
-    showAuthMsg(err.message || 'Error creating account.', 'error');
+    showAuthMsg(getAuthErrorMessage(err, 'Error creating account.'), 'error');
   } finally {
     btnSubCreate.disabled = false;
     btnSubLogin.disabled = false;
@@ -417,7 +417,7 @@ async function handleLogin() {
   try {
     await login(email, password);
   } catch (err) {
-    showAuthMsg(err.message || 'Login failed.', 'error');
+    showAuthMsg(getAuthErrorMessage(err, 'Login failed.'), 'error');
   } finally {
     btnSubCreate.disabled = false;
     btnSubLogin.disabled = false;

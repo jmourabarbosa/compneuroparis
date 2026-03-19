@@ -1,6 +1,6 @@
 import { loadGroups, initSearch, initSections, loadPublicInstitutes, loadPublicJobs, initPiDetail, initInstituteDetail, initJobDetail, handleDeepLink } from './ui-groups.js';
 import { initForm, initJobForm, updateSubmissionAuthUI } from './ui-form.js';
-import { onAuthChange, login, logout, resetPassword, createAccount, isEmailVerified, resendVerification, authReady } from './auth.js';
+import { onAuthChange, login, logout, resetPassword, createAccount, isEmailVerified, resendVerification, authReady, getAuthErrorMessage } from './auth.js';
 import {
   initTabs, loadPending, loadManageGroups, loadAdmins,
   initSubmissionActions, initEditForm, initAddAdmin,
@@ -111,7 +111,7 @@ loginForm.addEventListener('submit', async (e) => {
     closeModal(modalLogin);
     loginForm.reset();
   } catch (err) {
-    showLoginMsg(err.message || 'Login failed.', 'error');
+    showLoginMsg(getAuthErrorMessage(err, 'Login failed.'), 'error');
   } finally {
     submitBtn.disabled = false;
   }
@@ -153,7 +153,7 @@ document.getElementById('btn-login-forgot').addEventListener('click', async () =
     await resetPassword(email);
     showLoginMsg('Password reset email sent. Check your inbox.', 'success');
   } catch (err) {
-    showLoginMsg(err.message || 'Error sending reset email.', 'error');
+    showLoginMsg(getAuthErrorMessage(err, 'Error sending reset email.'), 'error');
   }
 });
 
@@ -188,7 +188,7 @@ signupForm.addEventListener('submit', async (e) => {
     signupMessage.className = 'verify-banner';
     signupMessage.classList.remove('hidden');
   } catch (err) {
-    showSignupMsg(err.message || 'Error creating account.', 'error');
+    showSignupMsg(getAuthErrorMessage(err, 'Error creating account.'), 'error');
   } finally {
     submitBtn.disabled = false;
   }

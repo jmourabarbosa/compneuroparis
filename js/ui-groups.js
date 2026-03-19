@@ -1,5 +1,5 @@
 import { fetchGroups, fetchApprovedInstitutes, fetchJobs, fetchJobsByPi, updateJob, deleteJob, updateGroup, createClaim, fetchMyClaimForTarget, fetchApprovedClaimForTarget, revokeClaim, deleteGroup, deleteInstitute, createReport } from './db.js';
-import { getCurrentUser, getIsAdmin, createAccount, login, isEmailVerified, resendVerification } from './auth.js';
+import { getCurrentUser, getIsAdmin, createAccount, login, isEmailVerified, resendVerification, getAuthErrorMessage } from './auth.js';
 
 let allGroups = [];
 let allInstitutes = [];
@@ -662,7 +662,7 @@ async function handleClaimAuth(isCreate) {
     claimStepAuth.classList.add('hidden');
   } catch (err) {
     console.error('Claim auth error:', err);
-    showClaimMsg(claimAuthMessage, err.message || 'Authentication failed.', 'error');
+    showClaimMsg(claimAuthMessage, getAuthErrorMessage(err, 'Authentication failed.'), 'error');
   } finally {
     btnClaimCreate.disabled = false;
     btnClaimLogin.disabled = false;

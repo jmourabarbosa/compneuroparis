@@ -30,6 +30,25 @@ export async function createAccount(email, password) {
   return cred.user;
 }
 
+export function getAuthErrorMessage(err, fallback = 'Authentication failed.') {
+  switch (err?.code) {
+    case 'auth/email-already-in-use':
+      return 'An account with this email already exists. Please log in instead, or use password reset if you no longer know the password.';
+    case 'auth/invalid-email':
+      return 'Please enter a valid email address.';
+    case 'auth/invalid-credential':
+    case 'auth/user-not-found':
+    case 'auth/wrong-password':
+      return 'That email/password combination was not recognized. Try logging in again or reset your password.';
+    case 'auth/too-many-requests':
+      return 'Too many attempts. Please wait a bit and try again.';
+    case 'auth/network-request-failed':
+      return 'Network error. Please check your connection and try again.';
+    default:
+      return err?.message || fallback;
+  }
+}
+
 export async function resendVerification() {
   if (auth.currentUser && !auth.currentUser.emailVerified) {
     await sendEmailVerification(auth.currentUser);
