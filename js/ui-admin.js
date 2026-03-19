@@ -530,6 +530,32 @@ function renderEditInstitutePills() {
   });
 }
 
+async function persistClaimantSelection() {
+  if (!currentEditGroup) return false;
+
+  const nextClaimantUid = editClaimedBySelect.value;
+  const currentClaimantUid = currentEditGroup.claimedBy || '';
+  editClaimMessage.classList.add('hidden');
+
+  if (nextClaimantUid === currentClaimantUid) {
+    return false;
+  }
+
+  const result = await setGroupClaimAdmin(currentEditGroup.id, nextClaimantUid);
+  currentEditGroup.claimedBy = result.claimedBy || '';
+  currentEditGroup.claimedByEmail = result.claimedByEmail || '';
+  updateClaimSectionSummary(currentEditGroup);
+  editClaimedBySelect.value = result.claimedBy || '';
+  showMsg(
+    editClaimMessage,
+    result.claimedBy
+      ? 'Claimant updated successfully.'
+      : 'Claim removed. This PI page is now unclaimed.',
+    'success'
+  );
+  return true;
+}
+
 export function initEditForm() {
   editPrimarySubfield.addEventListener('change', () => syncSecondaryCheckboxes(editPrimarySubfield, 'edit-secondary'));
   btnEditAddLink.addEventListener('click', () => addEditLinkRow());
@@ -537,31 +563,12 @@ export function initEditForm() {
     handleEditAddInstitute();
   });
   btnEditClaimSave.addEventListener('click', async () => {
-    if (!currentEditGroup) return;
-
-    const nextClaimantUid = editClaimedBySelect.value;
-    const currentClaimantUid = currentEditGroup.claimedBy || '';
-    editClaimMessage.classList.add('hidden');
-
-    if (nextClaimantUid === currentClaimantUid) {
-      showMsg(editClaimMessage, 'No claimant change to save.', 'success');
-      return;
-    }
-
     btnEditClaimSave.disabled = true;
     try {
-      const result = await setGroupClaimAdmin(currentEditGroup.id, nextClaimantUid);
-      currentEditGroup.claimedBy = result.claimedBy || '';
-      currentEditGroup.claimedByEmail = result.claimedByEmail || '';
-      updateClaimSectionSummary(currentEditGroup);
-      editClaimedBySelect.value = result.claimedBy || '';
-      showMsg(
-        editClaimMessage,
-        result.claimedBy
-          ? 'Claimant updated successfully.'
-          : 'Claim removed. This PI page is now unclaimed.',
-        'success'
-      );
+      const changed = await persistClaimantSelection();
+      if (!changed) {
+        showMsg(editClaimMessage, 'No claimant change to save.', 'success');
+      }
       await loadManageGroups();
       await loadGroups();
       notifyAdminDataChanged();
@@ -603,17 +610,23 @@ export function initEditForm() {
 
     const submitBtn = editForm.querySelector('button[type="submit"]');
     submitBtn.disabled = true;
+    btnEditClaimSave.disabled = true;
 
     try {
       await updateGroup(id, updateData);
+      const claimChanged = getIsAdmin() ? await persistClaimantSelection() : false;
       modalEdit.classList.add('hidden');
       await loadManageGroups();
       await loadGroups();
+      if (claimChanged) {
+        notifyAdminDataChanged();
+      }
     } catch (err) {
       console.error('Edit error:', err);
       showMsg(editMessage, 'Error saving changes.', 'error');
     } finally {
       submitBtn.disabled = false;
+      btnEditClaimSave.disabled = false;
     }
   });
 }
