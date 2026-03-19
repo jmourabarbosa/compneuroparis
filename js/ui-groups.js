@@ -25,6 +25,24 @@ let filterValidated = false;
 // Normalize old string or new array format
 function toArray(val) { return Array.isArray(val) ? val : (val ? [val] : []); }
 
+function normalizeInstituteName(value) {
+  return (value || '')
+    .toLowerCase()
+    .replace(/\([^)]*\)/g, ' ')
+    .replace(/[^a-z0-9]/g, ' ')
+    .replace(/\s+/g, ' ')
+    .trim();
+}
+
+function instituteNamesMatch(a, b) {
+  const normalizedA = normalizeInstituteName(a);
+  const normalizedB = normalizeInstituteName(b);
+  if (!normalizedA || !normalizedB) return false;
+  return normalizedA === normalizedB
+    || normalizedA.includes(normalizedB)
+    || normalizedB.includes(normalizedA);
+}
+
 // Section refs
 const sections = {};
 SUBFIELDS.forEach(sf => {
@@ -187,7 +205,7 @@ function renderGroups() {
     // Institute filter
     if (activeInstitute) {
       const institutes = toArray(g.institutes || g.institute);
-      if (!institutes.includes(activeInstitute)) return false;
+      if (!institutes.some(name => instituteNamesMatch(name, activeInstitute))) return false;
     }
     // Keyword filter (PI must have ALL selected keywords)
     if (activeKeywords.size > 0) {
@@ -899,7 +917,7 @@ export function setInstituteFilter(name) {
   }
   // Update active state on institute cards
   institutesPublicList.querySelectorAll('.institute-card').forEach(card => {
-    card.classList.toggle('active', card.dataset.institute === activeInstitute);
+    card.classList.toggle('active', instituteNamesMatch(card.dataset.institute, activeInstitute));
   });
   renderGroups();
   // Scroll to the groups area
