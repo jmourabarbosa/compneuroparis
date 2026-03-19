@@ -18,6 +18,7 @@ const btnAdminLogin = document.getElementById('btn-admin-login');
 const adminBar = document.getElementById('admin-bar');
 const adminEmail = document.getElementById('admin-email');
 const btnAdminPanel = document.getElementById('btn-admin-panel');
+const btnAdminPanelBeta = document.getElementById('btn-admin-panel-beta');
 const btnLogout = document.getElementById('btn-logout');
 const modalLogin = document.getElementById('modal-login');
 const loginForm = document.getElementById('login-form');
@@ -38,6 +39,19 @@ const signupMessage = document.getElementById('signup-message');
 const creatorBar = document.getElementById('creator-bar');
 const creatorEmail = document.getElementById('creator-email');
 const btnCreatorLogout = document.getElementById('btn-creator-logout');
+const isAdminWorkspace = document.body.classList.contains('admin-page');
+const adminPageStatus = document.getElementById('admin-page-status');
+
+function openAdminWorkspace() {
+  openModal(modalAdmin);
+  loadPending();
+  loadManageGroups();
+  loadPendingClaims();
+  loadAdmins();
+  loadPendingInstitutes();
+  loadApprovedInstitutes();
+  updateAdminBadge();
+}
 
 // ========== MODAL HELPERS ==========
 function openModal(modal) {
@@ -48,6 +62,7 @@ function openModal(modal) {
 }
 
 function closeModal(modal) {
+  if (isAdminWorkspace && modal.id === 'modal-admin') return;
   modal.classList.add('hidden');
   if (modal.id === 'modal-admin') updateAdminBadge();
 }
@@ -119,15 +134,14 @@ btnCreatorLogout.addEventListener('click', async () => {
 });
 
 btnAdminPanel.addEventListener('click', () => {
-  openModal(modalAdmin);
-  loadPending();
-  loadManageGroups();
-  loadPendingClaims();
-  loadAdmins();
-  loadPendingInstitutes();
-  loadApprovedInstitutes();
-  updateAdminBadge();
+  openAdminWorkspace();
 });
+
+if (btnAdminPanelBeta) {
+  btnAdminPanelBeta.addEventListener('click', () => {
+    window.location.href = 'admin.html';
+  });
+}
 
 document.getElementById('btn-login-forgot').addEventListener('click', async () => {
   const email = document.getElementById('login-email').value.trim();
@@ -282,6 +296,10 @@ onAuthChange((user, isAdmin) => {
     adminEmail.textContent = user.email;
     closeModal(modalSignup);
     updateAdminBadge();
+    if (isAdminWorkspace) {
+      if (adminPageStatus) adminPageStatus.textContent = 'You are logged in as an admin. The full workspace is available below.';
+      openAdminWorkspace();
+    }
   } else if (user) {
     // Creator state (logged in but not admin)
     btnAdminLogin.classList.add('hidden');
@@ -292,6 +310,9 @@ onAuthChange((user, isAdmin) => {
     // Close admin modals if open
     closeModal(modalAdmin);
     closeModal(modalSignup);
+    if (isAdminWorkspace && adminPageStatus) {
+      adminPageStatus.textContent = 'This page requires admin access. You are logged in, but this account is not an admin.';
+    }
   } else {
     // Anonymous state
     btnAdminLogin.classList.remove('hidden');
@@ -302,6 +323,9 @@ onAuthChange((user, isAdmin) => {
     creatorEmail.textContent = '';
     // Close admin modals if open
     closeModal(modalAdmin);
+    if (isAdminWorkspace && adminPageStatus) {
+      adminPageStatus.textContent = 'Log in with an admin account to access the full admin workspace.';
+    }
   }
 
   // Refresh groups to update edit buttons
@@ -345,8 +369,10 @@ loadPublicJobs()
   .then(() => handleDeepLink());
 
 // Handle #admin deep link (wait for auth to resolve)
-authReady().then(() => {
-  if (window.location.hash === '#admin') {
+authReady.then(() => {
+  if (isAdminWorkspace && !adminBar.classList.contains('hidden')) {
+    openAdminWorkspace();
+  } else if (window.location.hash === '#admin') {
     // Only open if user is already logged in as admin
     if (!adminBar.classList.contains('hidden')) {
       btnAdminPanel.click();

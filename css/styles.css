@@ -1688,6 +1688,63 @@ img {
   display: none !important;
 }
 
+/* ========== ADMIN PAGE ========== */
+body.admin-page .site-header,
+body.admin-page .welcome-section,
+body.admin-page .search-section,
+body.admin-page .groups-section,
+body.admin-page .submit-section,
+body.admin-page .site-footer,
+body.admin-page #modal-creator,
+body.admin-page #btn-creator-panel,
+body.admin-page #creator-bar {
+  display: none !important;
+}
+
+body.admin-page .nav-bar {
+  position: static;
+}
+
+.admin-page-intro {
+  padding: 2rem 1.5rem 0;
+}
+
+.admin-page-intro-inner {
+  max-width: 1200px;
+  margin: 0 auto;
+}
+
+.admin-page-kicker {
+  color: var(--color-text-secondary);
+  font-size: 0.85rem;
+  text-transform: uppercase;
+  letter-spacing: 0.08em;
+}
+
+body.admin-page #modal-admin {
+  position: static;
+  inset: auto;
+  background: transparent;
+  padding: 1.5rem;
+  align-items: stretch;
+  justify-content: center;
+  overflow: visible;
+}
+
+body.admin-page #modal-admin.hidden {
+  display: none !important;
+}
+
+body.admin-page #modal-admin .modal {
+  max-width: 1200px;
+  max-height: none;
+  width: 100%;
+}
+
+body.admin-page #modal-admin .modal-header .modal-close {
+  display: none;
+}
+
 .sr-only {
   position: absolute;
   width: 1px;
