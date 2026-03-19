@@ -1,12 +1,14 @@
 import { fetchGroups, fetchApprovedInstitutes, fetchJobs, fetchJobsByPi, updateJob, deleteJob, updateGroup, createClaim, fetchMyClaimForTarget, fetchApprovedClaimForTarget, revokeClaim, deleteGroup, deleteInstitute, createReport } from './db.js';
 import { getCurrentUser, getIsAdmin, createAccount, login, isEmailVerified, resendVerification, getAuthErrorMessage } from './auth.js';
+import { getInstituteDisplayNames, instituteNamesMatch, toArray } from './institute-links.mjs';
 
 let allGroups = [];
 let allInstitutes = [];
 let allJobs = [];
 let activeKeywords = new Set();
 let searchText = '';
-let activeInstitute = null;
+let activeInstituteId = null;
+let activeInstituteName = '';
 
 const SUBFIELDS = ['computational', 'systems', 'human', 'molecular', 'developmental', 'clinical'];
 
@@ -22,25 +24,12 @@ const SUBFIELD_LABELS = {
 let filterHiring = false;
 let filterValidated = false;
 
-// Normalize old string or new array format
-function toArray(val) { return Array.isArray(val) ? val : (val ? [val] : []); }
-
-function normalizeInstituteName(value) {
-  return (value || '')
-    .toLowerCase()
-    .replace(/\([^)]*\)/g, ' ')
-    .replace(/[^a-z0-9]/g, ' ')
-    .replace(/\s+/g, ' ')
-    .trim();
+function getGroupInstituteIds(group) {
+  return toArray(group.instituteIds);
 }
 
-function instituteNamesMatch(a, b) {
-  const normalizedA = normalizeInstituteName(a);
-  const normalizedB = normalizeInstituteName(b);
-  if (!normalizedA || !normalizedB) return false;
-  return normalizedA === normalizedB
-    || normalizedA.includes(normalizedB)
-    || normalizedB.includes(normalizedA);
+function getGroupInstituteNames(group) {
+  return getInstituteDisplayNames(group, allInstitutes);
 }
 
 // Section refs
@@ -203,9 +192,12 @@ function fuzzyMatch(haystack, query) {
 function renderGroups() {
   const filtered = allGroups.filter(g => {
     // Institute filter
-    if (activeInstitute) {
-      const institutes = toArray(g.institutes || g.institute);
-      if (!institutes.some(name => instituteNamesMatch(name, activeInstitute))) return false;
+    if (activeInstituteId || activeInstituteName) {
+      const instituteIds = getGroupInstituteIds(g);
+      const instituteNames = getGroupInstituteNames(g);
+      const matchesId = activeInstituteId && instituteIds.includes(activeInstituteId);
+      const matchesName = activeInstituteName && instituteNames.some(name => instituteNamesMatch(name, activeInstituteName));
+      if (!matchesId && !matchesName) return false;
     }
     // Keyword filter (PI must have ALL selected keywords)
     if (activeKeywords.size > 0) {
@@ -216,7 +208,7 @@ function renderGroups() {
     }
     // Text search (fuzzy)
     if (searchText) {
-      const institutes = toArray(g.institutes || g.institute);
+      const institutes = getGroupInstituteNames(g);
       const haystack = [
         g.name,
         g.summary,
@@ -268,7 +260,7 @@ function renderGroups() {
 
   let totalVisible = 0;
 
-  const isSearching = searchText || activeKeywords.size > 0 || activeInstitute || filterHiring || filterValidated;
+  const isSearching = searchText || activeKeywords.size > 0 || activeInstituteId || activeInstituteName || filterHiring || filterValidated;
 
   SUBFIELDS.forEach(sf => {
     const { grid, count, countSecondary, el } = sections[sf];
@@ -403,7 +395,7 @@ function createCard(group) {
     : '';
   const keywordHTML = visiblePills + overflowHTML;
 
-  const institutes = toArray(group.institutes || group.institute);
+  const institutes = getGroupInstituteNames(group);
   const instituteHTML = institutes.length > 0
     ? `<div class="card-institute">${escapeHTML(institutes.join(', '))}</div>`
     : '';
@@ -462,7 +454,7 @@ async function openPiDetail(group) {
   piDetailTitle.innerHTML = escapeHTML(group.name || 'PI Details') + (isHiringDetail ? ' <span class="card-job-badge">Hiring</span>' : '');
   piDetailPhoto.src = group.photoURL || 'assets/placeholder-lab.svg';
   piDetailPhoto.alt = group.name || '';
-  const institutes = toArray(group.institutes || group.institute);
+  const institutes = getGroupInstituteNames(group);
   piDetailInstitute.textContent = institutes.join(', ');
   piDetailInstitute.classList.toggle('hidden', institutes.length === 0);
 
@@ -900,14 +892,19 @@ const institutesSection = document.querySelector('.subfield-section[data-subfiel
 const institutesPublicList = document.getElementById('institutes-public-list');
 const institutesPublicCount = document.getElementById('institutes-public-count');
 
-export function setInstituteFilter(name) {
-  if (activeInstitute === name) {
+export function setInstituteFilter(institute) {
+  const nextInstituteId = institute?.id || '';
+  const nextInstituteName = institute?.name || '';
+
+  if ((activeInstituteId && activeInstituteId === nextInstituteId) || (!activeInstituteId && activeInstituteName === nextInstituteName)) {
     // Toggle off
-    activeInstitute = null;
+    activeInstituteId = null;
+    activeInstituteName = '';
     instituteFilterBanner.classList.add('hidden');
   } else {
-    activeInstitute = name;
-    instituteFilterName.textContent = name;
+    activeInstituteId = nextInstituteId;
+    activeInstituteName = nextInstituteName;
+    instituteFilterName.textContent = nextInstituteName;
     instituteFilterBanner.classList.remove('hidden');
     // Expand subfield sections so filtered groups are visible
     SUBFIELDS.forEach(sf => {
@@ -917,11 +914,16 @@ export function setInstituteFilter(name) {
   }
   // Update active state on institute cards
   institutesPublicList.querySelectorAll('.institute-card').forEach(card => {
-    card.classList.toggle('active', instituteNamesMatch(card.dataset.institute, activeInstitute));
+    const cardInstituteId = card.dataset.instituteId || '';
+    const cardInstituteName = card.dataset.institute || '';
+    card.classList.toggle('active',
+      (activeInstituteId && cardInstituteId === activeInstituteId)
+      || (!activeInstituteId && instituteNamesMatch(cardInstituteName, activeInstituteName))
+    );
   });
   renderGroups();
   // Scroll to the groups area
-  if (activeInstitute) {
+  if (activeInstituteId || activeInstituteName) {
     instituteFilterBanner.scrollIntoView({ behavior: 'smooth', block: 'start' });
   }
 }
@@ -992,7 +994,11 @@ function renderInstitutes() {
 function createInstituteCard(inst) {
   const card = document.createElement('article');
   card.className = 'group-card institute-card-rich';
+  card.dataset.instituteId = inst.id || '';
   card.dataset.institute = inst.name;
+  if ((activeInstituteId && inst.id === activeInstituteId) || (!activeInstituteId && instituteNamesMatch(inst.name, activeInstituteName))) {
+    card.classList.add('active');
+  }
 
   const keywordHTML = (inst.keywords || [])
     .map(k => `<span class="keyword-pill keyword-pill-institute">${escapeHTML(k)}</span>`)
@@ -1492,7 +1498,7 @@ export function initInstituteDetail() {
   btnInstViewPis.addEventListener('click', () => {
     if (!currentDetailInstitute) return;
     modalInstDetail.classList.add('hidden');
-    setInstituteFilter(currentDetailInstitute.name);
+    setInstituteFilter(currentDetailInstitute);
   });
 }
 
@@ -1535,7 +1541,7 @@ export function initSections() {
 
   // Institute filter clear
   instituteFilterClear.addEventListener('click', () => {
-    setInstituteFilter(activeInstitute); // toggle off
+    setInstituteFilter({ id: activeInstituteId, name: activeInstituteName }); // toggle off
   });
 
   // Filter toggles

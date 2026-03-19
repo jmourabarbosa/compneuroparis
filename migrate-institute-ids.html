@@ -1,0 +1,218 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<title>Backfill Institute IDs</title>
+<style>
+  body { font-family: system-ui; max-width: 920px; margin: 40px auto; padding: 0 20px; background: #111; color: #eee; }
+  button { padding: 10px 24px; font-size: 16px; cursor: pointer; border: none; border-radius: 6px; }
+  #loginBtn { background: #4285f4; color: white; }
+  #migrateBtn { background: #34a853; color: white; font-size: 18px; padding: 14px 32px; }
+  #migrateBtn:disabled { background: #555; cursor: not-allowed; color: #999; }
+  #dryRunBtn { background: #f59e0b; color: #111; font-size: 18px; padding: 14px 32px; margin-right: 12px; }
+  #dryRunBtn:disabled { background: #555; cursor: not-allowed; color: #999; }
+  #log { background: #1a1a1a; padding: 16px; border-radius: 8px; max-height: 700px; overflow-y: auto; font-family: monospace; font-size: 12px; white-space: pre-wrap; margin-top: 16px; }
+  .success { color: #34a853; }
+  .error { color: #ea4335; }
+  .info { color: #4285f4; }
+  .skip { color: #999; }
+  .change { color: #f59e0b; }
+  input { padding: 8px 12px; font-size: 14px; border-radius: 4px; border: 1px solid #444; background: #222; color: #eee; width: 240px; }
+  #authSection { margin-bottom: 24px; }
+  p.desc { color: #aaa; line-height: 1.6; }
+  #summary { margin-top: 16px; color: #ddd; }
+</style>
+</head>
+<body>
+<h1>Backfill Institute IDs</h1>
+<p class="desc">
+  Adds stable <code>instituteIds</code> to legacy <code>groups</code> and <code>submissions</code> records by matching their stored institute names
+  to real institute documents. This also refreshes the human-readable <code>institutes</code> and <code>institute</code> fields to the current
+  canonical names, while keeping the visible UX unchanged.
+</p>
+
+<div id="authSection">
+  <p id="authStatus">Not logged in</p>
+  <div id="loginForm">
+    <input type="email" id="email" placeholder="Admin email">
+    <input type="password" id="password" placeholder="Password">
+    <button id="loginBtn" onclick="doLogin()">Login</button>
+  </div>
+</div>
+
+<button id="dryRunBtn" disabled onclick="runMigration(true)">Dry Run (Preview)</button>
+<button id="migrateBtn" disabled onclick="runMigration(false)">Run Migration</button>
+<div id="summary"></div>
+<div id="log"></div>
+
+<script type="module">
+import { initializeApp } from 'https://www.gstatic.com/firebasejs/11.4.0/firebase-app.js';
+import { getAuth, signInWithEmailAndPassword, onAuthStateChanged } from 'https://www.gstatic.com/firebasejs/11.4.0/firebase-auth.js';
+import { getFirestore, collection, doc, getDoc, getDocs, query, updateDoc, where } from 'https://www.gstatic.com/firebasejs/11.4.0/firebase-firestore.js';
+import { buildInstituteFieldData, resolveInstituteRefsFromRecord } from './js/institute-links.mjs';
+
+const firebaseConfig = {
+  apiKey: "AIzaSyCEUSVBEAPYfsoG00GKPqw_lHJQKelgVbk",
+  authDomain: "compneuroparis.firebaseapp.com",
+  projectId: "compneuroparis",
+  storageBucket: "compneuroparis.firebasestorage.app",
+  messagingSenderId: "768335946036",
+  appId: "1:768335946036:web:61184dde3b4b66c58bc561"
+};
+
+const app = initializeApp(firebaseConfig);
+const auth = getAuth(app);
+const db = getFirestore(app);
+
+const logEl = document.getElementById('log');
+const summaryEl = document.getElementById('summary');
+const dryRunBtn = document.getElementById('dryRunBtn');
+const migrateBtn = document.getElementById('migrateBtn');
+
+function log(msg, cls = '') {
+  const span = document.createElement('span');
+  span.className = cls;
+  span.textContent = msg + '\n';
+  logEl.appendChild(span);
+  logEl.scrollTop = logEl.scrollHeight;
+}
+
+function setButtonsEnabled(enabled) {
+  dryRunBtn.disabled = !enabled;
+  migrateBtn.disabled = !enabled;
+}
+
+async function checkAdmin(user) {
+  const adminSnap = await getDoc(doc(db, 'admins', user.uid));
+  return adminSnap.exists();
+}
+
+onAuthStateChanged(auth, async (user) => {
+  if (!user) return;
+  try {
+    const isAdmin = await checkAdmin(user);
+    if (!isAdmin) {
+      document.getElementById('authStatus').textContent = `Logged in as ${user.email}, but this account is not an admin`;
+      log('Admin access required to run this migration.', 'error');
+      return;
+    }
+    document.getElementById('authStatus').textContent = `Logged in as admin ${user.email}`;
+    document.getElementById('loginForm').style.display = 'none';
+    setButtonsEnabled(true);
+  } catch (err) {
+    log('Failed to verify admin access: ' + err.message, 'error');
+  }
+});
+
+window.doLogin = async () => {
+  const email = document.getElementById('email').value;
+  const pw = document.getElementById('password').value;
+  try {
+    await signInWithEmailAndPassword(auth, email, pw);
+    log('Logged in!', 'success');
+  } catch (e) {
+    log('Login error: ' + e.message, 'error');
+  }
+};
+
+async function loadInstitutesForMigration() {
+  const instituteCollections = await Promise.all([
+    getDocs(query(collection(db, 'institutes'), where('status', '==', 'approved'))),
+    getDocs(query(collection(db, 'institutes'), where('status', '==', 'pending')))
+  ]);
+
+  const institutesById = new Map();
+  instituteCollections.forEach(snapshot => {
+    snapshot.forEach(docSnap => {
+      institutesById.set(docSnap.id, { id: docSnap.id, ...docSnap.data() });
+    });
+  });
+  return [...institutesById.values()];
+}
+
+function arraysEqual(a = [], b = []) {
+  return JSON.stringify(a) === JSON.stringify(b);
+}
+
+function computeMigration(record, institutes) {
+  const resolvedRefs = resolveInstituteRefsFromRecord(record, institutes);
+  const unresolved = resolvedRefs.filter(ref => !ref.id);
+  if (resolvedRefs.length === 0 || unresolved.length > 0) {
+    return {
+      updateData: null,
+      unresolved
+    };
+  }
+
+  const nextFields = buildInstituteFieldData(resolvedRefs);
+  const currentIds = Array.isArray(record.instituteIds) ? record.instituteIds : [];
+  const currentNames = Array.isArray(record.institutes)
+    ? record.institutes
+    : (record.institute ? [record.institute] : []);
+
+  const changed = !arraysEqual(currentIds, nextFields.instituteIds)
+    || !arraysEqual(currentNames, nextFields.institutes)
+    || (record.institute || '') !== nextFields.institute;
+
+  return {
+    updateData: changed ? nextFields : null,
+    unresolved: []
+  };
+}
+
+async function runCollectionMigration(collectionName, institutes, dryRun, counters) {
+  const snapshot = await getDocs(collection(db, collectionName));
+  log(`Scanning ${snapshot.size} documents in ${collectionName}...`, 'info');
+
+  for (const docSnap of snapshot.docs) {
+    const data = docSnap.data();
+    const { updateData, unresolved } = computeMigration(data, institutes);
+    const label = data.name || data.submitterEmail || docSnap.id;
+
+    if (unresolved.length > 0) {
+      counters.unresolved += 1;
+      log(`[${collectionName}] unresolved institute links for ${label}: ${unresolved.map(ref => ref.name || '(blank)').join(', ')}`, 'error');
+      continue;
+    }
+
+    if (!updateData) {
+      counters.skipped += 1;
+      log(`[${collectionName}] no change needed for ${label}`, 'skip');
+      continue;
+    }
+
+    counters.changed += 1;
+    log(`[${collectionName}] ${dryRun ? 'would update' : 'updating'} ${label} -> ids: ${updateData.instituteIds.join(', ')}`, 'change');
+
+    if (!dryRun) {
+      await updateDoc(doc(db, collectionName, docSnap.id), updateData);
+    }
+  }
+}
+
+window.runMigration = async (dryRun) => {
+  logEl.innerHTML = '';
+  summaryEl.textContent = '';
+  setButtonsEnabled(false);
+
+  const counters = { changed: 0, skipped: 0, unresolved: 0 };
+
+  try {
+    log(`Starting ${dryRun ? 'dry run' : 'live migration'}...`, 'info');
+    const institutes = await loadInstitutesForMigration();
+    log(`Loaded ${institutes.length} approved/pending institute documents.`, 'info');
+
+    await runCollectionMigration('groups', institutes, dryRun, counters);
+    await runCollectionMigration('submissions', institutes, dryRun, counters);
+
+    summaryEl.textContent = `${dryRun ? 'Dry run complete' : 'Migration complete'} — updated: ${counters.changed}, unchanged: ${counters.skipped}, unresolved: ${counters.unresolved}`;
+    log(summaryEl.textContent, counters.unresolved > 0 ? 'change' : 'success');
+  } catch (err) {
+    log(`Migration failed: ${err.message}`, 'error');
+  } finally {
+    setButtonsEnabled(true);
+  }
+};
+</script>
+</body>
+</html>

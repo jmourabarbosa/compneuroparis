@@ -1,6 +1,7 @@
 import { createSubmission, createGroup, fetchApprovedInstitutes, createInstitute, createMessage, fetchGroupsClaimedBy, createJob, fetchGroups } from './db.js';
 import { getCurrentUser, getIsAdmin, createAccount, login, logout, resetPassword, isEmailVerified, resendVerification, getAuthErrorMessage } from './auth.js';
 import { loadGroups, loadPublicInstitutes, loadPublicJobs } from './ui-groups.js';
+import { buildInstituteFieldData } from './institute-links.mjs';
 
 const form = document.getElementById('submission-form');
 const formWrapper = document.getElementById('submission-form-wrapper');
@@ -38,7 +39,6 @@ const subInstituteNewFields = document.getElementById('sub-institute-new-fields'
 
 // Multi-institute state
 let selectedInstitutes = [];
-let newInstituteData = {}; // { name: website } for proposed new institutes
 let cachedExistingGroups = [];
 
 // Auth elements
@@ -272,7 +272,7 @@ export async function loadInstituteOptions() {
 
     institutes.forEach(inst => {
       const opt = document.createElement('option');
-      opt.value = inst.name;
+      opt.value = inst.id;
       opt.textContent = inst.name;
       subInstitute.appendChild(opt);
     });
@@ -520,14 +520,14 @@ function handleAddInstitute() {
     const newName = subInstituteNewName.value.trim();
     const newWebsite = subInstituteNewWebsite.value.trim();
     if (!newName) return;
-    if (selectedInstitutes.includes(newName)) return;
-    selectedInstitutes.push(newName);
-    newInstituteData[newName] = newWebsite;
+    if (selectedInstitutes.some(inst => inst.name === newName)) return;
+    selectedInstitutes.push({ id: '', name: newName, website: newWebsite });
     subInstituteNewName.value = '';
     subInstituteNewWebsite.value = '';
     subInstituteNewFields.classList.add('hidden');
-  } else if (value && !selectedInstitutes.includes(value)) {
-    selectedInstitutes.push(value);
+  } else if (value && !selectedInstitutes.some(inst => inst.id === value)) {
+    const selectedOption = subInstitute.options[subInstitute.selectedIndex];
+    selectedInstitutes.push({ id: value, name: selectedOption?.textContent || value });
   } else {
     return;
   }
@@ -536,14 +536,13 @@ function handleAddInstitute() {
 }
 
 function renderInstitutePills() {
-  subInstitutePills.innerHTML = selectedInstitutes.map(name =>
-    `<span class="institute-pill">${escapeHTML(name)} <button type="button" class="institute-pill-remove" data-name="${escapeHTML(name)}">&times;</button></span>`
+  subInstitutePills.innerHTML = selectedInstitutes.map(inst =>
+    `<span class="institute-pill">${escapeHTML(inst.name)} <button type="button" class="institute-pill-remove" data-key="${escapeHTML(inst.id || inst.name)}">&times;</button></span>`
   ).join('');
   subInstitutePills.querySelectorAll('.institute-pill-remove').forEach(btn => {
     btn.addEventListener('click', () => {
-      const name = btn.dataset.name;
-      selectedInstitutes = selectedInstitutes.filter(n => n !== name);
-      delete newInstituteData[name];
+      const key = btn.dataset.key;
+      selectedInstitutes = selectedInstitutes.filter(inst => (inst.id || inst.name) !== key);
       renderInstitutePills();
     });
   });
@@ -614,12 +613,21 @@ async function handleSubmit(e) {
   try {
     const isAdmin = getIsAdmin();
 
-    // Create any new institutes
-    for (const instName of selectedInstitutes) {
-      if (newInstituteData[instName] !== undefined) {
-        await createInstitute(instName, user.uid, { website: newInstituteData[instName], autoApprove: isAdmin });
+    const resolvedInstitutes = [];
+    for (const instituteRef of selectedInstitutes) {
+      if (instituteRef.id) {
+        resolvedInstitutes.push({ id: instituteRef.id, name: instituteRef.name });
+        continue;
       }
+
+      const createdInstituteId = await createInstitute(instituteRef.name, user.uid, {
+        website: instituteRef.website || '',
+        autoApprove: isAdmin
+      });
+      resolvedInstitutes.push({ id: createdInstituteId, name: instituteRef.name });
     }
+
+    const instituteFieldData = buildInstituteFieldData(resolvedInstitutes);
 
     if (isAdmin) {
       // Admin: create group directly, skip submission review
@@ -631,8 +639,7 @@ async function handleSubmit(e) {
         photoURL,
         subfields,
         subfield: subfields[0],
-        institutes: selectedInstitutes,
-        institute: selectedInstitutes[0] || '',
+        ...instituteFieldData,
         creatorUid: user.uid
       });
       showMessage(formMessage, 'PI added successfully!', 'success');
@@ -646,8 +653,7 @@ async function handleSubmit(e) {
         photoURL,
         subfields,
         subfield: subfields[0],
-        institutes: selectedInstitutes,
-        institute: selectedInstitutes[0] || '',
+        ...instituteFieldData,
         submitterEmail: user.email,
         submitterNote,
         creatorUid: user.uid
@@ -662,7 +668,6 @@ async function handleSubmit(e) {
     subInstituteNewName.value = '';
     subInstituteNewWebsite.value = '';
     selectedInstitutes = [];
-    newInstituteData = {};
     subPrimarySubfield.selectedIndex = 0;
     document.querySelectorAll('input[name="sub-secondary"]').forEach(cb => { cb.checked = false; cb.disabled = false; });
     renderInstitutePills();

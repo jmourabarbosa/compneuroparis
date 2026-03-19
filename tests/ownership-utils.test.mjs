@@ -11,6 +11,7 @@ test('buildApprovedGroupData auto-claims approved user submissions', () => {
     links: [{ label: 'Website', url: 'https://example.com' }],
     photoURL: 'https://example.com/photo.jpg',
     subfield: 'human',
+    instituteIds: ['inst-1'],
     institute: 'ICM',
     submitterEmail: 'alice@example.edu',
     creatorUid: 'user-123'
@@ -23,6 +24,7 @@ test('buildApprovedGroupData auto-claims approved user submissions', () => {
     links: [{ label: 'Website', url: 'https://example.com' }],
     photoURL: 'https://example.com/photo.jpg',
     subfields: ['human'],
+    instituteIds: ['inst-1'],
     institutes: ['ICM'],
     subfield: 'human',
     institute: 'ICM',
@@ -36,6 +38,7 @@ test('buildApprovedGroupData preserves override fields but keeps ownership from 
   const submission = {
     name: 'Alice Example',
     subfields: ['systems'],
+    instituteIds: ['inst-original'],
     institutes: ['Original Institute'],
     submitterEmail: 'alice@example.edu',
     creatorUid: 'user-123'
@@ -45,6 +48,7 @@ test('buildApprovedGroupData preserves override fields but keeps ownership from 
     name: 'Alice Example, PhD',
     summary: 'Updated by admin review.',
     subfields: ['computational', 'systems'],
+    instituteIds: ['inst-reviewed'],
     institutes: ['Reviewed Institute']
   };
 
@@ -55,6 +59,7 @@ test('buildApprovedGroupData preserves override fields but keeps ownership from 
     links: [],
     photoURL: '',
     subfields: ['computational', 'systems'],
+    instituteIds: ['inst-reviewed'],
     institutes: ['Reviewed Institute'],
     subfield: 'computational',
     institute: 'Reviewed Institute',
@@ -68,6 +73,7 @@ test('buildApprovedGroupData leaves admin-created pages unclaimed when there is 
   const submission = {
     name: 'Admin Added PI',
     subfields: ['clinical'],
+    instituteIds: ['inst-hospital'],
     institutes: ['Hospital']
   };
 
@@ -78,6 +84,7 @@ test('buildApprovedGroupData leaves admin-created pages unclaimed when there is 
     links: [],
     photoURL: '',
     subfields: ['clinical'],
+    instituteIds: ['inst-hospital'],
     institutes: ['Hospital'],
     subfield: 'clinical',
     institute: 'Hospital'

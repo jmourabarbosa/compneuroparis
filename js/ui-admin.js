@@ -15,6 +15,7 @@ import { getCurrentUser, getIsAdmin, createAdminUser } from './auth.js';
 import { loadGroups, loadPublicInstitutes } from './ui-groups.js';
 import { getSubfieldsFromPicker, setSubfieldDropdown, syncSecondaryCheckboxes } from './ui-form.js';
 import { loadInstituteOptions } from './ui-form.js';
+import { buildInstituteFieldData, resolveInstituteRefsFromRecord, toArray } from './institute-links.mjs';
 
 // DOM refs
 const pendingList = document.getElementById('pending-list');
@@ -131,7 +132,9 @@ function notifyAdminDataChanged() {
 }
 
 // Cache for institute status lookups
+let approvedInstitutes = [];
 let approvedInstituteNames = new Set();
+let approvedInstitutesById = new Map();
 
 // ========== TABS ==========
 
@@ -213,7 +216,9 @@ async function showSubmissionDetail(sub) {
   // Refresh approved institutes cache
   try {
     const approved = await fetchApprovedInstitutes();
+    approvedInstitutes = approved;
     approvedInstituteNames = new Set(approved.map(i => i.name));
+    approvedInstitutesById = new Map(approved.map(i => [i.id, i]));
   } catch (err) {
     console.error('Error fetching approved institutes:', err);
   }
@@ -229,10 +234,14 @@ async function showSubmissionDetail(sub) {
   setSubfieldDropdown(reviewPrimarySubfield, 'review-secondary', subfields);
 
   // Institute display + warning
-  const institutes = toArray(sub.institutes || sub.institute);
+  const instituteRefs = resolveInstituteRefsFromRecord(sub, approvedInstitutes);
+  const institutes = instituteRefs.map(ref => ref.name);
   const instName = institutes.join(', ') || '';
   reviewInstituteDisplay.textContent = instName || '(none)';
-  const isPending = institutes.length > 0 && institutes.some(n => !approvedInstituteNames.has(n));
+  const isPending = instituteRefs.length > 0 && instituteRefs.some(ref => {
+    if (ref.id) return !approvedInstitutesById.has(ref.id);
+    return !approvedInstituteNames.has(ref.name);
+  });
   if (isPending) {
     reviewInstituteWarning.classList.remove('hidden');
     btnApprove.disabled = true;
@@ -289,9 +298,18 @@ function getReviewFormData() {
   });
 
   // Institute comes from original submission (read-only in review)
-  const institutes = toArray(currentSubmission?.institutes || currentSubmission?.institute);
+  const instituteRefs = resolveInstituteRefsFromRecord(currentSubmission, approvedInstitutes);
 
-  return { name, keywords, summary, links, photoURL, subfields, subfield: subfields[0], institutes, institute: institutes[0] || '' };
+  return {
+    name,
+    keywords,
+    summary,
+    links,
+    photoURL,
+    subfields,
+    subfield: subfields[0],
+    ...buildInstituteFieldData(instituteRefs)
+  };
 }
 
 export function initSubmissionActions() {
@@ -459,8 +477,8 @@ async function showEditModal(group) {
   setSubfieldDropdown(editPrimarySubfield, 'edit-secondary', subfields);
 
   // Institute picker — pre-populate with existing institutes
-  editSelectedInstitutes = [...toArray(group.institutes || group.institute)];
-  loadEditInstituteOptions();
+  await loadEditInstituteOptions();
+  editSelectedInstitutes = resolveInstituteRefsFromRecord(group, approvedInstitutes);
   renderEditInstitutePills();
 
   // Populate links
@@ -515,6 +533,9 @@ function addEditLinkRow(label = '', url = '') {
 async function loadEditInstituteOptions() {
   try {
     const institutes = await fetchApprovedInstitutes();
+    approvedInstitutes = institutes;
+    approvedInstituteNames = new Set(institutes.map(inst => inst.name));
+    approvedInstitutesById = new Map(institutes.map(inst => [inst.id, inst]));
     editInstituteSelect.innerHTML = '';
     const placeholder = document.createElement('option');
     placeholder.value = '';
@@ -525,7 +546,7 @@ async function loadEditInstituteOptions() {
 
     institutes.forEach(inst => {
       const opt = document.createElement('option');
-      opt.value = inst.name;
+      opt.value = inst.id;
       opt.textContent = inst.name;
       editInstituteSelect.appendChild(opt);
     });
@@ -536,19 +557,20 @@ async function loadEditInstituteOptions() {
 
 function handleEditAddInstitute() {
   const value = editInstituteSelect.value;
-  if (!value || editSelectedInstitutes.includes(value)) return;
-  editSelectedInstitutes.push(value);
+  if (!value || editSelectedInstitutes.some(inst => inst.id === value)) return;
+  const selectedOption = editInstituteSelect.options[editInstituteSelect.selectedIndex];
+  editSelectedInstitutes.push({ id: value, name: selectedOption?.textContent || value });
   editInstituteSelect.selectedIndex = 0;
   renderEditInstitutePills();
 }
 
 function renderEditInstitutePills() {
-  editInstitutePills.innerHTML = editSelectedInstitutes.map(name =>
-    `<span class="institute-pill">${escapeHTML(name)} <button type="button" class="institute-pill-remove" data-name="${escapeHTML(name)}">&times;</button></span>`
+  editInstitutePills.innerHTML = editSelectedInstitutes.map(inst =>
+    `<span class="institute-pill">${escapeHTML(inst.name)} <button type="button" class="institute-pill-remove" data-key="${escapeHTML(inst.id || inst.name)}">&times;</button></span>`
   ).join('');
   editInstitutePills.querySelectorAll('.institute-pill-remove').forEach(btn => {
     btn.addEventListener('click', () => {
-      editSelectedInstitutes = editSelectedInstitutes.filter(n => n !== btn.dataset.name);
+      editSelectedInstitutes = editSelectedInstitutes.filter(inst => (inst.id || inst.name) !== btn.dataset.key);
       renderEditInstitutePills();
     });
   });
@@ -630,7 +652,18 @@ export function initEditForm() {
 
     const photoURL = editPhotoURL.value.trim();
     const hiring = document.getElementById('edit-hiring-checkbox').checked;
-    const updateData = { name, keywords, summary, links, photoURL, subfields, subfield: subfields[0], institutes: editSelectedInstitutes, institute: editSelectedInstitutes[0] || '', hiring, lastEditedBy: getCurrentUser()?.uid };
+    const updateData = {
+      name,
+      keywords,
+      summary,
+      links,
+      photoURL,
+      subfields,
+      subfield: subfields[0],
+      ...buildInstituteFieldData(editSelectedInstitutes),
+      hiring,
+      lastEditedBy: getCurrentUser()?.uid
+    };
 
     const submitBtn = editForm.querySelector('button[type="submit"]');
     submitBtn.disabled = true;
@@ -1416,8 +1449,6 @@ export function initSettings() {
 }
 
 // ========== HELPERS ==========
-
-function toArray(val) { return Array.isArray(val) ? val : (val ? [val] : []); }
 
 function escapeHTML(str) {
   const div = document.createElement('div');
