@@ -581,6 +581,11 @@ async function handleSubmit(e) {
     return;
   }
 
+  if (!photoURL) {
+    showMessage(formMessage, 'Please add a photo URL for the PI before submitting.', 'error');
+    return;
+  }
+
   if (subfields.length === 0) {
     showMessage(formMessage, 'Please select at least one subfield.', 'error');
     return;
