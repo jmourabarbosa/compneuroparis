@@ -1,0 +1,1544 @@
+[
+  {
+    "id": "0A31zUrUlpEyPbqFALre",
+    "name": "David Holcman",
+    "has_scholar": false,
+    "scholar_url": null
+  },
+  {
+    "id": "0a4qt6BjCgUeE0J8ieME",
+    "name": "Nicolas Michalski",
+    "has_scholar": false,
+    "scholar_url": null
+  },
+  {
+    "id": "0kkxk0dr2j0R2wWKDnSW",
+    "name": "Matthieu Peyre",
+    "has_scholar": false,
+    "scholar_url": null
+  },
+  {
+    "id": "0wXyFlahrcPOagHsbUCO",
+    "name": "Jean-Pierre Levraud",
+    "has_scholar": true,
+    "scholar_url": "https://scholar.google.com/citations?user=EdaYjAcAAAAJ"
+  },
+  {
+    "id": "18LSjlF1bJoJRCBXYhGa",
+    "name": "Raphael Etournay",
+    "has_scholar": false,
+    "scholar_url": null
+  },
+  {
+    "id": "1WZbu1HJnYWrJdA7G5yi",
+    "name": "Alain Destexhe",
+    "has_scholar": true,
+    "scholar_url": "https://scholar.google.com/citations?user=x-MyT34AAAAJ"
+  },
+  {
+    "id": "2BQDf2EmmaxznslAvjYv",
+    "name": "Brandon Stell",
+    "has_scholar": false,
+    "scholar_url": null
+  },
+  {
+    "id": "2GDP6DhJEa8QaFPzJs6d",
+    "name": "Vincent Cantagrel",
+    "has_scholar": false,
+    "scholar_url": null
+  },
+  {
+    "id": "2a3DSjKIjlDh3Yif7Z1T",
+    "name": "Sara Bizzotto",
+    "has_scholar": false,
+    "scholar_url": null
+  },
+  {
+    "id": "3Vmu26CXU1uqtP6wBcMg",
+    "name": "Francois Rouyer",
+    "has_scholar": false,
+    "scholar_url": null
+  },
+  {
+    "id": "3fLU0tFRCMELmI31XJ9H",
+    "name": "Sebastien Parnaudeau",
+    "has_scholar": false,
+    "scholar_url": null
+  },
+  {
+    "id": "3ukPiitk6D5twF43TzV6",
+    "name": "Jaime De Juan-Sanz",
+    "has_scholar": false,
+    "scholar_url": null
+  },
+  {
+    "id": "3y6FfanylT0xphY8n6IT",
+    "name": "Stephane Nedelec",
+    "has_scholar": false,
+    "scholar_url": null
+  },
+  {
+    "id": "44dcmNo5OZMdj9HGhfu0",
+    "name": "Alexandra Durr",
+    "has_scholar": false,
+    "scholar_url": null
+  },
+  {
+    "id": "4LuhVQjSpjt7jgwPSYKX",
+    "name": "Bruno Gasnier",
+    "has_scholar": false,
+    "scholar_url": null
+  },
+  {
+    "id": "4jBO3m5OlDlOfuTpfevq",
+    "name": "Julien Ferent",
+    "has_scholar": false,
+    "scholar_url": null
+  },
+  {
+    "id": "4tk3EPTvY0kjHG7ubvBo",
+    "name": "Shihab Shamma",
+    "has_scholar": false,
+    "scholar_url": null
+  },
+  {
+    "id": "59v5pZdZV4AculPU697B",
+    "name": "Gilles Bonvento",
+    "has_scholar": false,
+    "scholar_url": null
+  },
+  {
+    "id": "5Y5DZX6yE5iCX2vqrP0y",
+    "name": "Isabelle Audo",
+    "has_scholar": false,
+    "scholar_url": null
+  },
+  {
+    "id": "5xdLEPW2Mgo3GJ2kUZrk",
+    "name": "Michela Deleidi",
+    "has_scholar": false,
+    "scholar_url": null
+  },
+  {
+    "id": "70SB0hKsx0dhBElnOgOA",
+    "name": "Olivier Marre",
+    "has_scholar": false,
+    "scholar_url": null
+  },
+  {
+    "id": "7DiEH5B0cIJRvMpYSgY9",
+    "name": "German Sumbre",
+    "has_scholar": false,
+    "scholar_url": null
+  },
+  {
+    "id": "7nmswAbTCfXMggXLM3mB",
+    "name": "Corentin Le Magueresse",
+    "has_scholar": false,
+    "scholar_url": null
+  },
+  {
+    "id": "8EDQfR7UuHIS8Poxu0vk",
+    "name": "Daniel Vasiliauskas",
+    "has_scholar": false,
+    "scholar_url": null
+  },
+  {
+    "id": "8l6A3YSWRPfqUyjisZHr",
+    "name": "Aziz El Amraoui",
+    "has_scholar": false,
+    "scholar_url": null
+  },
+  {
+    "id": "8vzrlhtGYBSVHPNPcaHA",
+    "name": "Stefano Palminteri",
+    "has_scholar": false,
+    "scholar_url": null
+  },
+  {
+    "id": "9DHdSczUltC8DEcTfKzj",
+    "name": "Alain Chedotal",
+    "has_scholar": false,
+    "scholar_url": null
+  },
+  {
+    "id": "9FJA4VjtI75TtdKwfbKB",
+    "name": "Romina Aron Badin",
+    "has_scholar": false,
+    "scholar_url": null
+  },
+  {
+    "id": "9JN8EtOIprSyZ84imlG2",
+    "name": "Isabelle Ferezou",
+    "has_scholar": true,
+    "scholar_url": "https://scholar.google.com/citations?user=SUwQco0AAAAJ"
+  },
+  {
+    "id": "9WIweWcgSyeI26i0dX05",
+    "name": "Bassem Hassan",
+    "has_scholar": false,
+    "scholar_url": null
+  },
+  {
+    "id": "9mYNOI4BCEhAQDZIrznZ",
+    "name": "Catherine Oppenheim",
+    "has_scholar": false,
+    "scholar_url": null
+  },
+  {
+    "id": "A78sxWfhLMtCSjboMwXf",
+    "name": "Martine Cohen-Salmon",
+    "has_scholar": false,
+    "scholar_url": null
+  },
+  {
+    "id": "AAZgkvVkOSnTvWQTRC7A",
+    "name": "Jean-Baptiste Masson",
+    "has_scholar": false,
+    "scholar_url": null
+  },
+  {
+    "id": "AGTldbRwZOkX5mTWBKuI",
+    "name": "Brice Bathellier",
+    "has_scholar": false,
+    "scholar_url": null
+  },
+  {
+    "id": "AMYFnCfnVqt5PIu0hz7n",
+    "name": "Julien Valette",
+    "has_scholar": false,
+    "scholar_url": null
+  },
+  {
+    "id": "AaDHyNTDIoVMN4XH1JVN",
+    "name": "Fabrizio De Vico Fallani",
+    "has_scholar": false,
+    "scholar_url": null
+  },
+  {
+    "id": "AgZESf9wdg97Y2dotjOh",
+    "name": "Vincent El Ghouzzi",
+    "has_scholar": false,
+    "scholar_url": null
+  },
+  {
+    "id": "Ak7eHfm2thdFCIT6rWmW",
+    "name": "Pierre Paoletti",
+    "has_scholar": false,
+    "scholar_url": null
+  },
+  {
+    "id": "ApjrSSQcUakpZ2lbGPGI",
+    "name": "Marco Diana",
+    "has_scholar": false,
+    "scholar_url": null
+  },
+  {
+    "id": "AuzuMKAYppOzv9FW6MtZ",
+    "name": "Virginie van Wassenhove",
+    "has_scholar": false,
+    "scholar_url": null
+  },
+  {
+    "id": "BDVpFxDVSZncRxNLzPGo",
+    "name": "Thierry Galli",
+    "has_scholar": false,
+    "scholar_url": null
+  },
+  {
+    "id": "BNHehDgNn0tkjquICRw9",
+    "name": "Severine Boillee",
+    "has_scholar": false,
+    "scholar_url": null
+  },
+  {
+    "id": "Bo5ltjdHStiEneI5M1v5",
+    "name": "Tihana Jovanic",
+    "has_scholar": false,
+    "scholar_url": null
+  },
+  {
+    "id": "BrdlqwXkKBSVjubgHLQy",
+    "name": "Marie-Pia d'Ortho",
+    "has_scholar": false,
+    "scholar_url": null
+  },
+  {
+    "id": "C3iOCGiYZduSdjWEqIwJ",
+    "name": "Marc Guillon",
+    "has_scholar": false,
+    "scholar_url": null
+  },
+  {
+    "id": "C4Wl7qXniyyixllXkoSa",
+    "name": "Vincent Villette",
+    "has_scholar": false,
+    "scholar_url": null
+  },
+  {
+    "id": "CF7bg6IxVf0ygJxoxGP8",
+    "name": "Marie-Constance Corsi",
+    "has_scholar": false,
+    "scholar_url": null
+  },
+  {
+    "id": "CYEFxYu0lN2yorNqwXjB",
+    "name": "Mickael Tanter",
+    "has_scholar": false,
+    "scholar_url": null
+  },
+  {
+    "id": "CZNgkfb7KxNhb6GIV8Xb",
+    "name": "Alessandra Pierani",
+    "has_scholar": false,
+    "scholar_url": null
+  },
+  {
+    "id": "CgioN0lVOaqjpdtuS66N",
+    "name": "Emmanuel Dupoux",
+    "has_scholar": false,
+    "scholar_url": null
+  },
+  {
+    "id": "CvzIrCePxGd8bm6FP2cL",
+    "name": "Ariel Di Nardo",
+    "has_scholar": false,
+    "scholar_url": null
+  },
+  {
+    "id": "D2utgf6fw4UodKiPneOE",
+    "name": "Nikolas Karalis",
+    "has_scholar": false,
+    "scholar_url": null
+  },
+  {
+    "id": "DDv8TfI4P2Gzudaqtx4B",
+    "name": "Ninon Burgos",
+    "has_scholar": false,
+    "scholar_url": null
+  },
+  {
+    "id": "DRWvlqCwSDbFDk5f9VfE",
+    "name": "Patrick Mollaret",
+    "has_scholar": false,
+    "scholar_url": null
+  },
+  {
+    "id": "DTeqrsmA97IqAQXxigQn",
+    "name": "Jean-Marc Edeline",
+    "has_scholar": true,
+    "scholar_url": "https://scholar.google.com/citations?user=Efkq6mkAAAAJ"
+  },
+  {
+    "id": "DU5EAYKySajaXU6yYkLP",
+    "name": "Brahim Tamadazte",
+    "has_scholar": false,
+    "scholar_url": null
+  },
+  {
+    "id": "EHgwYHZ7rMfuI8cBk4Em",
+    "name": "Liane Schmidt",
+    "has_scholar": false,
+    "scholar_url": null
+  },
+  {
+    "id": "EQVDrkwVqshClkB6NMAL",
+    "name": "Glenda Comai",
+    "has_scholar": false,
+    "scholar_url": null
+  },
+  {
+    "id": "EmRzz5QvMuDNhVmlBAKW",
+    "name": "Gisella Vetere",
+    "has_scholar": false,
+    "scholar_url": null
+  },
+  {
+    "id": "F8m1wBo8ZiNqJJOrsF9U",
+    "name": "Sabine Levi",
+    "has_scholar": false,
+    "scholar_url": null
+  },
+  {
+    "id": "GCO9twSXpZcukBF1O5kI",
+    "name": "Bruno Stankoff",
+    "has_scholar": false,
+    "scholar_url": null
+  },
+  {
+    "id": "GaTpfVjkuEJOUC7Cmgmg",
+    "name": "Elim Hong",
+    "has_scholar": false,
+    "scholar_url": null
+  },
+  {
+    "id": "GjpYU5sm8zFUmYWalUDg",
+    "name": "Stanley Durrleman",
+    "has_scholar": false,
+    "scholar_url": null
+  },
+  {
+    "id": "GnuHuNIptALhFNeFVkj7",
+    "name": "Cecile Charrier",
+    "has_scholar": false,
+    "scholar_url": null
+  },
+  {
+    "id": "Gpw07E772hHIddGHFqTF",
+    "name": "Laurence Conty",
+    "has_scholar": false,
+    "scholar_url": null
+  },
+  {
+    "id": "Gr5ZVT2ttsDTwHDgoqk2",
+    "name": "Richard Levy",
+    "has_scholar": false,
+    "scholar_url": null
+  },
+  {
+    "id": "GyyAw13MywZHyHQteCI4",
+    "name": "Anne-Catherine Bachoud-Levi",
+    "has_scholar": false,
+    "scholar_url": null
+  },
+  {
+    "id": "H4KmBsS8XjbSwX95hvYy",
+    "name": "Daniel Pressnitzer",
+    "has_scholar": false,
+    "scholar_url": null
+  },
+  {
+    "id": "H88OEhgL3EP91PPx9cDG",
+    "name": "Clement Lena",
+    "has_scholar": false,
+    "scholar_url": null
+  },
+  {
+    "id": "HWjLfVsYBg2TXPvpzFLI",
+    "name": "Marie-Claude Potier",
+    "has_scholar": false,
+    "scholar_url": null
+  },
+  {
+    "id": "HeYXTktZBT8Lx8cDYFwW",
+    "name": "Dafni Hadjieconomou",
+    "has_scholar": false,
+    "scholar_url": null
+  },
+  {
+    "id": "HwHxyaXfxj84QB30xk7K",
+    "name": "Antonio Carlos Costa",
+    "has_scholar": false,
+    "scholar_url": null
+  },
+  {
+    "id": "IOUryiMajB8iyn4sqefv",
+    "name": "Jerome Sackur",
+    "has_scholar": false,
+    "scholar_url": null
+  },
+  {
+    "id": "IQ8nfskZzw9P0SLA4VBq",
+    "name": "Bechir Jarraya",
+    "has_scholar": false,
+    "scholar_url": null
+  },
+  {
+    "id": "Im0UyBWC9Zm7bm9R7NPo",
+    "name": "Marc Dhenain",
+    "has_scholar": false,
+    "scholar_url": null
+  },
+  {
+    "id": "IvoXGl0jFzPbsYlIDeoG",
+    "name": "Kate Grieve",
+    "has_scholar": false,
+    "scholar_url": null
+  },
+  {
+    "id": "JK0yLjoaI5DPFpzeSCT0",
+    "name": "Fiona Francis",
+    "has_scholar": false,
+    "scholar_url": null
+  },
+  {
+    "id": "JXEubPOCAm0jkNqCbK5X",
+    "name": "Roberto Toro",
+    "has_scholar": false,
+    "scholar_url": null
+  },
+  {
+    "id": "Jz7P0YxSfSnwMZHmhBmp",
+    "name": "Saaid Safieddine",
+    "has_scholar": false,
+    "scholar_url": null
+  },
+  {
+    "id": "K2h7xgTUDCgIjkQrovgx",
+    "name": "Michael Graupner",
+    "has_scholar": false,
+    "scholar_url": null
+  },
+  {
+    "id": "KBiyDpUHSE4qNEpGKfxF",
+    "name": "Pascal Mamassian",
+    "has_scholar": false,
+    "scholar_url": null
+  },
+  {
+    "id": "Ku6dI5GUZZfeaY9Im1A9",
+    "name": "Charles Laidi",
+    "has_scholar": false,
+    "scholar_url": null
+  },
+  {
+    "id": "KwqQKebUixP7e9OffSOg",
+    "name": "Paolo Bartolomeo",
+    "has_scholar": false,
+    "scholar_url": null
+  },
+  {
+    "id": "KzMkvl5bt1HLYzjPYsHN",
+    "name": "Guy Bouvier",
+    "has_scholar": true,
+    "scholar_url": "https://scholar.google.com/citations?user=IdMatQoAAAAJ"
+  },
+  {
+    "id": "L4nu9YbRaqC5ZPbAC9MU",
+    "name": "Boris Gutkin",
+    "has_scholar": false,
+    "scholar_url": null
+  },
+  {
+    "id": "L8hMxFRY9PBCpJTIFpXR",
+    "name": "Mehdi Khamassi",
+    "has_scholar": false,
+    "scholar_url": null
+  },
+  {
+    "id": "LBK5kRns0BACF662vFW9",
+    "name": "Mathieu Beraneck",
+    "has_scholar": false,
+    "scholar_url": null
+  },
+  {
+    "id": "Mblu1PpfyVrNxu1xh3F7",
+    "name": "Jeremie Barral",
+    "has_scholar": false,
+    "scholar_url": null
+  },
+  {
+    "id": "NGuIqc8zmvMbPplr8Tag",
+    "name": "Zsolt Lenkei",
+    "has_scholar": false,
+    "scholar_url": null
+  },
+  {
+    "id": "NQZwtM5X8aRGhxCIvqyb",
+    "name": "Sophie Bagur",
+    "has_scholar": false,
+    "scholar_url": null
+  },
+  {
+    "id": "NkOP2Ff9U0NDUFwszn8z",
+    "name": "Mohammed Taouis",
+    "has_scholar": true,
+    "scholar_url": "https://scholar.google.com/citations?user=l9flKSgAAAAJ"
+  },
+  {
+    "id": "NmskoqcBuiyuXPXEPYH8",
+    "name": "Alexis Bemelmans",
+    "has_scholar": false,
+    "scholar_url": null
+  },
+  {
+    "id": "Nnitfya26SSaN7DoZXhT",
+    "name": "Lorenzo Posani",
+    "has_scholar": false,
+    "scholar_url": null
+  },
+  {
+    "id": "NqS1p8QPFqqhiiGJWshi",
+    "name": "Sophie Herbst",
+    "has_scholar": false,
+    "scholar_url": null
+  },
+  {
+    "id": "NxSHZh8xmtPY9B730vhO",
+    "name": "Peter Vanhoutte",
+    "has_scholar": false,
+    "scholar_url": null
+  },
+  {
+    "id": "OKyFCOMmQ5IALiAH2lYK",
+    "name": "Florent Meyniel",
+    "has_scholar": false,
+    "scholar_url": null
+  },
+  {
+    "id": "OTKphC493shnURdxGPH2",
+    "name": "Jean-Francois Brunet",
+    "has_scholar": false,
+    "scholar_url": null
+  },
+  {
+    "id": "OdR3b0rbzzqbYJPhU8nL",
+    "name": "Denis Sheynikhovich",
+    "has_scholar": false,
+    "scholar_url": null
+  },
+  {
+    "id": "PBRV2MgkyIM9Xtql2usa",
+    "name": "Anne-Lise Giraud",
+    "has_scholar": false,
+    "scholar_url": null
+  },
+  {
+    "id": "PD0CrxDjoh0iWjTleHYI",
+    "name": "Serge Luquet",
+    "has_scholar": false,
+    "scholar_url": null
+  },
+  {
+    "id": "PcGqE44eBEHRcWh5bCSp",
+    "name": "Jessica Dubois",
+    "has_scholar": false,
+    "scholar_url": null
+  },
+  {
+    "id": "PgsDxUViHccvH2rEpQWU",
+    "name": "Kei Yamamoto",
+    "has_scholar": true,
+    "scholar_url": "https://scholar.google.com/citations?user=XNYaLZAAAAAJ"
+  },
+  {
+    "id": "QWZsqXk8JCJXQtsbkvV2",
+    "name": "Laurent Bourdieu",
+    "has_scholar": false,
+    "scholar_url": null
+  },
+  {
+    "id": "QZrQD8iyurPt2jyFuaHf",
+    "name": "Sylvie Retaux",
+    "has_scholar": true,
+    "scholar_url": "https://scholar.google.com/citations?user=4NwsDqEAAAAJ"
+  },
+  {
+    "id": "QvwP7JjajuV4yGPGHE8L",
+    "name": "Valerie Mezger",
+    "has_scholar": false,
+    "scholar_url": null
+  },
+  {
+    "id": "QzUWtDFgLfejYmICR0EP",
+    "name": "Brian Lau",
+    "has_scholar": false,
+    "scholar_url": null
+  },
+  {
+    "id": "RF4P0FJ6MwrEznVnFcPK",
+    "name": "Sid Kouider",
+    "has_scholar": false,
+    "scholar_url": null
+  },
+  {
+    "id": "RSrS9OKXz3YredQkniBW",
+    "name": "Claire Sergent",
+    "has_scholar": false,
+    "scholar_url": null
+  },
+  {
+    "id": "SA8ngjBNAKqKlVFuBW3o",
+    "name": "Delphine Oudiette",
+    "has_scholar": false,
+    "scholar_url": null
+  },
+  {
+    "id": "SgI2F5WlAgMaHw5toeD6",
+    "name": "Jonas Ranft",
+    "has_scholar": false,
+    "scholar_url": null
+  },
+  {
+    "id": "T1C1ZF1PmOvmtdBbWqZh",
+    "name": "David Hansel",
+    "has_scholar": false,
+    "scholar_url": null
+  },
+  {
+    "id": "T51IyzUfD1eCl61fGxpB",
+    "name": "Filippo Del Bene",
+    "has_scholar": false,
+    "scholar_url": null
+  },
+  {
+    "id": "TkoyZUFYtUVYCh5vOWPf",
+    "name": "Elsa Isingrini",
+    "has_scholar": false,
+    "scholar_url": null
+  },
+  {
+    "id": "UCGYpa8cHiTQ1y0Z0xhp",
+    "name": "Urs Bohm",
+    "has_scholar": false,
+    "scholar_url": null
+  },
+  {
+    "id": "UVOXfv25V4Bq0xbD2SC7",
+    "name": "Loic Broix",
+    "has_scholar": false,
+    "scholar_url": null
+  },
+  {
+    "id": "UuBQ2e8OekSHdlPEkx67",
+    "name": "Nicolas Panayotis",
+    "has_scholar": false,
+    "scholar_url": null
+  },
+  {
+    "id": "VLEkl9tS9weaxpqlzSZN",
+    "name": "Mireille Laforge",
+    "has_scholar": false,
+    "scholar_url": null
+  },
+  {
+    "id": "Vl5BEP2deHu7U1MxXvb6",
+    "name": "Jean-Rene Martin",
+    "has_scholar": false,
+    "scholar_url": null
+  },
+  {
+    "id": "WHagbrnF52PWDbMtIWBB",
+    "name": "Bertrand Thirion",
+    "has_scholar": false,
+    "scholar_url": null
+  },
+  {
+    "id": "WSvGimxqbf1KBZZCylTh",
+    "name": "Pierre Gressens",
+    "has_scholar": false,
+    "scholar_url": null
+  },
+  {
+    "id": "WTtcJcLOI9wH1V2OdJop",
+    "name": "Philippe Ciuciu",
+    "has_scholar": false,
+    "scholar_url": null
+  },
+  {
+    "id": "WTy4j3c5HvyG4Q6qwtUm",
+    "name": "Veronique Izard",
+    "has_scholar": false,
+    "scholar_url": null
+  },
+  {
+    "id": "WyqUMTGBgZc5v4ZzZzqW",
+    "name": "Desdemona Fricker",
+    "has_scholar": false,
+    "scholar_url": null
+  },
+  {
+    "id": "X30hmujSAdxBoffmnx29",
+    "name": "Lionel Naccache",
+    "has_scholar": false,
+    "scholar_url": null
+  },
+  {
+    "id": "X6lb9CJLOTjs9gLRH1EX",
+    "name": "Nathalie Spassky",
+    "has_scholar": false,
+    "scholar_url": null
+  },
+  {
+    "id": "XUMwtlH2U8vZZgNfw2Zp",
+    "name": "Fekrije Selimi",
+    "has_scholar": false,
+    "scholar_url": null
+  },
+  {
+    "id": "XX0qoyZKKrUdWM5wz3uk",
+    "name": "Iris Salecker",
+    "has_scholar": false,
+    "scholar_url": null
+  },
+  {
+    "id": "XyWy9UN4CJEssCoPs8Jh",
+    "name": "Valerie Ego-Stengel",
+    "has_scholar": true,
+    "scholar_url": "https://scholar.google.com/citations?user=PI2P_oEAAAAJ"
+  },
+  {
+    "id": "YAPpMEf29fo5FYxcHHJ5",
+    "name": "Alberto Bacci",
+    "has_scholar": false,
+    "scholar_url": null
+  },
+  {
+    "id": "YH663xBjDJQq6TrjvlVR",
+    "name": "Julia Sliwa",
+    "has_scholar": false,
+    "scholar_url": null
+  },
+  {
+    "id": "ZT6wdhAEH7IhPAYbjKIW",
+    "name": "Edouard Duchesnay",
+    "has_scholar": false,
+    "scholar_url": null
+  },
+  {
+    "id": "ZZ80DIMeaxyj21ylBE6Q",
+    "name": "Jacobo Sitt",
+    "has_scholar": false,
+    "scholar_url": null
+  },
+  {
+    "id": "Zh17bKjyfOn4b3bpWoWD",
+    "name": "Fanny Mochel",
+    "has_scholar": false,
+    "scholar_url": null
+  },
+  {
+    "id": "ZhACnX4eZBFICG0LAxtt",
+    "name": "Pierre-Jean Corringer",
+    "has_scholar": false,
+    "scholar_url": null
+  },
+  {
+    "id": "aCTl5LfhJN0SFg2mLnEi",
+    "name": "Sylvie Chokron",
+    "has_scholar": false,
+    "scholar_url": null
+  },
+  {
+    "id": "afEytBlhqaJURzcV7FxB",
+    "name": "Nicolas Ramoz",
+    "has_scholar": false,
+    "scholar_url": null
+  },
+  {
+    "id": "aqb3yash0pK3YWNAzW7V",
+    "name": "Olivier Colliot",
+    "has_scholar": false,
+    "scholar_url": null
+  },
+  {
+    "id": "awPqJJfe9h8Ew7uLxQlC",
+    "name": "Vincent De Gardelle",
+    "has_scholar": false,
+    "scholar_url": null
+  },
+  {
+    "id": "ayFkk2xYqxDBiuP2cacN",
+    "name": "Aleksandra Deczkowska",
+    "has_scholar": false,
+    "scholar_url": null
+  },
+  {
+    "id": "b1EgwKUtR5vM75TdwSiD",
+    "name": "Valerie Doyere",
+    "has_scholar": false,
+    "scholar_url": null
+  },
+  {
+    "id": "b2XXxktuDTKLk8zkH66s",
+    "name": "Yves Boubenec",
+    "has_scholar": false,
+    "scholar_url": null
+  },
+  {
+    "id": "bDnPuhiHPQsIP3KzoeRT",
+    "name": "Idoia Quintana-Urzainqui",
+    "has_scholar": true,
+    "scholar_url": "https://scholar.google.com/citations?user=4l9AE2MAAAAJ"
+  },
+  {
+    "id": "bqNbn25XyLwDtaeGktGS",
+    "name": "Pierre-Marie Lledo",
+    "has_scholar": false,
+    "scholar_url": null
+  },
+  {
+    "id": "br3MUE0EAjM9SFP7n8aI",
+    "name": "Julien Bouvier",
+    "has_scholar": true,
+    "scholar_url": "https://scholar.google.com/citations?user=rNHs0ecAAAAJ"
+  },
+  {
+    "id": "cFo85GR5GyQZawZP7k0P",
+    "name": "Stanislas Dehaene",
+    "has_scholar": false,
+    "scholar_url": null
+  },
+  {
+    "id": "cNNReMdzojNX7R34caVj",
+    "name": "Giovanni De Marco",
+    "has_scholar": false,
+    "scholar_url": null
+  },
+  {
+    "id": "cYP3dwVoV0bliuaa9tpR",
+    "name": "Thomas Preat",
+    "has_scholar": false,
+    "scholar_url": null
+  },
+  {
+    "id": "cuWH6imXHYnfLqusYHM6",
+    "name": "Thomas Bourgeron",
+    "has_scholar": false,
+    "scholar_url": null
+  },
+  {
+    "id": "cv7ABF9Q7R95g7zbuGom",
+    "name": "Martin Oheim",
+    "has_scholar": false,
+    "scholar_url": null
+  },
+  {
+    "id": "dHTLwCkydrii921NGQcE",
+    "name": "Christian Neri",
+    "has_scholar": false,
+    "scholar_url": null
+  },
+  {
+    "id": "dJnJwvBrAtyOH0QuwoNp",
+    "name": "Cyrille Vaillend",
+    "has_scholar": true,
+    "scholar_url": "https://scholar.google.com/citations?user=t4pmD_oAAAAJ"
+  },
+  {
+    "id": "dSedbheRZTgNhloyozU3",
+    "name": "Jean-Francois Mangin",
+    "has_scholar": false,
+    "scholar_url": null
+  },
+  {
+    "id": "dWilrzEIs86I2QjodKlX",
+    "name": "Lucie Berkovitch",
+    "has_scholar": false,
+    "scholar_url": null
+  },
+  {
+    "id": "dengP18X8X6o3I87Kgpy",
+    "name": "Thomas Andrillon",
+    "has_scholar": false,
+    "scholar_url": null
+  },
+  {
+    "id": "dnO7tD9FkXPWw8AH07gk",
+    "name": "Jean Daunizeau",
+    "has_scholar": false,
+    "scholar_url": null
+  },
+  {
+    "id": "e8lpiq78xlYQYOSOci8S",
+    "name": "Sonia Garel",
+    "has_scholar": false,
+    "scholar_url": null
+  },
+  {
+    "id": "eIBgf5A9C9LRHUa141NS",
+    "name": "Claire Meissner-Bernard",
+    "has_scholar": false,
+    "scholar_url": null
+  },
+  {
+    "id": "edwUWhQcQqzqaIR55G1e",
+    "name": "Florent Haiss",
+    "has_scholar": false,
+    "scholar_url": null
+  },
+  {
+    "id": "eqdAGrUPkrJcxcCxnKOr",
+    "name": "Edor Kabashi",
+    "has_scholar": false,
+    "scholar_url": null
+  },
+  {
+    "id": "f3S2lcgHOM3C6f5NmFqZ",
+    "name": "Valentin Wyart",
+    "has_scholar": false,
+    "scholar_url": null
+  },
+  {
+    "id": "fMMunNS4DSlEBhKndTsa",
+    "name": "Ludovic Saint-Bauzel",
+    "has_scholar": false,
+    "scholar_url": null
+  },
+  {
+    "id": "fXyZsrINXUeTqKg3yPhq",
+    "name": "Heike Stein",
+    "has_scholar": false,
+    "scholar_url": null
+  },
+  {
+    "id": "fa4oV7aizDSZcBmBEQ8T",
+    "name": "Martin Giurfa",
+    "has_scholar": false,
+    "scholar_url": null
+  },
+  {
+    "id": "frxgAT35dazKk9tqnJgU",
+    "name": "Catalina Betancur",
+    "has_scholar": false,
+    "scholar_url": null
+  },
+  {
+    "id": "fuiGNq2fjlgFshPfmCJy",
+    "name": "Joao Barbosa",
+    "has_scholar": false,
+    "scholar_url": null
+  },
+  {
+    "id": "g3OWz3Lt4MP7s4PPOxXO",
+    "name": "Xavier Morin",
+    "has_scholar": false,
+    "scholar_url": null
+  },
+  {
+    "id": "g8d6IOMNj5wohoB7Wwty",
+    "name": "Marie-Odile Krebs",
+    "has_scholar": false,
+    "scholar_url": null
+  },
+  {
+    "id": "gF3Av0X4SkZoOaySXiH2",
+    "name": "Ronald Melki",
+    "has_scholar": false,
+    "scholar_url": null
+  },
+  {
+    "id": "gMBj4IN23Z0FS6HI1m4b",
+    "name": "Mathias Pessiglione",
+    "has_scholar": false,
+    "scholar_url": null
+  },
+  {
+    "id": "gw71IN2G50Zgmw4FWcup",
+    "name": "Rebecca Piskorowski",
+    "has_scholar": false,
+    "scholar_url": null
+  },
+  {
+    "id": "h0528pQeF3tNGg02ZOkc",
+    "name": "Claire Eschbach",
+    "has_scholar": true,
+    "scholar_url": "https://scholar.google.com/citations?user=wd9RgnUAAAAJ"
+  },
+  {
+    "id": "htytErt8H2z23MJJ30nc",
+    "name": "Ulisse Ferrari",
+    "has_scholar": false,
+    "scholar_url": null
+  },
+  {
+    "id": "iC3LdlElM9rxpGKCBnnQ",
+    "name": "Philippe Fossati",
+    "has_scholar": false,
+    "scholar_url": null
+  },
+  {
+    "id": "iXObp7RFJCkGvOWmYtH7",
+    "name": "Andrew Davison",
+    "has_scholar": true,
+    "scholar_url": "https://scholar.google.com/citations?user=a_sFeLwAAAAJ"
+  },
+  {
+    "id": "irrd9VF7V8z0ziPfSrOr",
+    "name": "Claire Wyart",
+    "has_scholar": false,
+    "scholar_url": null
+  },
+  {
+    "id": "jAS1aHoo6UCxYVZSJh1G",
+    "name": "Yann Zerlaut",
+    "has_scholar": false,
+    "scholar_url": null
+  },
+  {
+    "id": "jFcgkwA8aABby0kHG8zo",
+    "name": "Boris Barbour",
+    "has_scholar": false,
+    "scholar_url": null
+  },
+  {
+    "id": "jMMVu1vJAga6Ow9PCRIg",
+    "name": "Fani Koukouli",
+    "has_scholar": false,
+    "scholar_url": null
+  },
+  {
+    "id": "jPGzN0e4CC0hZrQCs88D",
+    "name": "Jean-Remi King",
+    "has_scholar": false,
+    "scholar_url": null
+  },
+  {
+    "id": "jYAXDHZjNbv9vEQzI1qG",
+    "name": "Franck Ramus",
+    "has_scholar": false,
+    "scholar_url": null
+  },
+  {
+    "id": "jYlh4ubKJLPIOucIevlk",
+    "name": "Anne Joutel",
+    "has_scholar": false,
+    "scholar_url": null
+  },
+  {
+    "id": "jccxKcJQ0xuu9fHLeEmL",
+    "name": "Maria Cecilia Angulo",
+    "has_scholar": false,
+    "scholar_url": null
+  },
+  {
+    "id": "k5yYq9ZJVKgEPPnZ96J1",
+    "name": "Olivier Goureau",
+    "has_scholar": false,
+    "scholar_url": null
+  },
+  {
+    "id": "kPFI7OdRgBAH1MGG22li",
+    "name": "Gabrielle Girardeau",
+    "has_scholar": false,
+    "scholar_url": null
+  },
+  {
+    "id": "ko4wPhdD2eunGy86ly9K",
+    "name": "Bruno Cauli",
+    "has_scholar": false,
+    "scholar_url": null
+  },
+  {
+    "id": "lFmFjogz3BnjDoKqOBMh",
+    "name": "Hugues Chabriat",
+    "has_scholar": false,
+    "scholar_url": null
+  },
+  {
+    "id": "lVeSN72aXnJdRkpwn2vg",
+    "name": "Carole Escartin",
+    "has_scholar": true,
+    "scholar_url": "https://scholar.google.com/citations?user=wKCXxQIAAAAJ"
+  },
+  {
+    "id": "le4yQ65W2RamY1HyuPiv",
+    "name": "Laure Rondi-Reig",
+    "has_scholar": false,
+    "scholar_url": null
+  },
+  {
+    "id": "lfSQ55smXJDWm3zGmdoh",
+    "name": "Sebastien Deregnaucourt",
+    "has_scholar": false,
+    "scholar_url": null
+  },
+  {
+    "id": "lk20n2TAzVxmxaBntbDQ",
+    "name": "Thierry Bal",
+    "has_scholar": true,
+    "scholar_url": "https://scholar.google.com/citations?user=hM9QCTkAAAAJ"
+  },
+  {
+    "id": "lxOsqoLGxeV3ouAiLBLT",
+    "name": "Mehdi Touat",
+    "has_scholar": false,
+    "scholar_url": null
+  },
+  {
+    "id": "nGECLq4jm2YzJrZk6DlH",
+    "name": "Michael Zugaro",
+    "has_scholar": false,
+    "scholar_url": null
+  },
+  {
+    "id": "nea3BseIFJx2I3gdw2EW",
+    "name": "Valentina Emiliani",
+    "has_scholar": false,
+    "scholar_url": null
+  },
+  {
+    "id": "nkXnprZjvme9IT3kdpZE",
+    "name": "Martial Ruat",
+    "has_scholar": false,
+    "scholar_url": null
+  },
+  {
+    "id": "o8Iu1QztVwm1P7rZDl4Z",
+    "name": "Boris Lamotte d'Incamps",
+    "has_scholar": false,
+    "scholar_url": null
+  },
+  {
+    "id": "oXPiGlAVepeA16wRAGvZ",
+    "name": "Julie Grezes",
+    "has_scholar": false,
+    "scholar_url": null
+  },
+  {
+    "id": "odNnShvQhsiFKajmzrWb",
+    "name": "Sebastien Meriaux",
+    "has_scholar": false,
+    "scholar_url": null
+  },
+  {
+    "id": "osnbCJKiuEWlmHrBwYdD",
+    "name": "Kristina Irsch",
+    "has_scholar": false,
+    "scholar_url": null
+  },
+  {
+    "id": "pEWYBMcpCJ22xkOnZhQw",
+    "name": "Gilles Tessier",
+    "has_scholar": false,
+    "scholar_url": null
+  },
+  {
+    "id": "pV9TZdPL6gtOBEVst7u8",
+    "name": "Raouf Issa",
+    "has_scholar": false,
+    "scholar_url": null
+  },
+  {
+    "id": "pYIyhtR61iZIq7me5GBy",
+    "name": "Ludovic Tricoire",
+    "has_scholar": false,
+    "scholar_url": null
+  },
+  {
+    "id": "pdekCPdNmcUjChK8izBL",
+    "name": "Yves Ville",
+    "has_scholar": false,
+    "scholar_url": null
+  },
+  {
+    "id": "qBTbqzpa3o4Fj0XypQqm",
+    "name": "Jean-Christophe Vergnaud",
+    "has_scholar": false,
+    "scholar_url": null
+  },
+  {
+    "id": "qCoG6GUr6MVyFFyenUk7",
+    "name": "Isabelle Brunet",
+    "has_scholar": false,
+    "scholar_url": null
+  },
+  {
+    "id": "qLTmyhzzyA0ZgTcqpZcb",
+    "name": "Srdjan Ostojic",
+    "has_scholar": false,
+    "scholar_url": null
+  },
+  {
+    "id": "qOSf2CPBXCk8Bv9hwTLn",
+    "name": "Nicolas Boulant",
+    "has_scholar": false,
+    "scholar_url": null
+  },
+  {
+    "id": "qpExdr4QAhBzL04275yJ",
+    "name": "Heike Rebholz",
+    "has_scholar": false,
+    "scholar_url": null
+  },
+  {
+    "id": "r8fcZe11qXpqgcbXcY7R",
+    "name": "Philippe Ravassard",
+    "has_scholar": false,
+    "scholar_url": null
+  },
+  {
+    "id": "r93DXhB1FebdMGiL8pHZ",
+    "name": "Benoit Girard",
+    "has_scholar": false,
+    "scholar_url": null
+  },
+  {
+    "id": "rDJJkhA2TTmJ1QD7I6KV",
+    "name": "Sophie Creuzet",
+    "has_scholar": false,
+    "scholar_url": null
+  },
+  {
+    "id": "rE4L9Typ7dWGnaFYk8w3",
+    "name": "Matthieu Cord",
+    "has_scholar": false,
+    "scholar_url": null
+  },
+  {
+    "id": "rcA8qBBdtCMfYODhUdxT",
+    "name": "Keith Doelling",
+    "has_scholar": false,
+    "scholar_url": null
+  },
+  {
+    "id": "rlGrCsGNg6lZpdXQDlYC",
+    "name": "Alex Cayco Gajic",
+    "has_scholar": false,
+    "scholar_url": null
+  },
+  {
+    "id": "s9J1bWJlghLxS8cGBdQs",
+    "name": "Antoine Drieu",
+    "has_scholar": false,
+    "scholar_url": null
+  },
+  {
+    "id": "sBafvZ3U6WzgcUyulCqf",
+    "name": "Nelson Rebola",
+    "has_scholar": false,
+    "scholar_url": null
+  },
+  {
+    "id": "sN2TXfXycepMVliKX9ee",
+    "name": "Romain Brette",
+    "has_scholar": false,
+    "scholar_url": null
+  },
+  {
+    "id": "t1H9jCSphDViH22N5F4s",
+    "name": "Emmanuel Flamand-Roze",
+    "has_scholar": false,
+    "scholar_url": null
+  },
+  {
+    "id": "tGsU3P5SYWN65V6b3e20",
+    "name": "Etienne Koechlin",
+    "has_scholar": false,
+    "scholar_url": null
+  },
+  {
+    "id": "tRMKlpqp2tEjw8r2VZ5e",
+    "name": "Daniel Shulz",
+    "has_scholar": false,
+    "scholar_url": null
+  },
+  {
+    "id": "tSuoHBNHId8cT5nosXc6",
+    "name": "Deniz Dalkara",
+    "has_scholar": false,
+    "scholar_url": null
+  },
+  {
+    "id": "tVLPxLGsLKXahL9ZM7hp",
+    "name": "Thibaut Brouillet",
+    "has_scholar": false,
+    "scholar_url": null
+  },
+  {
+    "id": "tkbGphCiHj47gpSWwiEx",
+    "name": "Coralie Chevallier",
+    "has_scholar": false,
+    "scholar_url": null
+  },
+  {
+    "id": "u0tIT8Yt2UMXbzJh4X04",
+    "name": "Cyrille Bouvet",
+    "has_scholar": false,
+    "scholar_url": null
+  },
+  {
+    "id": "u8lonPSebliPxBmuXQ9D",
+    "name": "Luc Arnal",
+    "has_scholar": false,
+    "scholar_url": null
+  },
+  {
+    "id": "uJyNgTTehxrQzUsOSM9n",
+    "name": "Ghislaine Dehaene-Lambertz",
+    "has_scholar": false,
+    "scholar_url": null
+  },
+  {
+    "id": "uakZ4Wnety65WxAzyG4N",
+    "name": "Jean-Christophe Poncer",
+    "has_scholar": false,
+    "scholar_url": null
+  },
+  {
+    "id": "ukhTFtFgIR6D0OIdCM0W",
+    "name": "Laurent Venance",
+    "has_scholar": false,
+    "scholar_url": null
+  },
+  {
+    "id": "vO4UmZCqZJKCBeA1De1B",
+    "name": "Nizar Ouarti",
+    "has_scholar": false,
+    "scholar_url": null
+  },
+  {
+    "id": "vR7mYZ6lpV4KKFUabhXW",
+    "name": "Christophe Pallier",
+    "has_scholar": false,
+    "scholar_url": null
+  },
+  {
+    "id": "vjDHYnN0zyX22v6lqvtU",
+    "name": "Catherine Tallon-Baudry",
+    "has_scholar": false,
+    "scholar_url": null
+  },
+  {
+    "id": "vodTh0JanYKo8SIti1fW",
+    "name": "Catherine Del Negro",
+    "has_scholar": false,
+    "scholar_url": null
+  },
+  {
+    "id": "vtoBWqklC9XZZkCur5Bi",
+    "name": "Roberto Casati",
+    "has_scholar": false,
+    "scholar_url": null
+  },
+  {
+    "id": "wokOfzaDFQ6K9b67l9IS",
+    "name": "Nathalie Rouach",
+    "has_scholar": false,
+    "scholar_url": null
+  },
+  {
+    "id": "xDIfKSXe1E6YTYRZYLmb",
+    "name": "Nicolas Renier",
+    "has_scholar": false,
+    "scholar_url": null
+  },
+  {
+    "id": "xQMM1fhiuh9g5ugMT8XD",
+    "name": "Guillaume Turc",
+    "has_scholar": false,
+    "scholar_url": null
+  },
+  {
+    "id": "xb3KhSguYPp4RPwOwN6Z",
+    "name": "Nathalie Boddaert",
+    "has_scholar": false,
+    "scholar_url": null
+  },
+  {
+    "id": "xlCAUr84btTgvEwwno9K",
+    "name": "Stephanie Baulac",
+    "has_scholar": false,
+    "scholar_url": null
+  },
+  {
+    "id": "xpXC1Gjh5c3jxYEPOXtK",
+    "name": "Louise Kirsch",
+    "has_scholar": false,
+    "scholar_url": null
+  },
+  {
+    "id": "xwv9435zTkQyIIcaKkYh",
+    "name": "Isabelle Charrier",
+    "has_scholar": true,
+    "scholar_url": "https://scholar.google.com/citations?user=StiLS6QAAAAJ"
+  },
+  {
+    "id": "xyiVH8b6lpaYqtSpPTTA",
+    "name": "Sylvie Granon",
+    "has_scholar": true,
+    "scholar_url": "https://scholar.google.com/citations?user=_SYkVr0AAAAJ"
+  },
+  {
+    "id": "y2Sw6Mg2hhB43A1d6aQq",
+    "name": "Muriel Perron",
+    "has_scholar": true,
+    "scholar_url": "https://scholar.google.com/citations?user=GEOPovIAAAAJ"
+  },
+  {
+    "id": "yIh9dB2TWOxkUlIWW070",
+    "name": "Michel Bottlaender",
+    "has_scholar": false,
+    "scholar_url": null
+  },
+  {
+    "id": "yNB9Ka8pBeBWYNzoNcaa",
+    "name": "Jeanne Amiel",
+    "has_scholar": false,
+    "scholar_url": null
+  },
+  {
+    "id": "yP5IeffzF238i3EiQmLB",
+    "name": "Florian Sennlaub",
+    "has_scholar": false,
+    "scholar_url": null
+  },
+  {
+    "id": "yTkqMUFZiayxpH3ZPRX9",
+    "name": "Gilles Seraphin",
+    "has_scholar": false,
+    "scholar_url": null
+  },
+  {
+    "id": "yUdtb1eyc4hstkzB9QB9",
+    "name": "Yanick Crow",
+    "has_scholar": false,
+    "scholar_url": null
+  },
+  {
+    "id": "yhP6R16Tx2ORsCuFPYnv",
+    "name": "Christine Petit",
+    "has_scholar": false,
+    "scholar_url": null
+  },
+  {
+    "id": "ykyxkmxP6qQecck30qO4",
+    "name": "Xavier Nicol",
+    "has_scholar": false,
+    "scholar_url": null
+  },
+  {
+    "id": "ymIDPxT7F07jWKVD216T",
+    "name": "Jean Livet",
+    "has_scholar": false,
+    "scholar_url": null
+  },
+  {
+    "id": "yox9QjyraQEAQ4A9l1UY",
+    "name": "Belen Pardi",
+    "has_scholar": false,
+    "scholar_url": null
+  },
+  {
+    "id": "yzwo9QOKzmGZHvDYEL3X",
+    "name": "Philippe Faure",
+    "has_scholar": false,
+    "scholar_url": null
+  },
+  {
+    "id": "z1rUQcStajysILwcb3iF",
+    "name": "David Germanaud",
+    "has_scholar": false,
+    "scholar_url": null
+  },
+  {
+    "id": "z9hr9DnC3I2VvUXral3P",
+    "name": "Glenn Dallerac",
+    "has_scholar": false,
+    "scholar_url": null
+  },
+  {
+    "id": "zFTqXCSTZw91SiHf4Dvt",
+    "name": "Gilles Huberfeld",
+    "has_scholar": false,
+    "scholar_url": null
+  },
+  {
+    "id": "zLO99dbP435s4aRv1X70",
+    "name": "Laura Dugue",
+    "has_scholar": false,
+    "scholar_url": null
+  },
+  {
+    "id": "zanrqlACQ63sdH2NQlMb",
+    "name": "Stephanie Daumas",
+    "has_scholar": false,
+    "scholar_url": null
+  },
+  {
+    "id": "zyWkr2hTdvhXJwqJUzJ9",
+    "name": "Karim Benchenane",
+    "has_scholar": false,
+    "scholar_url": null
+  }
+]
