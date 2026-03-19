@@ -1745,6 +1745,26 @@ body.admin-page #modal-admin .modal-header .modal-close {
   display: none;
 }
 
+.admin-tab-toolbar {
+  margin-bottom: 1rem;
+}
+
+.admin-tab-search {
+  width: 100%;
+  max-width: 420px;
+  padding: 0.75rem 1rem;
+  border: 1px solid var(--color-border);
+  border-radius: var(--radius-md);
+  background: #fff;
+  color: var(--color-text);
+}
+
+.admin-tab-search:focus {
+  outline: none;
+  border-color: var(--color-primary);
+  box-shadow: 0 0 0 3px rgba(220, 53, 69, 0.12);
+}
+
 .sr-only {
   position: absolute;
   width: 1px;

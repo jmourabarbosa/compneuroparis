@@ -536,6 +536,16 @@
 
         <!-- Manage PIs Tab -->
         <div id="tab-manage" class="tab-panel" role="tabpanel">
+          <div class="admin-tab-toolbar">
+            <label class="sr-only" for="manage-search-input">Search PI pages</label>
+            <input
+              type="search"
+              id="manage-search-input"
+              class="admin-tab-search"
+              placeholder="Search PI pages by name, keyword, or subfield"
+              autocomplete="off"
+            >
+          </div>
           <div id="manage-loading" class="loading-state">
             <div class="spinner"></div>
           </div>
@@ -605,6 +615,16 @@
 
         <!-- Users Tab -->
         <div id="tab-users" class="tab-panel" role="tabpanel">
+          <div class="admin-tab-toolbar">
+            <label class="sr-only" for="users-search-input">Search users</label>
+            <input
+              type="search"
+              id="users-search-input"
+              class="admin-tab-search"
+              placeholder="Search users by email, name, or UID"
+              autocomplete="off"
+            >
+          </div>
           <div id="users-loading" class="loading-state hidden">
             <div class="spinner"></div>
           </div>

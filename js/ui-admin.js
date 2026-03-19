@@ -23,6 +23,7 @@ const pendingEmpty = document.getElementById('pending-empty');
 const manageList = document.getElementById('manage-list');
 const manageLoading = document.getElementById('manage-loading');
 const manageEmpty = document.getElementById('manage-empty');
+const manageSearchInput = document.getElementById('manage-search-input');
 const adminsList = document.getElementById('admins-list');
 
 // Submission review modal (now editable)
@@ -108,6 +109,7 @@ const messagesEmpty = document.getElementById('messages-empty');
 const usersList = document.getElementById('users-list');
 const usersEmpty = document.getElementById('users-empty');
 const usersLoading = document.getElementById('users-loading');
+const usersSearchInput = document.getElementById('users-search-input');
 
 // Edit user modal
 const modalEditUser = document.getElementById('modal-edit-user');
@@ -121,6 +123,8 @@ const editUserClaimedList = document.getElementById('edit-user-claimed-list');
 
 let currentSubmission = null;
 let currentEditGroup = null;
+let cachedManageGroups = [];
+let cachedUsers = [];
 
 function notifyAdminDataChanged() {
   document.dispatchEvent(new CustomEvent('admin-data-changed'));
@@ -340,38 +344,58 @@ export async function loadManageGroups() {
 
   try {
     const groups = await fetchGroups();
+    cachedManageGroups = groups;
     manageLoading.classList.add('hidden');
-
-    if (groups.length === 0) {
-      manageEmpty.classList.remove('hidden');
-      return;
-    }
-
-    groups.forEach(g => {
-      const item = document.createElement('div');
-      item.className = 'admin-item';
-      const sfs = toArray(g.subfields || g.subfield);
-      const subfieldLabel = sfs.length > 0 ? ` [${sfs.join(', ')}]` : '';
-      const claimedLabel = g.claimedBy ? ' (claimed)' : '';
-      item.innerHTML = `
-        <div class="admin-item-info">
-          <div class="admin-item-name">${escapeHTML(g.name)}${escapeHTML(subfieldLabel)}${claimedLabel}</div>
-          <div class="admin-item-meta">${(g.keywords || []).join(', ')}</div>
-        </div>
-        <div class="admin-item-actions">
-          <button class="btn btn-primary btn-sm btn-edit" aria-label="Edit ${escapeHTML(g.name)}">Edit</button>
-          <button class="btn btn-danger btn-sm btn-delete" aria-label="Delete ${escapeHTML(g.name)}">Delete</button>
-        </div>
-      `;
-
-      item.querySelector('.btn-edit').addEventListener('click', () => { void showEditModal(g); });
-      item.querySelector('.btn-delete').addEventListener('click', () => handleDelete(g));
-      manageList.appendChild(item);
-    });
+    renderManageGroups();
   } catch (err) {
     console.error('Error loading manage groups:', err);
     manageLoading.classList.add('hidden');
   }
+}
+
+function renderManageGroups() {
+  manageList.innerHTML = '';
+  manageEmpty.classList.add('hidden');
+
+  const term = (manageSearchInput?.value || '').trim().toLowerCase();
+  const filteredGroups = cachedManageGroups.filter(g => {
+    if (!term) return true;
+    const haystack = [
+      g.name || '',
+      ...(g.keywords || []),
+      ...toArray(g.subfields || g.subfield),
+      g.claimedByEmail || ''
+    ].join(' ').toLowerCase();
+    return haystack.includes(term);
+  });
+
+  if (filteredGroups.length === 0) {
+    manageEmpty.classList.remove('hidden');
+    manageEmpty.querySelector('p').textContent = term ? 'No PI pages match your search.' : 'No PIs yet.';
+    return;
+  }
+
+  filteredGroups.forEach(g => {
+    const item = document.createElement('div');
+    item.className = 'admin-item';
+    const sfs = toArray(g.subfields || g.subfield);
+    const subfieldLabel = sfs.length > 0 ? ` [${sfs.join(', ')}]` : '';
+    const claimedLabel = g.claimedBy ? ' (claimed)' : '';
+    item.innerHTML = `
+      <div class="admin-item-info">
+        <div class="admin-item-name">${escapeHTML(g.name)}${escapeHTML(subfieldLabel)}${claimedLabel}</div>
+        <div class="admin-item-meta">${(g.keywords || []).join(', ')}</div>
+      </div>
+      <div class="admin-item-actions">
+        <button class="btn btn-primary btn-sm btn-edit" aria-label="Edit ${escapeHTML(g.name)}">Edit</button>
+        <button class="btn btn-danger btn-sm btn-delete" aria-label="Delete ${escapeHTML(g.name)}">Delete</button>
+      </div>
+    `;
+
+    item.querySelector('.btn-edit').addEventListener('click', () => { void showEditModal(g); });
+    item.querySelector('.btn-delete').addEventListener('click', () => handleDelete(g));
+    manageList.appendChild(item);
+  });
 }
 
 function updateClaimSectionSummary(group) {
@@ -1138,55 +1162,90 @@ export async function loadUsers() {
 
   try {
     const users = await listAllUsers();
+    cachedUsers = users;
     usersLoading.classList.add('hidden');
-
-    if (users.length === 0) {
-      usersEmpty.classList.remove('hidden');
-      return;
-    }
-
-    users.forEach(u => {
-      const item = document.createElement('div');
-      item.className = 'admin-item';
-      const created = u.createdAt ? new Date(u.createdAt).toLocaleDateString() : '';
-      const verifiedLabel = u.emailVerified ? '' : ' (unverified)';
-      const verifyBtn = u.emailVerified ? '' : `<button class="btn btn-success btn-sm btn-verify-user" aria-label="Verify ${escapeHTML(u.email)}">Verify</button>`;
-      item.innerHTML = `
-        <div class="admin-item-info">
-          <div class="admin-item-name">${escapeHTML(u.email)}${u.displayName ? ` (${escapeHTML(u.displayName)})` : ''}${verifiedLabel}</div>
-          <div class="admin-item-meta">UID: ${escapeHTML(u.uid)}${created ? ` | Joined: ${created}` : ''}${u.disabled ? ' | Disabled' : ''}</div>
-        </div>
-        <div class="admin-item-actions">
-          ${verifyBtn}
-          <button class="btn btn-primary btn-sm btn-edit-user" aria-label="Edit ${escapeHTML(u.email)}">Edit</button>
-          <button class="btn btn-danger btn-sm btn-delete-user" aria-label="Delete ${escapeHTML(u.email)}">Delete</button>
-        </div>
-      `;
-
-      const verifyEl = item.querySelector('.btn-verify-user');
-      if (verifyEl) {
-        verifyEl.addEventListener('click', async (e) => {
-          const btn = e.currentTarget;
-          btn.disabled = true;
-          try {
-            await verifyUserAccount(u.uid);
-            await loadUsers();
-          } catch (err) {
-            console.error('Verify user error:', err);
-            alert('Error verifying user: ' + (err.message || err));
-            btn.disabled = false;
-          }
-        });
-      }
-      item.querySelector('.btn-edit-user').addEventListener('click', () => showEditUserModal(u));
-      item.querySelector('.btn-delete-user').addEventListener('click', () => handleDeleteUser(u));
-      usersList.appendChild(item);
-    });
+    renderUsers();
   } catch (err) {
     console.error('Error loading users:', err);
     usersLoading.classList.add('hidden');
   }
 }
+
+function renderUsers() {
+  usersList.innerHTML = '';
+  usersEmpty.classList.add('hidden');
+
+  const term = (usersSearchInput?.value || '').trim().toLowerCase();
+  const filteredUsers = cachedUsers.filter(u => {
+    if (!term) return true;
+    const haystack = [
+      u.email || '',
+      u.displayName || '',
+      u.uid || ''
+    ].join(' ').toLowerCase();
+    return haystack.includes(term);
+  });
+
+  if (filteredUsers.length === 0) {
+    usersEmpty.classList.remove('hidden');
+    usersEmpty.querySelector('p').textContent = term ? 'No users match your search.' : 'No registered users.';
+    return;
+  }
+
+  filteredUsers.forEach(u => {
+    const item = document.createElement('div');
+    item.className = 'admin-item';
+    const created = u.createdAt ? new Date(u.createdAt).toLocaleDateString() : '';
+    const verifiedLabel = u.emailVerified ? '' : ' (unverified)';
+    const verifyBtn = u.emailVerified ? '' : `<button class="btn btn-success btn-sm btn-verify-user" aria-label="Verify ${escapeHTML(u.email)}">Verify</button>`;
+    item.innerHTML = `
+      <div class="admin-item-info">
+        <div class="admin-item-name">${escapeHTML(u.email)}${u.displayName ? ` (${escapeHTML(u.displayName)})` : ''}${verifiedLabel}</div>
+        <div class="admin-item-meta">UID: ${escapeHTML(u.uid)}${created ? ` | Joined: ${created}` : ''}${u.disabled ? ' | Disabled' : ''}</div>
+      </div>
+      <div class="admin-item-actions">
+        ${verifyBtn}
+        <button class="btn btn-primary btn-sm btn-edit-user" aria-label="Edit ${escapeHTML(u.email)}">Edit</button>
+        <button class="btn btn-danger btn-sm btn-delete-user" aria-label="Delete ${escapeHTML(u.email)}">Delete</button>
+      </div>
+    `;
+
+    const verifyEl = item.querySelector('.btn-verify-user');
+    if (verifyEl) {
+      verifyEl.addEventListener('click', async (e) => {
+        const btn = e.currentTarget;
+        btn.disabled = true;
+        try {
+          await verifyUserAccount(u.uid);
+          await loadUsers();
+        } catch (err) {
+          console.error('Verify user error:', err);
+          alert('Error verifying user: ' + (err.message || err));
+          btn.disabled = false;
+        }
+      });
+    }
+    item.querySelector('.btn-edit-user').addEventListener('click', () => showEditUserModal(u));
+    item.querySelector('.btn-delete-user').addEventListener('click', () => handleDeleteUser(u));
+    usersList.appendChild(item);
+  });
+}
+
+function initAdminSearch() {
+  if (manageSearchInput) {
+    manageSearchInput.addEventListener('input', () => {
+      renderManageGroups();
+    });
+  }
+
+  if (usersSearchInput) {
+    usersSearchInput.addEventListener('input', () => {
+      renderUsers();
+    });
+  }
+}
+
+initAdminSearch();
 
 async function showEditUserModal(user) {
   editUserUid.value = user.uid;
