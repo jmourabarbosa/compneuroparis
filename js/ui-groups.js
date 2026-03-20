@@ -31,67 +31,13 @@ let filterHiring = false;
 let filterValidated = false;
 const normalizedGroupKeywordsCache = new WeakMap();
 const keywordSearchMatchCache = new Map();
-let instituteRefsCache = new WeakMap();
-let institutesByIdCache = new Map();
-let groupsByIdCache = new Map();
-let piIdsWithJobsCache = new Set();
-let institutePiCountMapCache = new Map();
-let institutePiCountCacheVersion = '';
-
-function scheduleNonCriticalRender(callback) {
-  if (typeof window !== 'undefined' && typeof window.requestAnimationFrame === 'function') {
-    window.requestAnimationFrame(() => callback());
-    return;
-  }
-  setTimeout(callback, 0);
-}
-
-function getInstituteCacheVersion() {
-  return `${allGroups.length}:${allInstitutes.length}`;
-}
-
-function rebuildGroupDerivedCaches() {
-  groupsByIdCache = new Map(allGroups.map(group => [group.id, group]));
-  instituteRefsCache = new WeakMap();
-  institutePiCountMapCache = new Map();
-  institutePiCountCacheVersion = '';
-}
-
-function rebuildInstituteCache() {
-  institutesByIdCache = new Map(allInstitutes.map(inst => [inst.id, inst]));
-  instituteRefsCache = new WeakMap();
-  institutePiCountMapCache = new Map();
-  institutePiCountCacheVersion = '';
-}
-
-function rebuildJobDerivedCaches() {
-  piIdsWithJobsCache = new Set(allJobs.map(job => job.piId).filter(Boolean));
-}
-
-function getInstituteRefsForGroup(group) {
-  let refs = instituteRefsCache.get(group);
-  if (!refs) {
-    refs = resolveInstituteRefsFromRecord(group, institutesByIdCache).filter(ref => ref.id && ref.name);
-    instituteRefsCache.set(group, refs);
-  }
-  return refs;
-}
-
-function getInstitutePiCountMapCached() {
-  const version = getInstituteCacheVersion();
-  if (version !== institutePiCountCacheVersion) {
-    institutePiCountMapCache = buildInstitutePiCountMap(allGroups, institutesByIdCache, instituteRefsCache);
-    institutePiCountCacheVersion = version;
-  }
-  return institutePiCountMapCache;
-}
 
 function getGroupInstituteNames(group) {
   return getInstituteDisplayNames(group, allInstitutes);
 }
 
 function getGroupInstituteRefs(group) {
-  return getInstituteRefsForGroup(group);
+  return resolveInstituteRefsFromRecord(group, allInstitutes).filter(ref => ref.id && ref.name);
 }
 
 function findInstituteByKey(instituteKey = '') {
@@ -178,11 +124,9 @@ export async function loadGroups(shouldFetch = true) {
 
     try {
       allGroups = await fetchGroups();
-      rebuildGroupDerivedCaches();
     } catch (err) {
       console.error('Error loading groups:', err);
       allGroups = [];
-      rebuildGroupDerivedCaches();
     }
 
     groupsLoading.classList.add('hidden');
@@ -190,10 +134,8 @@ export async function loadGroups(shouldFetch = true) {
 
   buildKeywordFilters();
   renderGroups();
-  scheduleNonCriticalRender(() => {
-    renderInstitutes();
-    renderJobs();
-  });
+  renderInstitutes();
+  renderJobs();
 }
 
 function buildKeywordFilters() {
@@ -364,7 +306,7 @@ function createCard(group) {
   const sf = sfs[0] || 'computational';
   card.dataset.subfield = sf;
   const instituteRefs = getGroupInstituteRefs(group);
-  const isHiring = group.hiring || piIdsWithJobsCache.has(group.id);
+  const isHiring = group.hiring || allJobs.some(j => j.piId === group.id);
   const { html, overflowCount } = buildPiCardMarkup(group, {
     subfieldLabel: SUBFIELD_LABELS[sf] || sf,
     instituteRefs,
@@ -412,7 +354,7 @@ async function openPiDetail(group) {
   history.replaceState(null, '', '#pi-' + group.id);
 
   // Populate modal fields
-  const isHiringDetail = group.hiring || piIdsWithJobsCache.has(group.id);
+  const isHiringDetail = group.hiring || allJobs.some(j => j.piId === group.id);
   piDetailTitle.innerHTML = escapeHTML(group.name || 'PI Details') + (isHiringDetail ? ' <span class="card-job-badge">Hiring</span>' : '');
   piDetailPhoto.src = group.photoURL || 'assets/placeholder-lab.svg';
   piDetailPhoto.alt = group.name || '';
@@ -742,7 +684,7 @@ export function initPiDetail() {
       const cached = allGroups.find(g => g.id === currentDetailGroup.id);
       if (cached) cached.hiring = cb.checked;
       // Update title badge
-      const isHiringNow = cb.checked || piIdsWithJobsCache.has(currentDetailGroup.id);
+      const isHiringNow = cb.checked || allJobs.some(j => j.piId === currentDetailGroup.id);
       piDetailTitle.innerHTML = escapeHTML(currentDetailGroup.name || 'PI Details') + (isHiringNow ? ' <span class="card-job-badge">Hiring</span>' : '');
       // Re-render cards
       renderGroups();
@@ -902,11 +844,9 @@ export function setInstituteFilter(institute) {
 export async function loadPublicInstitutes() {
   try {
     allInstitutes = await fetchApprovedInstitutes();
-    rebuildInstituteCache();
   } catch (err) {
     console.error('Error loading public institutes:', err);
     allInstitutes = [];
-    rebuildInstituteCache();
   }
   renderInstitutes();
 }
@@ -915,7 +855,7 @@ function renderInstitutes() {
   institutesPublicList.innerHTML = '';
 
   const isSearching = !!searchText;
-  const piCountMap = getInstitutePiCountMapCached();
+  const piCountMap = buildInstitutePiCountMap(allGroups, allInstitutes);
 
   const filtered = allInstitutes.filter(inst => {
     if (!searchText) return true;
@@ -990,11 +930,9 @@ const jobsPublicCount = document.getElementById('jobs-public-count');
 export async function loadPublicJobs() {
   try {
     allJobs = await fetchJobs();
-    rebuildJobDerivedCaches();
   } catch (err) {
     console.error('Error loading public jobs:', err);
     allJobs = [];
-    rebuildJobDerivedCaches();
   }
   renderJobs();
   renderGroups();
@@ -1005,7 +943,7 @@ function renderJobs() {
 
   const isSearching = !!searchText;
 
-  const filtered = filterVisibleJobs({ jobs: allJobs, groups: allGroups, groupsById: groupsByIdCache, searchText });
+  const filtered = filterVisibleJobs({ jobs: allJobs, groups: allGroups, searchText });
 
   jobsPublicCount.textContent = filtered.length;
 
@@ -1039,7 +977,7 @@ function renderJobs() {
 function createJobCard(job) {
   const card = document.createElement('article');
   card.className = 'job-card';
-  const allKwsForCard = getCombinedJobKeywords(job, allGroups, groupsByIdCache);
+  const allKwsForCard = getCombinedJobKeywords(job, allGroups);
   card.innerHTML = buildJobCardMarkup(job, allKwsForCard);
 
   card.addEventListener('click', (e) => {
