@@ -1,18 +1,23 @@
 import { createSubmission, createGroup, fetchApprovedInstitutes, createInstitute, createMessage, fetchGroupsClaimedBy, createJob, fetchGroups } from './db.js';
 import { getCurrentUser, getIsAdmin, createAccount, login, logout, resetPassword, isEmailVerified, resendVerification, getAuthErrorMessage } from './auth.js';
 import { loadGroups, loadPublicInstitutes, loadPublicJobs } from './ui-groups.js';
-import { getImageUrlValidationMessage, validateImageUrl } from './image-url-utils.mjs';
+import { validateImageUrl } from './image-url-utils.mjs';
 import { buildInstituteFieldData } from './institute-links.mjs';
 import { getPreferredUserName } from './manager-name-utils.mjs';
+import { canSubmitWithPhotoUrlWarning, getPhotoUrlWarningState } from './photo-url-warning-utils.mjs';
 
 const form = document.getElementById('submission-form');
 const formWrapper = document.getElementById('submission-form-wrapper');
 const btnShowForm = document.getElementById('btn-show-form');
 const formMessage = document.getElementById('form-message');
 const submissionDuplicateWarning = document.getElementById('submission-duplicate-warning');
+const submissionPhotoWarning = document.getElementById('submission-photo-warning');
+const submissionPhotoAcknowledgeWrap = document.getElementById('submission-photo-warning-ack-row');
+const submissionPhotoAcknowledge = document.getElementById('submission-photo-warning-ack');
 const linksContainer = document.getElementById('links-container');
 const btnAddLink = document.getElementById('btn-add-link');
 const subNameInput = document.getElementById('sub-name');
+const subPhotoUrlInput = document.getElementById('sub-photo-url');
 
 // Institute submission form
 const instForm = document.getElementById('institute-submission-form');
@@ -43,6 +48,15 @@ const subInstituteNewFields = document.getElementById('sub-institute-new-fields'
 // Multi-institute state
 let selectedInstitutes = [];
 let cachedExistingGroups = [];
+const PHOTO_WARNING_DEBOUNCE_MS = 500;
+const photoValidationState = {
+  validationResult: null,
+  isChecking: false,
+  acknowledged: false,
+  lastValidatedUrl: '',
+  pendingPromise: null,
+  debounceTimer: null
+};
 
 // Auth elements
 const subAuthForm = document.getElementById('submission-auth-form');
@@ -159,7 +173,16 @@ export function initForm() {
   subNameInput.addEventListener('input', () => {
     void updateDuplicatePiWarning(subNameInput.value);
   });
+  subPhotoUrlInput.addEventListener('input', handlePhotoUrlInput);
+  subPhotoUrlInput.addEventListener('blur', () => {
+    void validateSubmissionPhotoUrl({ immediate: true });
+  });
+  submissionPhotoAcknowledge?.addEventListener('change', () => {
+    photoValidationState.acknowledged = !!submissionPhotoAcknowledge.checked;
+    renderPhotoWarningState();
+  });
   void preloadExistingGroups();
+  renderPhotoWarningState();
 
   // Auto-disable primary subfield in secondary checkboxes
   subPrimarySubfield.addEventListener('change', () => {
@@ -561,6 +584,99 @@ function escapeHTML(str) {
   return div.innerHTML;
 }
 
+function clearPhotoValidationDebounce() {
+  if (photoValidationState.debounceTimer) {
+    clearTimeout(photoValidationState.debounceTimer);
+    photoValidationState.debounceTimer = null;
+  }
+}
+
+function handlePhotoUrlInput() {
+  photoValidationState.validationResult = null;
+  photoValidationState.lastValidatedUrl = '';
+  photoValidationState.acknowledged = false;
+  clearPhotoValidationDebounce();
+
+  const currentUrl = subPhotoUrlInput.value.trim();
+  if (!currentUrl) {
+    photoValidationState.isChecking = false;
+    renderPhotoWarningState();
+    return;
+  }
+
+  photoValidationState.debounceTimer = setTimeout(() => {
+    photoValidationState.debounceTimer = null;
+    void validateSubmissionPhotoUrl();
+  }, PHOTO_WARNING_DEBOUNCE_MS);
+
+  renderPhotoWarningState();
+}
+
+function renderPhotoWarningState() {
+  const warningState = getPhotoUrlWarningState({
+    hasValue: Boolean(subPhotoUrlInput.value.trim()),
+    isChecking: photoValidationState.isChecking,
+    validationResult: photoValidationState.validationResult,
+    acknowledged: photoValidationState.acknowledged
+  });
+
+  if (warningState.hidden) {
+    submissionPhotoWarning.classList.add('hidden');
+    submissionPhotoWarning.textContent = '';
+  } else {
+    submissionPhotoWarning.textContent = warningState.message;
+    submissionPhotoWarning.className = `form-message ${warningState.tone}`;
+    submissionPhotoWarning.classList.remove('hidden');
+  }
+
+  if (!submissionPhotoAcknowledgeWrap || !submissionPhotoAcknowledge) return;
+
+  submissionPhotoAcknowledgeWrap.classList.toggle('hidden', !warningState.requiresAcknowledgement);
+  submissionPhotoAcknowledge.checked = warningState.acknowledged;
+}
+
+async function validateSubmissionPhotoUrl({ immediate = false } = {}) {
+  clearPhotoValidationDebounce();
+
+  const photoUrl = subPhotoUrlInput.value.trim();
+  if (!photoUrl) {
+    photoValidationState.isChecking = false;
+    photoValidationState.validationResult = null;
+    photoValidationState.lastValidatedUrl = '';
+    photoValidationState.pendingPromise = null;
+    renderPhotoWarningState();
+    return null;
+  }
+
+  if (!immediate && photoValidationState.pendingPromise && photoValidationState.lastValidatedUrl === photoUrl) {
+    return photoValidationState.pendingPromise;
+  }
+
+  photoValidationState.isChecking = true;
+  photoValidationState.lastValidatedUrl = photoUrl;
+  renderPhotoWarningState();
+
+  const pendingPromise = validateImageUrl(photoUrl)
+    .then((result) => {
+      if (subPhotoUrlInput.value.trim() !== photoUrl) return result;
+      photoValidationState.validationResult = result;
+      photoValidationState.lastValidatedUrl = photoUrl;
+      return result;
+    })
+    .finally(() => {
+      if (subPhotoUrlInput.value.trim() === photoUrl) {
+        photoValidationState.isChecking = false;
+        renderPhotoWarningState();
+      }
+      if (photoValidationState.pendingPromise === pendingPromise) {
+        photoValidationState.pendingPromise = null;
+      }
+    });
+
+  photoValidationState.pendingPromise = pendingPromise;
+  return pendingPromise;
+}
+
 async function handleSubmit(e) {
   e.preventDefault();
   hideMessage(formMessage);
@@ -613,9 +729,16 @@ async function handleSubmit(e) {
     if (label && url) links.push({ label, url });
   });
 
-  const photoValidation = await validateImageUrl(photoInputValue);
-  if (!photoValidation.valid) {
-    showMessage(formMessage, getImageUrlValidationMessage(photoValidation, 'PI photo URL'), 'error');
+  const photoValidation = await validateSubmissionPhotoUrl({ immediate: true });
+  if (!canSubmitWithPhotoUrlWarning({
+    hasValue: Boolean(photoInputValue),
+    isChecking: photoValidationState.isChecking,
+    validationResult: photoValidation,
+    acknowledged: photoValidationState.acknowledged
+  })) {
+    showMessage(formMessage, 'The PI photo link may be broken. If you still want to continue, tick the confirmation box under the photo field and submit again.', 'error');
+    submissionPhotoAcknowledgeWrap?.scrollIntoView({ block: 'nearest', behavior: 'smooth' });
+    submissionPhotoAcknowledge?.focus();
     return;
   }
 
@@ -686,6 +809,12 @@ async function handleSubmit(e) {
     subPrimarySubfield.selectedIndex = 0;
     document.querySelectorAll('input[name="sub-secondary"]').forEach(cb => { cb.checked = false; cb.disabled = false; });
     renderInstitutePills();
+    photoValidationState.validationResult = null;
+    photoValidationState.isChecking = false;
+    photoValidationState.acknowledged = false;
+    photoValidationState.lastValidatedUrl = '';
+    clearPhotoValidationDebounce();
+    renderPhotoWarningState();
     // Reset links to single row
     linksContainer.innerHTML = '';
     addLinkRow(linksContainer);

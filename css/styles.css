@@ -1386,6 +1386,25 @@ img {
   color: #6cb4ee;
 }
 
+.form-message.warning {
+  background: #FEF3C7;
+  color: #92400E;
+}
+
+.photo-warning-ack {
+  display: flex;
+  align-items: flex-start;
+  gap: 0.55rem;
+  margin-top: -0.5rem;
+  margin-bottom: 1rem;
+  font-size: 0.85rem;
+  color: var(--color-text-secondary);
+}
+
+.photo-warning-ack input {
+  margin-top: 0.15rem;
+}
+
 .signup-tip {
   font-size: 0.85rem;
   color: var(--color-text-muted);
