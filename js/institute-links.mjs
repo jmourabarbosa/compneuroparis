@@ -2,24 +2,6 @@ export function toArray(value) {
   return Array.isArray(value) ? value : (value ? [value] : []);
 }
 
-export function normalizeInstituteName(value) {
-  return (value || '')
-    .toLowerCase()
-    .replace(/\([^)]*\)/g, ' ')
-    .replace(/[^a-z0-9]/g, ' ')
-    .replace(/\s+/g, ' ')
-    .trim();
-}
-
-export function instituteNamesMatch(a, b) {
-  const normalizedA = normalizeInstituteName(a);
-  const normalizedB = normalizeInstituteName(b);
-  if (!normalizedA || !normalizedB) return false;
-  return normalizedA === normalizedB
-    || normalizedA.includes(normalizedB)
-    || normalizedB.includes(normalizedA);
-}
-
 export function resolveInstituteRefsFromRecord(record = {}, availableInstitutes = []) {
   const institutesById = new Map(availableInstitutes.map(inst => [inst.id, inst]));
   const storedIds = toArray(record.instituteIds);
@@ -30,18 +12,6 @@ export function resolveInstituteRefsFromRecord(record = {}, availableInstitutes 
       id,
       name: institutesById.get(id)?.name || ''
     }));
-}
-
-export function resolveLegacyInstituteRefsFromRecord(record = {}, availableInstitutes = []) {
-  const storedNames = toArray(record.institutes || record.institute);
-
-  return storedNames.map(name => {
-    const matchedInstitute = availableInstitutes.find(inst => instituteNamesMatch(inst.name, name));
-    return {
-      id: matchedInstitute?.id || '',
-      name: matchedInstitute?.name || name
-    };
-  });
 }
 
 export function buildInstituteFieldData(instituteRefs = []) {

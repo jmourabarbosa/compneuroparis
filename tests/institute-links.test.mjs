@@ -4,7 +4,6 @@ import assert from 'node:assert/strict';
 import {
   buildInstituteFieldData,
   getInstituteDisplayNames,
-  resolveLegacyInstituteRefsFromRecord,
   resolveInstituteRefsFromRecord
 } from '../js/institute-links.mjs';
 
@@ -27,17 +26,6 @@ test('resolveInstituteRefsFromRecord ignores legacy institute names without IDs'
   const institutes = [{ id: 'inst-1', name: 'NeuroSpin (CEA)' }];
 
   assert.deepEqual(resolveInstituteRefsFromRecord(record, institutes), []);
-});
-
-test('resolveLegacyInstituteRefsFromRecord maps legacy institute names to matching IDs for migration', () => {
-  const record = {
-    institutes: ['NeuroSpin']
-  };
-  const institutes = [{ id: 'inst-1', name: 'NeuroSpin (CEA)' }];
-
-  assert.deepEqual(resolveLegacyInstituteRefsFromRecord(record, institutes), [
-    { id: 'inst-1', name: 'NeuroSpin (CEA)' }
-  ]);
 });
 
 test('buildInstituteFieldData stores only stable IDs', () => {
