@@ -811,6 +811,11 @@
           <div class="form-group">
             <label for="edit-photo-url">Photo URL</label>
             <input type="url" id="edit-photo-url" placeholder="https://example.com/photo.jpg">
+            <div id="edit-photo-warning" class="form-message hidden" role="alert"></div>
+            <label id="edit-photo-warning-ack-row" class="photo-warning-ack hidden">
+              <input type="checkbox" id="edit-photo-warning-ack">
+              <span>The photo link may be broken. Save anyway.</span>
+            </label>
             <div id="edit-photo-current" class="photo-preview hidden">
               <img id="edit-photo-img" alt="Current photo">
             </div>

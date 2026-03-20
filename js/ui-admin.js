@@ -16,6 +16,7 @@ import { loadGroups, loadPublicInstitutes } from './ui-groups.js';
 import { getSubfieldsFromPicker, setSubfieldDropdown, syncSecondaryCheckboxes } from './ui-form.js';
 import { loadInstituteOptions } from './ui-form.js';
 import { getImageUrlValidationMessage, validateImageUrl } from './image-url-utils.mjs';
+import { canSubmitWithPhotoUrlWarning, getPhotoUrlWarningState } from './photo-url-warning-utils.mjs';
 import {
   buildClaimantOptionData,
   buildInstitutePillsMarkup,
@@ -67,6 +68,9 @@ const btnEditAddLink = document.getElementById('btn-edit-add-link');
 const editPhotoURL = document.getElementById('edit-photo-url');
 const editPhotoCurrentDiv = document.getElementById('edit-photo-current');
 const editPhotoImg = document.getElementById('edit-photo-img');
+const editPhotoWarning = document.getElementById('edit-photo-warning');
+const editPhotoWarningAckRow = document.getElementById('edit-photo-warning-ack-row');
+const editPhotoWarningAck = document.getElementById('edit-photo-warning-ack');
 const editMessage = document.getElementById('edit-message');
 const editClaimSection = document.getElementById('edit-claim-section');
 const editClaimCurrent = document.getElementById('edit-claim-current');
@@ -151,6 +155,15 @@ function notifyAdminDataChanged() {
 let approvedInstitutes = [];
 let approvedInstituteNames = new Set();
 let approvedInstitutesById = new Map();
+const EDIT_PHOTO_WARNING_DEBOUNCE_MS = 500;
+const editPhotoValidationState = {
+  validationResult: null,
+  isChecking: false,
+  acknowledged: false,
+  lastValidatedUrl: '',
+  pendingPromise: null,
+  debounceTimer: null
+};
 
 function setApprovedInstitutesCache(institutes = []) {
   approvedInstitutes = institutes;
@@ -216,6 +229,108 @@ function renderLoadingOption(selectEl, text) {
   option.selected = true;
   selectEl.appendChild(option);
   selectEl.disabled = true;
+}
+
+function clearEditPhotoValidationDebounce() {
+  if (editPhotoValidationState.debounceTimer) {
+    clearTimeout(editPhotoValidationState.debounceTimer);
+    editPhotoValidationState.debounceTimer = null;
+  }
+}
+
+function renderEditPhotoWarning() {
+  const warningState = getPhotoUrlWarningState({
+    hasValue: Boolean(editPhotoURL.value.trim()),
+    isChecking: editPhotoValidationState.isChecking,
+    validationResult: editPhotoValidationState.validationResult,
+    acknowledged: editPhotoValidationState.acknowledged
+  });
+
+  if (warningState.hidden) {
+    editPhotoWarning.classList.add('hidden');
+    editPhotoWarning.textContent = '';
+  } else {
+    editPhotoWarning.textContent = warningState.message;
+    editPhotoWarning.className = `form-message ${warningState.tone}`;
+    editPhotoWarning.classList.remove('hidden');
+  }
+
+  if (!editPhotoWarningAckRow || !editPhotoWarningAck) return;
+  editPhotoWarningAckRow.classList.toggle('hidden', !warningState.requiresAcknowledgement);
+  editPhotoWarningAck.checked = warningState.acknowledged;
+}
+
+function resetEditPhotoValidationState() {
+  clearEditPhotoValidationDebounce();
+  editPhotoValidationState.validationResult = null;
+  editPhotoValidationState.isChecking = false;
+  editPhotoValidationState.acknowledged = false;
+  editPhotoValidationState.lastValidatedUrl = '';
+  editPhotoValidationState.pendingPromise = null;
+  renderEditPhotoWarning();
+}
+
+function handleEditPhotoInput() {
+  editPhotoValidationState.validationResult = null;
+  editPhotoValidationState.lastValidatedUrl = '';
+  editPhotoValidationState.acknowledged = false;
+  clearEditPhotoValidationDebounce();
+
+  const photoUrl = editPhotoURL.value.trim();
+  if (!photoUrl) {
+    editPhotoValidationState.isChecking = false;
+    renderEditPhotoWarning();
+    return;
+  }
+
+  editPhotoValidationState.debounceTimer = setTimeout(() => {
+    editPhotoValidationState.debounceTimer = null;
+    void validateEditPhotoUrl();
+  }, EDIT_PHOTO_WARNING_DEBOUNCE_MS);
+
+  renderEditPhotoWarning();
+}
+
+async function validateEditPhotoUrl({ immediate = false } = {}) {
+  clearEditPhotoValidationDebounce();
+
+  const photoUrl = editPhotoURL.value.trim();
+  if (!photoUrl) {
+    editPhotoValidationState.validationResult = null;
+    editPhotoValidationState.lastValidatedUrl = '';
+    editPhotoValidationState.isChecking = false;
+    editPhotoValidationState.pendingPromise = null;
+    renderEditPhotoWarning();
+    return null;
+  }
+
+  if (!immediate && editPhotoValidationState.pendingPromise && editPhotoValidationState.lastValidatedUrl === photoUrl) {
+    return editPhotoValidationState.pendingPromise;
+  }
+
+  editPhotoValidationState.isChecking = true;
+  editPhotoValidationState.lastValidatedUrl = photoUrl;
+  renderEditPhotoWarning();
+
+  const pendingPromise = validateImageUrl(photoUrl)
+    .then((result) => {
+      if (editPhotoURL.value.trim() !== photoUrl) return result;
+      editPhotoValidationState.validationResult = result;
+      editPhotoValidationState.lastValidatedUrl = photoUrl;
+      return result;
+    })
+    .finally(() => {
+      if (editPhotoURL.value.trim() === photoUrl) {
+        editPhotoValidationState.isChecking = false;
+        renderEditPhotoWarning();
+      }
+      if (editPhotoValidationState.pendingPromise === pendingPromise) {
+        editPhotoValidationState.pendingPromise = null;
+      }
+    });
+
+  editPhotoValidationState.pendingPromise = pendingPromise;
+  return pendingPromise;
 }
 
 async function refreshManageAndPublicGroups() {
@@ -549,6 +664,7 @@ async function showEditModal(group) {
 
   // Show current photo
   editPhotoURL.value = group.photoURL || '';
+  resetEditPhotoValidationState();
   if (group.photoURL) {
     editPhotoImg.src = group.photoURL;
     editPhotoCurrentDiv.classList.remove('hidden');
@@ -657,6 +773,12 @@ async function persistClaimantSelection() {
 export function initEditForm() {
   editPrimarySubfield.addEventListener('change', () => syncSecondaryCheckboxes(editPrimarySubfield, 'edit-secondary'));
   btnEditAddLink.addEventListener('click', () => addEditLinkRow());
+  editPhotoURL.addEventListener('input', handleEditPhotoInput);
+  editPhotoURL.addEventListener('blur', () => { void validateEditPhotoUrl({ immediate: true }); });
+  editPhotoWarningAck?.addEventListener('change', () => {
+    editPhotoValidationState.acknowledged = !!editPhotoWarningAck.checked;
+    renderEditPhotoWarning();
+  });
   editInstituteSelect.addEventListener('change', () => {
     handleEditAddInstitute();
   });
@@ -702,9 +824,20 @@ export function initEditForm() {
     });
 
     const photoURL = editPhotoURL.value.trim();
-    const photoValidation = await validateImageUrl(photoURL);
-    if (!photoValidation.valid) {
-      showMsg(editMessage, getImageUrlValidationMessage(photoValidation, 'PI photo URL'), 'error');
+    if (!photoURL) {
+      showMsg(editMessage, 'PI photo URL is required.', 'error');
+      return;
+    }
+    const photoValidation = await validateEditPhotoUrl({ immediate: true });
+    if (!canSubmitWithPhotoUrlWarning({
+      hasValue: Boolean(photoURL),
+      isChecking: editPhotoValidationState.isChecking,
+      validationResult: photoValidation,
+      acknowledged: editPhotoValidationState.acknowledged
+    })) {
+      showMsg(editMessage, 'The PI photo link may be broken. If you still want to continue, tick the confirmation box under the photo field and save again.', 'error');
+      editPhotoWarningAckRow?.scrollIntoView({ block: 'nearest', behavior: 'smooth' });
+      editPhotoWarningAck?.focus();
       return;
     }
     const hiring = document.getElementById('edit-hiring-checkbox').checked;
