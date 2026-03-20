@@ -1,3 +1,5 @@
+import { getClaimManagerName } from './manager-name-utils.mjs';
+
 export const MAX_VISIBLE_KEYWORDS = 5;
 
 export function escapeHTML(str) {
@@ -38,7 +40,7 @@ export function buildPiCardMarkup(group, {
     : '';
 
   const managedHTML = group.claimedBy
-    ? '<span class="card-managed-badge">Managed by PI</span>'
+    ? `<span class="card-managed-badge">Managed by ${escapeHTML(getClaimManagerName(group, 'PI'))}</span>`
     : '<span class="card-unclaimed-badge">Unclaimed</span>';
 
   const jobBadgeHTML = isHiring ? '<span class="card-job-badge">Hiring</span>' : '';
@@ -74,7 +76,7 @@ export function buildInstituteCardMarkup(institute, { piCount = 0 } = {}) {
     ? `<div class="card-links"><a href="${escapeHTML(institute.website)}" class="card-link" target="_blank" rel="noopener noreferrer">Website</a></div>`
     : '';
   const managedHTML = institute.claimedBy
-    ? '<span class="card-managed-badge">Claimed</span>'
+    ? `<span class="card-managed-badge">Managed by ${escapeHTML(getClaimManagerName(institute))}</span>`
     : '<span class="card-unclaimed-badge">Unclaimed</span>';
   const piCountLabel = `${piCount} PI${piCount === 1 ? '' : 's'}`;
 

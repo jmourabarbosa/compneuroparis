@@ -5,6 +5,7 @@ import { filterVisibleGroups, fuzzyMatch, partitionGroupsBySubfield } from './gr
 import { buildInstitutePiCountMap, getInstitutePiCount } from './institute-count-utils.mjs';
 import { filterVisibleJobs, getCombinedJobKeywords } from './job-filter-utils.mjs';
 import { buildInstituteCardMarkup, buildJobCardMarkup, buildPiCardMarkup, escapeHTML, formatCardDate } from './public-card-utils.mjs';
+import { getClaimManagerName, getPreferredUserName } from './manager-name-utils.mjs';
 
 let allGroups = [];
 let allInstitutes = [];
@@ -34,6 +35,12 @@ function getGroupInstituteNames(group) {
 
 function getGroupInstituteRefs(group) {
   return resolveInstituteRefsFromRecord(group, allInstitutes).filter(ref => ref.name);
+}
+
+function findInstituteByKey(instituteKey = '') {
+  return allInstitutes.find(inst =>
+    (inst.id && inst.id === instituteKey) || instituteNamesMatch(inst.name, instituteKey)
+  ) || null;
 }
 
 // Section refs
@@ -318,9 +325,7 @@ function createCard(group) {
       e.preventDefault();
       e.stopPropagation();
       const instituteKey = link.dataset.instituteKey;
-      const institute = allInstitutes.find(inst =>
-        (inst.id && inst.id === instituteKey) || instituteNamesMatch(inst.name, instituteKey)
-      );
+      const institute = findInstituteByKey(instituteKey);
       if (institute) {
         openInstituteDetail(institute);
       }
@@ -352,9 +357,27 @@ async function openPiDetail(group) {
   piDetailTitle.innerHTML = escapeHTML(group.name || 'PI Details') + (isHiringDetail ? ' <span class="card-job-badge">Hiring</span>' : '');
   piDetailPhoto.src = group.photoURL || 'assets/placeholder-lab.svg';
   piDetailPhoto.alt = group.name || '';
-  const institutes = getGroupInstituteNames(group);
-  piDetailInstitute.textContent = institutes.join(', ');
+  const instituteRefs = getGroupInstituteRefs(group);
+  const institutes = instituteRefs.length > 0
+    ? instituteRefs
+    : getGroupInstituteNames(group).map(name => ({ id: '', name }));
+  piDetailInstitute.innerHTML = institutes
+    .map(ref => {
+      const key = ref.id || ref.name || '';
+      return `<a href="#inst-${escapeHTML(key)}" class="card-link pi-detail-institute-link" data-institute-key="${escapeHTML(key)}">${escapeHTML(ref.name)}</a>`;
+    })
+    .join(', ');
   piDetailInstitute.classList.toggle('hidden', institutes.length === 0);
+  piDetailInstitute.querySelectorAll('.pi-detail-institute-link').forEach(link => {
+    link.addEventListener('click', (e) => {
+      e.preventDefault();
+      e.stopPropagation();
+      const institute = findInstituteByKey(link.dataset.instituteKey || '');
+      if (!institute) return;
+      modalPiDetail.classList.add('hidden');
+      openInstituteDetail(institute);
+    });
+  });
 
   const sfs = toArray(group.subfields || group.subfield);
   if (sfs.length === 0) sfs.push('computational');
@@ -392,6 +415,7 @@ async function openPiDetail(group) {
 
   // Managed-by display
   if (group.claimedBy) {
+    const managerName = getClaimManagerName(group, 'PI');
     let emailStr = '';
     let revokeBtn = '';
     if (isAdmin) {
@@ -405,7 +429,7 @@ async function openPiDetail(group) {
       if (email) emailStr = ` <span class="managed-by-email">(${escapeHTML(email)})</span>`;
       revokeBtn = ' <button class="btn-revoke-claim" data-target-id="' + escapeHTML(group.id) + '" data-type="pi">Remove claim</button>';
     }
-    piDetailManagedBy.innerHTML = `<div class="managed-by-badge">Managed by the PI${emailStr}${revokeBtn}</div>`;
+    piDetailManagedBy.innerHTML = `<div class="managed-by-badge">Managed by ${escapeHTML(managerName)}${emailStr}${revokeBtn}</div>`;
   } else {
     piDetailManagedBy.innerHTML = '<div class="unclaimed-warning">Not yet claimed — information was semi-automatically populated and may contain errors</div>';
   }
@@ -606,6 +630,7 @@ async function handleClaimSubmit() {
       type: currentClaimTarget.type,
       claimantUid: user.uid,
       claimantEmail: user.email,
+      claimantName: getPreferredUserName(user),
       justification
     });
     // Close claim modal, update detail to show pending
@@ -1181,6 +1206,7 @@ async function openInstituteDetail(inst) {
 
   // Managed-by display
   if (inst.claimedBy) {
+    const managerName = getClaimManagerName(inst);
     let emailStr = '';
     let revokeBtn = '';
     if (isAdmin) {
@@ -1194,7 +1220,7 @@ async function openInstituteDetail(inst) {
       if (email) emailStr = ` <span class="managed-by-email">(${escapeHTML(email)})</span>`;
       revokeBtn = ' <button class="btn-revoke-claim" data-target-id="' + escapeHTML(inst.id) + '" data-type="institute">Remove claim</button>';
     }
-    instDetailManagedBy.innerHTML = `<div class="managed-by-badge">Managed by a member${emailStr}${revokeBtn}</div>`;
+    instDetailManagedBy.innerHTML = `<div class="managed-by-badge">Managed by ${escapeHTML(managerName)}${emailStr}${revokeBtn}</div>`;
   } else {
     instDetailManagedBy.innerHTML = '<div class="unclaimed-warning">Not yet claimed — information was semi-automatically populated and may contain errors</div>';
   }

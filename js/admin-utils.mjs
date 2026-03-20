@@ -41,7 +41,8 @@ export function getClaimSectionSummary(group = {}) {
   if (!group.claimedBy) {
     return 'Currently unclaimed.';
   }
-  return `Currently claimed by ${group.claimedByEmail || 'unknown email'}.`;
+  const claimedByLabel = group.claimedByName || group.claimedByEmail || 'unknown user';
+  return `Currently claimed by ${claimedByLabel}.`;
 }
 
 export function buildClaimantOptionData(users = [], group = {}) {

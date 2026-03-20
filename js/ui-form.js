@@ -2,6 +2,7 @@ import { createSubmission, createGroup, fetchApprovedInstitutes, createInstitute
 import { getCurrentUser, getIsAdmin, createAccount, login, logout, resetPassword, isEmailVerified, resendVerification, getAuthErrorMessage } from './auth.js';
 import { loadGroups, loadPublicInstitutes, loadPublicJobs } from './ui-groups.js';
 import { buildInstituteFieldData } from './institute-links.mjs';
+import { getPreferredUserName } from './manager-name-utils.mjs';
 
 const form = document.getElementById('submission-form');
 const formWrapper = document.getElementById('submission-form-wrapper');
@@ -655,6 +656,7 @@ async function handleSubmit(e) {
         subfield: subfields[0],
         ...instituteFieldData,
         submitterEmail: user.email,
+        submitterName: getPreferredUserName(user),
         submitterNote,
         creatorUid: user.uid
       });

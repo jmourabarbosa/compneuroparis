@@ -22,7 +22,8 @@ export function buildApprovedGroupData(submissionData = {}, overrideData = null)
     ...(data.creatorUid ? {
       creatorUid: data.creatorUid,
       claimedBy: data.creatorUid,
-      claimedByEmail: data.submitterEmail || ''
+      claimedByEmail: data.submitterEmail || '',
+      claimedByName: data.submitterName || ''
     } : {})
   };
 }

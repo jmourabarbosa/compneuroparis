@@ -30,7 +30,8 @@ test('buildApprovedGroupData auto-claims approved user submissions', () => {
     institute: 'ICM',
     creatorUid: 'user-123',
     claimedBy: 'user-123',
-    claimedByEmail: 'alice@example.edu'
+    claimedByEmail: 'alice@example.edu',
+    claimedByName: ''
   });
 });
 
@@ -65,7 +66,8 @@ test('buildApprovedGroupData preserves override fields but keeps ownership from 
     institute: 'Reviewed Institute',
     creatorUid: 'user-123',
     claimedBy: 'user-123',
-    claimedByEmail: 'alice@example.edu'
+    claimedByEmail: 'alice@example.edu',
+    claimedByName: ''
   });
 });
 

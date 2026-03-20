@@ -13,6 +13,7 @@ export function getClaimTargetCollection(type = 'pi') {
 export function buildClaimedByUpdate(claim = {}) {
   return {
     claimedBy: claim.claimantUid,
-    claimedByEmail: claim.claimantEmail || ''
+    claimedByEmail: claim.claimantEmail || '',
+    claimedByName: claim.claimantName || ''
   };
 }

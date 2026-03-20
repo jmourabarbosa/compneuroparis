@@ -21,12 +21,14 @@ test('getClaimTargetCollection maps institutes separately from PI groups', () =>
 });
 
 test('buildClaimedByUpdate normalizes claimant email presence', () => {
-  assert.deepEqual(buildClaimedByUpdate({ claimantUid: 'user-1', claimantEmail: 'alice@example.org' }), {
+  assert.deepEqual(buildClaimedByUpdate({ claimantUid: 'user-1', claimantEmail: 'alice@example.org', claimantName: 'Alice Example' }), {
     claimedBy: 'user-1',
-    claimedByEmail: 'alice@example.org'
+    claimedByEmail: 'alice@example.org',
+    claimedByName: 'Alice Example'
   });
   assert.deepEqual(buildClaimedByUpdate({ claimantUid: 'user-2' }), {
     claimedBy: 'user-2',
-    claimedByEmail: ''
+    claimedByEmail: '',
+    claimedByName: ''
   });
 });

@@ -420,6 +420,7 @@ exports.deleteUser = functions.https.onCall(async (data, context) => {
     await doc.ref.update({
       claimedBy: admin.firestore.FieldValue.delete(),
       claimedByEmail: admin.firestore.FieldValue.delete(),
+      claimedByName: admin.firestore.FieldValue.delete(),
     });
   }
 
@@ -429,6 +430,7 @@ exports.deleteUser = functions.https.onCall(async (data, context) => {
     await doc.ref.update({
       claimedBy: admin.firestore.FieldValue.delete(),
       claimedByEmail: admin.firestore.FieldValue.delete(),
+      claimedByName: admin.firestore.FieldValue.delete(),
     });
   }
 
@@ -490,24 +492,32 @@ exports.updateUser = functions.https.onCall(async (data, context) => {
     await admin.auth().updateUser(uid, updatePayload);
   }
 
-  // If email changed, update claimedByEmail on groups/institutes
-  if (updatePayload.email) {
+  // If email or display name changed, update claim metadata on groups/institutes
+  if (updatePayload.email || updatePayload.displayName !== undefined) {
     const firestore = admin.firestore();
+    const nextClaimedByName = displayName || "";
 
     const groupsSnap = await firestore.collection("groups").where("claimedBy", "==", uid).get();
     for (const doc of groupsSnap.docs) {
-      await doc.ref.update({ claimedByEmail: email });
+      const claimUpdate = {};
+      if (updatePayload.email) claimUpdate.claimedByEmail = email;
+      if (updatePayload.displayName !== undefined) claimUpdate.claimedByName = nextClaimedByName;
+      await doc.ref.update(claimUpdate);
     }
 
     const instSnap = await firestore.collection("institutes").where("claimedBy", "==", uid).get();
     for (const doc of instSnap.docs) {
-      await doc.ref.update({ claimedByEmail: email });
+      const claimUpdate = {};
+      if (updatePayload.email) claimUpdate.claimedByEmail = email;
+      if (updatePayload.displayName !== undefined) claimUpdate.claimedByName = nextClaimedByName;
+      await doc.ref.update(claimUpdate);
     }
 
-    // Update email in admins collection if exists
-    const adminDoc = await firestore.collection("admins").doc(uid).get();
-    if (adminDoc.exists) {
-      await adminDoc.ref.update({ email });
+    if (updatePayload.email) {
+      const adminDoc = await firestore.collection("admins").doc(uid).get();
+      if (adminDoc.exists) {
+        await adminDoc.ref.update({ email });
+      }
     }
   }
 
@@ -604,12 +614,14 @@ exports.setGroupClaim = functions.https.onCall(async (data, context) => {
     await groupRef.update({
       claimedBy: claimPlan.nextClaimedBy,
       claimedByEmail: claimPlan.nextClaimedByEmail,
+      claimedByName: claimantUser?.displayName || "",
       updatedAt: admin.firestore.FieldValue.serverTimestamp(),
     });
   } else {
     await groupRef.update({
       claimedBy: admin.firestore.FieldValue.delete(),
       claimedByEmail: admin.firestore.FieldValue.delete(),
+      claimedByName: admin.firestore.FieldValue.delete(),
       updatedAt: admin.firestore.FieldValue.serverTimestamp(),
     });
   }
@@ -626,5 +638,6 @@ exports.setGroupClaim = functions.https.onCall(async (data, context) => {
     success: true,
     claimedBy: claimPlan.nextClaimedBy,
     claimedByEmail: claimPlan.nextClaimedByEmail,
+    claimedByName: claimantUser?.displayName || "",
   };
 });

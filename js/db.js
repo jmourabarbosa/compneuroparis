@@ -192,7 +192,7 @@ export async function rejectInstitute(id) {
 
 // ========== CLAIMS ==========
 
-export async function createClaim({ targetId, targetName, type = 'pi', claimantUid, claimantEmail, justification }) {
+export async function createClaim({ targetId, targetName, type = 'pi', claimantUid, claimantEmail, claimantName = '', justification }) {
   const docRef = await addDoc(collection(db, 'claims'), {
     targetId,
     targetName,
@@ -202,6 +202,7 @@ export async function createClaim({ targetId, targetName, type = 'pi', claimantU
     piName: targetName,
     claimantUid,
     claimantEmail,
+    claimantName,
     justification: justification || '',
     status: 'pending',
     createdAt: serverTimestamp()
@@ -271,6 +272,7 @@ export async function revokeClaim(targetId, type = 'pi') {
   await updateDoc(doc(db, targetCollection, targetId), {
     claimedBy: deleteField(),
     claimedByEmail: deleteField(),
+    claimedByName: deleteField(),
     updatedAt: serverTimestamp()
   });
 

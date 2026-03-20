@@ -557,6 +557,7 @@ async function persistClaimantSelection() {
   const result = await setGroupClaimAdmin(currentEditGroup.id, nextClaimantUid);
   currentEditGroup.claimedBy = result.claimedBy || '';
   currentEditGroup.claimedByEmail = result.claimedByEmail || '';
+  currentEditGroup.claimedByName = result.claimedByName || '';
   updateClaimSectionSummary(currentEditGroup);
   editClaimedBySelect.value = result.claimedBy || '';
   showMsg(
