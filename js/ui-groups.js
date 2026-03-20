@@ -1,6 +1,6 @@
 import { fetchGroups, fetchApprovedInstitutes, fetchJobs, fetchJobsByPi, updateJob, deleteJob, updateGroup, createClaim, fetchMyClaimForTarget, fetchApprovedClaimForTarget, revokeClaim, deleteGroup, deleteInstitute, createReport } from './db.js';
 import { getCurrentUser, getIsAdmin, createAccount, login, isEmailVerified, resendVerification, getAuthErrorMessage } from './auth.js';
-import { getInstituteDisplayNames, instituteNamesMatch, toArray } from './institute-links.mjs';
+import { getInstituteDisplayNames, instituteNamesMatch, resolveInstituteRefsFromRecord, toArray } from './institute-links.mjs';
 import { filterVisibleGroups, fuzzyMatch, partitionGroupsBySubfield } from './group-filter-utils.mjs';
 import { filterVisibleJobs, getCombinedJobKeywords } from './job-filter-utils.mjs';
 import { buildInstituteCardMarkup, buildJobCardMarkup, buildPiCardMarkup, escapeHTML, formatCardDate } from './public-card-utils.mjs';
@@ -29,6 +29,10 @@ let filterValidated = false;
 
 function getGroupInstituteNames(group) {
   return getInstituteDisplayNames(group, allInstitutes);
+}
+
+function getGroupInstituteRefs(group) {
+  return resolveInstituteRefsFromRecord(group, allInstitutes).filter(ref => ref.name);
 }
 
 // Section refs
@@ -292,11 +296,11 @@ function createCard(group) {
   const sfs = toArray(group.subfields || group.subfield);
   const sf = sfs[0] || 'computational';
   card.dataset.subfield = sf;
-  const institutes = getGroupInstituteNames(group);
+  const instituteRefs = getGroupInstituteRefs(group);
   const isHiring = group.hiring || allJobs.some(j => j.piId === group.id);
   const { html, overflowCount } = buildPiCardMarkup(group, {
     subfieldLabel: SUBFIELD_LABELS[sf] || sf,
-    instituteNames: institutes,
+    instituteRefs,
     isHiring
   });
 
@@ -306,6 +310,20 @@ function createCard(group) {
   card.addEventListener('click', (e) => {
     if (e.target.closest('a') || e.target.closest('.keyword-pill') || e.target.closest('.keyword-more')) return;
     openPiDetail(group);
+  });
+
+  card.querySelectorAll('.card-institute-link').forEach(link => {
+    link.addEventListener('click', (e) => {
+      e.preventDefault();
+      e.stopPropagation();
+      const instituteKey = link.dataset.instituteKey;
+      const institute = allInstitutes.find(inst =>
+        (inst.id && inst.id === instituteKey) || instituteNamesMatch(inst.name, instituteKey)
+      );
+      if (institute) {
+        openInstituteDetail(institute);
+      }
+    });
   });
 
   // Toggle "+N more" keywords

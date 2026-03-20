@@ -21,7 +21,7 @@ test('buildPiCardMarkup includes hiring badge, managed state, and keyword overfl
     subfields: ['systems']
   }, {
     subfieldLabel: 'Systems',
-    instituteNames: ['ICM'],
+    instituteRefs: [{ id: 'inst-1', name: 'ICM' }],
     isHiring: true
   });
 
@@ -29,6 +29,8 @@ test('buildPiCardMarkup includes hiring badge, managed state, and keyword overfl
   assert.match(html, /Managed by PI/);
   assert.match(html, /Hiring/);
   assert.match(html, /ICM/);
+  assert.match(html, /card-institute-link/);
+  assert.match(html, /data-institute-key="inst-1"/);
   assert.match(html, /\+1/);
 });
 

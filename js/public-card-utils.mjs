@@ -17,7 +17,7 @@ export function formatCardDate(dateValue) {
 
 export function buildPiCardMarkup(group, {
   subfieldLabel,
-  instituteNames = [],
+  instituteRefs = [],
   isHiring = false
 }) {
   const keywords = group.keywords || [];
@@ -30,8 +30,11 @@ export function buildPiCardMarkup(group, {
     ? `<span class="keywords-overflow keywords-hidden">${pills.slice(MAX_VISIBLE_KEYWORDS).join('')}</span><button class="keyword-more">+${overflowCount}</button>`
     : '';
 
-  const institutesHTML = instituteNames.length > 0
-    ? `<div class="card-institute">${escapeHTML(instituteNames.join(', '))}</div>`
+  const institutesHTML = instituteRefs.length > 0
+    ? `<div class="card-institute">${instituteRefs.map(ref => {
+      const key = ref.id || ref.name || '';
+      return `<a href="#inst-${escapeHTML(key)}" class="card-institute-link" data-institute-key="${escapeHTML(key)}">${escapeHTML(ref.name)}</a>`;
+    }).join(', ')}</div>`
     : '';
 
   const managedHTML = group.claimedBy
