@@ -4,6 +4,7 @@ import assert from 'node:assert/strict';
 import {
   buildInstituteFieldData,
   getInstituteDisplayNames,
+  resolveLegacyInstituteRefsFromRecord,
   resolveInstituteRefsFromRecord
 } from '../js/institute-links.mjs';
 
@@ -19,33 +20,40 @@ test('resolveInstituteRefsFromRecord preserves ID links and refreshes names from
   ]);
 });
 
-test('resolveInstituteRefsFromRecord maps legacy institute names to matching IDs', () => {
+test('resolveInstituteRefsFromRecord ignores legacy institute names without IDs', () => {
   const record = {
     institutes: ['NeuroSpin']
   };
   const institutes = [{ id: 'inst-1', name: 'NeuroSpin (CEA)' }];
 
-  assert.deepEqual(resolveInstituteRefsFromRecord(record, institutes), [
+  assert.deepEqual(resolveInstituteRefsFromRecord(record, institutes), []);
+});
+
+test('resolveLegacyInstituteRefsFromRecord maps legacy institute names to matching IDs for migration', () => {
+  const record = {
+    institutes: ['NeuroSpin']
+  };
+  const institutes = [{ id: 'inst-1', name: 'NeuroSpin (CEA)' }];
+
+  assert.deepEqual(resolveLegacyInstituteRefsFromRecord(record, institutes), [
     { id: 'inst-1', name: 'NeuroSpin (CEA)' }
   ]);
 });
 
-test('buildInstituteFieldData keeps names for display while storing stable IDs', () => {
+test('buildInstituteFieldData stores only stable IDs', () => {
   assert.deepEqual(buildInstituteFieldData([
     { id: 'inst-1', name: 'ICM' },
     { id: 'inst-2', name: 'ENS' }
   ]), {
-    instituteIds: ['inst-1', 'inst-2'],
-    institutes: ['ICM', 'ENS'],
-    institute: 'ICM'
+    instituteIds: ['inst-1', 'inst-2']
   });
 });
 
-test('getInstituteDisplayNames falls back to stored names when an ID cannot be resolved', () => {
+test('getInstituteDisplayNames omits missing institute IDs', () => {
   const record = {
     instituteIds: ['missing-id'],
     institutes: ['Legacy Name']
   };
 
-  assert.deepEqual(getInstituteDisplayNames(record, []), ['Legacy Name']);
+  assert.deepEqual(getInstituteDisplayNames(record, []), []);
 });

@@ -25,9 +25,7 @@ test('buildApprovedGroupData auto-claims approved user submissions', () => {
     photoURL: 'https://example.com/photo.jpg',
     subfields: ['human'],
     instituteIds: ['inst-1'],
-    institutes: ['ICM'],
     subfield: 'human',
-    institute: 'ICM',
     creatorUid: 'user-123',
     claimedBy: 'user-123',
     claimedByEmail: 'alice@example.edu',
@@ -61,9 +59,7 @@ test('buildApprovedGroupData preserves override fields but keeps ownership from 
     photoURL: '',
     subfields: ['computational', 'systems'],
     instituteIds: ['inst-reviewed'],
-    institutes: ['Reviewed Institute'],
     subfield: 'computational',
-    institute: 'Reviewed Institute',
     creatorUid: 'user-123',
     claimedBy: 'user-123',
     claimedByEmail: 'alice@example.edu',
@@ -87,8 +83,6 @@ test('buildApprovedGroupData leaves admin-created pages unclaimed when there is 
     photoURL: '',
     subfields: ['clinical'],
     instituteIds: ['inst-hospital'],
-    institutes: ['Hospital'],
     subfield: 'clinical',
-    institute: 'Hospital'
   });
 });

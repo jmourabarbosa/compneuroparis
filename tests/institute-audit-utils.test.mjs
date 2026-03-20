@@ -8,7 +8,7 @@ test('auditInstituteLinks detects clean records, updates, and unresolved mapping
 
   assert.equal(
     auditInstituteLinks({ instituteIds: ['inst-1'], institutes: ['NeuroSpin (CEA)'], institute: 'NeuroSpin (CEA)' }, institutes).needsUpdate,
-    false
+    true
   );
 
   assert.equal(
@@ -34,8 +34,8 @@ test('summarizeInstituteLinkAudit classifies record sets', () => {
   assert.deepEqual(summary, {
     total: 4,
     noLinks: 1,
-    clean: 1,
-    needsUpdate: 1,
+    clean: 0,
+    needsUpdate: 2,
     unresolved: 1
   });
 });

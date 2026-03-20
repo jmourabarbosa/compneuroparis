@@ -1,10 +1,4 @@
-import { normalizeInstituteName, resolveInstituteRefsFromRecord } from './institute-links.mjs';
-
-function getInstituteCountKey(ref = {}) {
-  if (ref.id) return `id:${ref.id}`;
-  if (ref.name) return `name:${normalizeInstituteName(ref.name)}`;
-  return '';
-}
+import { resolveInstituteRefsFromRecord } from './institute-links.mjs';
 
 export function buildInstitutePiCountMap(groups = [], institutes = []) {
   const counts = new Map();
@@ -14,7 +8,7 @@ export function buildInstitutePiCountMap(groups = [], institutes = []) {
     const seenKeys = new Set();
 
     refs.forEach(ref => {
-      const key = getInstituteCountKey(ref);
+      const key = ref.id || '';
       if (!key || seenKeys.has(key)) return;
       seenKeys.add(key);
       counts.set(key, (counts.get(key) || 0) + 1);
@@ -25,15 +19,5 @@ export function buildInstitutePiCountMap(groups = [], institutes = []) {
 }
 
 export function getInstitutePiCount(institute = {}, countMap = new Map()) {
-  const idKey = institute.id ? `id:${institute.id}` : '';
-  if (idKey && countMap.has(idKey)) {
-    return countMap.get(idKey);
-  }
-
-  const nameKey = institute.name ? `name:${normalizeInstituteName(institute.name)}` : '';
-  if (nameKey && countMap.has(nameKey)) {
-    return countMap.get(nameKey);
-  }
-
-  return 0;
+  return institute.id ? (countMap.get(institute.id) || 0) : 0;
 }

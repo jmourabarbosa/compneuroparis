@@ -1,6 +1,6 @@
 import { fetchGroups, fetchApprovedInstitutes, fetchJobs, fetchJobsByPi, updateJob, deleteJob, updateGroup, createClaim, fetchMyClaimForTarget, fetchApprovedClaimForTarget, revokeClaim, deleteGroup, deleteInstitute, createReport } from './db.js';
 import { getCurrentUser, getIsAdmin, createAccount, login, isEmailVerified, resendVerification, getAuthErrorMessage } from './auth.js';
-import { getInstituteDisplayNames, instituteNamesMatch, resolveInstituteRefsFromRecord, toArray } from './institute-links.mjs';
+import { getInstituteDisplayNames, resolveInstituteRefsFromRecord, toArray } from './institute-links.mjs';
 import { filterVisibleGroups, fuzzyMatch, partitionGroupsBySubfield } from './group-filter-utils.mjs';
 import { buildInstitutePiCountMap, getInstitutePiCount } from './institute-count-utils.mjs';
 import { filterVisibleJobs, getCombinedJobKeywords } from './job-filter-utils.mjs';
@@ -34,13 +34,11 @@ function getGroupInstituteNames(group) {
 }
 
 function getGroupInstituteRefs(group) {
-  return resolveInstituteRefsFromRecord(group, allInstitutes).filter(ref => ref.name);
+  return resolveInstituteRefsFromRecord(group, allInstitutes).filter(ref => ref.id && ref.name);
 }
 
 function findInstituteByKey(instituteKey = '') {
-  return allInstitutes.find(inst =>
-    (inst.id && inst.id === instituteKey) || instituteNamesMatch(inst.name, instituteKey)
-  ) || null;
+  return allInstitutes.find(inst => inst.id && inst.id === instituteKey) || null;
 }
 
 // Section refs
@@ -363,13 +361,10 @@ async function openPiDetail(group) {
   piDetailPhoto.src = group.photoURL || 'assets/placeholder-lab.svg';
   piDetailPhoto.alt = group.name || '';
   const instituteRefs = getGroupInstituteRefs(group);
-  const institutes = instituteRefs.length > 0
-    ? instituteRefs
-    : getGroupInstituteNames(group).map(name => ({ id: '', name }));
+  const institutes = instituteRefs;
   piDetailInstitute.innerHTML = institutes
     .map(ref => {
-      const key = ref.id || ref.name || '';
-      return `<a href="#inst-${escapeHTML(key)}" class="card-link pi-detail-institute-link" data-institute-key="${escapeHTML(key)}">${escapeHTML(ref.name)}</a>`;
+      return `<a href="#inst-${escapeHTML(ref.id)}" class="card-link pi-detail-institute-link" data-institute-key="${escapeHTML(ref.id)}">${escapeHTML(ref.name)}</a>`;
     })
     .join(', ');
   piDetailInstitute.classList.toggle('hidden', institutes.length === 0);
@@ -820,7 +815,7 @@ export function setInstituteFilter(institute) {
   const nextInstituteId = institute?.id || '';
   const nextInstituteName = institute?.name || '';
 
-  if ((activeInstituteId && activeInstituteId === nextInstituteId) || (!activeInstituteId && activeInstituteName === nextInstituteName)) {
+  if (activeInstituteId && activeInstituteId === nextInstituteId) {
     // Toggle off
     activeInstituteId = null;
     activeInstituteName = '';
@@ -839,15 +834,11 @@ export function setInstituteFilter(institute) {
   // Update active state on institute cards
   institutesPublicList.querySelectorAll('.institute-card').forEach(card => {
     const cardInstituteId = card.dataset.instituteId || '';
-    const cardInstituteName = card.dataset.institute || '';
-    card.classList.toggle('active',
-      (activeInstituteId && cardInstituteId === activeInstituteId)
-      || (!activeInstituteId && instituteNamesMatch(cardInstituteName, activeInstituteName))
-    );
+    card.classList.toggle('active', activeInstituteId && cardInstituteId === activeInstituteId);
   });
   renderGroups();
   // Scroll to the groups area
-  if (activeInstituteId || activeInstituteName) {
+  if (activeInstituteId) {
     instituteFilterBanner.scrollIntoView({ behavior: 'smooth', block: 'start' });
   }
 }
@@ -920,8 +911,7 @@ function createInstituteCard(inst, piCount = 0) {
   const card = document.createElement('article');
   card.className = 'group-card institute-card-rich';
   card.dataset.instituteId = inst.id || '';
-  card.dataset.institute = inst.name;
-  if ((activeInstituteId && inst.id === activeInstituteId) || (!activeInstituteId && instituteNamesMatch(inst.name, activeInstituteName))) {
+  if (activeInstituteId && inst.id === activeInstituteId) {
     card.classList.add('active');
   }
   card.innerHTML = buildInstituteCardMarkup(inst, { piCount });

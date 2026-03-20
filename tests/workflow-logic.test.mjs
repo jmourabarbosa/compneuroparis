@@ -34,16 +34,6 @@ test('submission approval workflow creates a claimed PI that is immediately visi
     }).map(group => group.id),
     ['pi-1']
   );
-
-  assert.deepEqual(
-    filterVisibleGroups({
-      groups: [approvedGroup],
-      institutes,
-      activeInstituteName: 'NeuroSpin',
-      filterValidated: true
-    }).map(group => group.id),
-    ['pi-1']
-  );
 });
 
 test('admin reassignment workflow promotes matching pending claim and suppresses duplicate ownership email', () => {

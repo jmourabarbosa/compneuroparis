@@ -1,4 +1,4 @@
-import { buildInstituteFieldData, resolveInstituteRefsFromRecord, toArray } from './institute-links.mjs';
+import { buildInstituteFieldData, resolveLegacyInstituteRefsFromRecord, toArray } from './institute-links.mjs';
 
 function arraysEqual(a = [], b = []) {
   return JSON.stringify(a) === JSON.stringify(b);
@@ -7,13 +7,14 @@ function arraysEqual(a = [], b = []) {
 export function auditInstituteLinks(record = {}, institutes = []) {
   const storedIds = toArray(record.instituteIds);
   const storedNames = toArray(record.institutes || record.institute);
-  const resolvedRefs = resolveInstituteRefsFromRecord(record, institutes);
+  const resolvedRefs = storedIds.length > 0
+    ? storedIds.map(id => ({ id }))
+    : resolveLegacyInstituteRefsFromRecord(record, institutes);
   const unresolved = resolvedRefs.filter(ref => !ref.id);
   const nextFields = buildInstituteFieldData(resolvedRefs);
   const needsUpdate = resolvedRefs.length > 0 && unresolved.length === 0 && (
     !arraysEqual(storedIds, nextFields.instituteIds)
-    || !arraysEqual(storedNames, nextFields.institutes)
-    || (record.institute || '') !== nextFields.institute
+    || storedNames.length > 0
   );
 
   return {

@@ -15,7 +15,7 @@ test('editDistance and fuzzyMatch tolerate small typos but not short unrelated t
   assert.equal(fuzzyMatch('German Sumbre NeuroSpin', 'ens'), false);
 });
 
-test('filterVisibleGroups matches institutes by stable ID and legacy-compatible name', () => {
+test('filterVisibleGroups matches institutes only by stable ID', () => {
   const groups = [
     { id: 'pi-1', name: 'German Sumbre', instituteIds: ['inst-1'], institutes: ['NeuroSpin'] },
     { id: 'pi-2', name: 'Other PI', instituteIds: ['inst-2'], institutes: ['ICM'] }
@@ -27,11 +27,6 @@ test('filterVisibleGroups matches institutes by stable ID and legacy-compatible 
 
   assert.deepEqual(
     filterVisibleGroups({ groups, institutes, activeInstituteId: 'inst-1' }).map(group => group.id),
-    ['pi-1']
-  );
-
-  assert.deepEqual(
-    filterVisibleGroups({ groups, institutes, activeInstituteName: 'NeuroSpin' }).map(group => group.id),
     ['pi-1']
   );
 });

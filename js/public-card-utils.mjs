@@ -32,8 +32,10 @@ export function buildPiCardMarkup(group, {
 
   const institutesHTML = instituteRefs.length > 0
     ? `<div class="card-institute">${instituteRefs.map(ref => {
-      const key = ref.id || ref.name || '';
-      return `<a href="#inst-${escapeHTML(key)}" class="card-institute-link" data-institute-key="${escapeHTML(key)}">${escapeHTML(ref.name)}</a>`;
+      if (!ref.id) {
+        return `<span class="card-institute-name">${escapeHTML(ref.name)}</span>`;
+      }
+      return `<a href="#inst-${escapeHTML(ref.id)}" class="card-institute-link" data-institute-key="${escapeHTML(ref.id)}">${escapeHTML(ref.name)}</a>`;
     }).join(', ')}</div>`
     : '';
 

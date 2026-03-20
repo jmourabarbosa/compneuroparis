@@ -5,7 +5,6 @@ import {
 import { getFunctions, httpsCallable } from 'https://www.gstatic.com/firebasejs/11.4.0/firebase-functions.js';
 import { db } from './firebase-config.js';
 import { buildClaimedByUpdate, getClaimTargetCollection, getClaimTargetId } from './claim-record-utils.mjs';
-import { buildInstituteRenameUpdate } from './institute-record-utils.mjs';
 import { buildApprovedGroupData } from './ownership-utils.mjs';
 
 const functions = getFunctions();
@@ -40,6 +39,8 @@ export async function createGroup(data) {
 export async function updateGroup(id, data) {
   await updateDoc(doc(db, 'groups', id), {
     ...data,
+    institutes: deleteField(),
+    institute: deleteField(),
     updatedAt: serverTimestamp()
   });
 }
@@ -141,31 +142,10 @@ export async function updateInstitute(id, data) {
   const instituteSnap = await getDoc(instituteRef);
   if (!instituteSnap.exists()) throw new Error('Institute not found');
 
-  const existingInstitute = instituteSnap.data();
-  const previousName = existingInstitute.name || '';
-  const nextName = data.name || previousName;
-
   await updateDoc(instituteRef, {
     ...data,
     updatedAt: serverTimestamp()
   });
-
-  if (previousName && nextName && previousName !== nextName) {
-    const groupsSnap = await getDocs(collection(db, 'groups'));
-    const updates = groupsSnap.docs
-      .map(groupDoc => {
-        const groupData = groupDoc.data();
-        const updateData = buildInstituteRenameUpdate(groupData, previousName, nextName);
-        if (!updateData) return null;
-        return updateDoc(groupDoc.ref, {
-          ...updateData,
-          updatedAt: serverTimestamp()
-        });
-      })
-      .filter(Boolean);
-
-    await Promise.all(updates);
-  }
 }
 
 export async function deleteInstitute(id) {

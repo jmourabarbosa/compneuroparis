@@ -48,10 +48,10 @@
 
 <script type="module">
 import { getAuth, signInWithEmailAndPassword, onAuthStateChanged } from 'https://www.gstatic.com/firebasejs/11.4.0/firebase-auth.js';
-import { getFirestore, collection, doc, getDoc, getDocs, query, updateDoc, where } from 'https://www.gstatic.com/firebasejs/11.4.0/firebase-firestore.js';
-import { db } from './js/firebase-config.js';
-import { summarizeInstituteLinkAudit } from './js/institute-audit-utils.mjs';
-import { buildInstituteFieldData, resolveInstituteRefsFromRecord } from './js/institute-links.mjs';
+ import { addDoc, collection, deleteField, doc, getDoc, getDocs, query, serverTimestamp, updateDoc, where } from 'https://www.gstatic.com/firebasejs/11.4.0/firebase-firestore.js';
+ import { db } from './js/firebase-config.js';
+ import { summarizeInstituteLinkAudit } from './js/institute-audit-utils.mjs';
+ import { buildInstituteFieldData, normalizeInstituteName, resolveLegacyInstituteRefsFromRecord } from './js/institute-links.mjs';
 const auth = getAuth();
 
 const logEl = document.getElementById('log');
@@ -131,39 +131,100 @@ function arraysEqual(a = [], b = []) {
   return JSON.stringify(a) === JSON.stringify(b);
 }
 
-function computeMigration(record, institutes) {
-  const resolvedRefs = resolveInstituteRefsFromRecord(record, institutes);
-  const unresolved = resolvedRefs.filter(ref => !ref.id);
-  if (resolvedRefs.length === 0 || unresolved.length > 0) {
-    return {
-      updateData: null,
-      unresolved
+ async function ensureInstituteRef(ref, institutes, dryRun, counters, createdInstituteRefs) {
+   if (ref.id) return ref;
+
+   const trimmedName = (ref.name || '').trim();
+   if (!trimmedName) return { id: '', name: '' };
+
+   const normalized = normalizeInstituteName(trimmedName);
+   const existingInstitute = institutes.find(inst => normalizeInstituteName(inst.name) === normalized);
+   if (existingInstitute) {
+     return { id: existingInstitute.id, name: existingInstitute.name || trimmedName };
+   }
+
+   if (createdInstituteRefs.has(normalized)) {
+     return createdInstituteRefs.get(normalized);
+   }
+
+   counters.createdInstitutes += 1;
+
+   if (dryRun) {
+     const dryRunRef = { id: `dry-run-${normalized || counters.createdInstitutes}`, name: trimmedName };
+     createdInstituteRefs.set(normalized, dryRunRef);
+     log(`[institutes] would create approved institute "${trimmedName}"`, 'change');
+     return dryRunRef;
+   }
+
+   const docRef = await addDoc(collection(db, 'institutes'), {
+     name: trimmedName,
+     status: 'approved',
+     proposedBy: auth.currentUser?.uid || '',
+     keywords: [],
+     links: [],
+     logoURL: '',
+     summary: '',
+     website: '',
+     createdAt: serverTimestamp(),
+     updatedAt: serverTimestamp()
+   });
+
+   const createdRef = { id: docRef.id, name: trimmedName };
+   institutes.push(createdRef);
+   createdInstituteRefs.set(normalized, createdRef);
+   log(`[institutes] created approved institute "${trimmedName}" -> ${docRef.id}`, 'change');
+   return createdRef;
+ }
+
+ async function computeMigration(record, institutes, dryRun, counters, createdInstituteRefs) {
+   const resolvedRefs = resolveLegacyInstituteRefsFromRecord(record, institutes);
+   if (resolvedRefs.length === 0) {
+     return {
+       updateData: null,
+       unresolved: []
+     };
+   }
+
+   const ensuredRefs = [];
+   for (const ref of resolvedRefs) {
+     const ensuredRef = await ensureInstituteRef(ref, institutes, dryRun, counters, createdInstituteRefs);
+     ensuredRefs.push(ensuredRef);
+   }
+
+   const unresolved = ensuredRefs.filter(ref => !ref.id);
+   if (unresolved.length > 0) {
+     return {
+       updateData: null,
+       unresolved
+     };
+   }
+
+   const nextFields = buildInstituteFieldData(ensuredRefs);
+   const currentIds = Array.isArray(record.instituteIds) ? record.instituteIds : [];
+   const currentNames = Array.isArray(record.institutes)
+     ? record.institutes
+     : (record.institute ? [record.institute] : []);
+
+   const changed = !arraysEqual(currentIds, nextFields.instituteIds)
+     || currentNames.length > 0;
+
+   return {
+     updateData: changed ? {
+       ...nextFields,
+       institutes: deleteField(),
+       institute: deleteField()
+     } : null,
+     unresolved: []
     };
   }
 
-  const nextFields = buildInstituteFieldData(resolvedRefs);
-  const currentIds = Array.isArray(record.instituteIds) ? record.instituteIds : [];
-  const currentNames = Array.isArray(record.institutes)
-    ? record.institutes
-    : (record.institute ? [record.institute] : []);
-
-  const changed = !arraysEqual(currentIds, nextFields.instituteIds)
-    || !arraysEqual(currentNames, nextFields.institutes)
-    || (record.institute || '') !== nextFields.institute;
-
-  return {
-    updateData: changed ? nextFields : null,
-    unresolved: []
-  };
-}
-
-async function runCollectionMigration(collectionName, institutes, dryRun, counters) {
+ async function runCollectionMigration(collectionName, institutes, dryRun, counters, createdInstituteRefs) {
   const snapshot = await getDocs(collection(db, collectionName));
   log(`Scanning ${snapshot.size} documents in ${collectionName}...`, 'info');
 
   for (const docSnap of snapshot.docs) {
     const data = docSnap.data();
-    const { updateData, unresolved } = computeMigration(data, institutes);
+    const { updateData, unresolved } = await computeMigration(data, institutes, dryRun, counters, createdInstituteRefs);
     const label = data.name || data.submitterEmail || docSnap.id;
 
     if (unresolved.length > 0) {
@@ -192,17 +253,18 @@ window.runMigration = async (dryRun) => {
   summaryEl.textContent = '';
   setButtonsEnabled(false);
 
-  const counters = { changed: 0, skipped: 0, unresolved: 0 };
+  const counters = { changed: 0, skipped: 0, unresolved: 0, createdInstitutes: 0 };
+  const createdInstituteRefs = new Map();
 
   try {
     log(`Starting ${dryRun ? 'dry run' : 'live migration'}...`, 'info');
     const institutes = await loadInstitutesForMigration();
     log(`Loaded ${institutes.length} approved/pending institute documents.`, 'info');
 
-    await runCollectionMigration('groups', institutes, dryRun, counters);
-    await runCollectionMigration('submissions', institutes, dryRun, counters);
+    await runCollectionMigration('groups', institutes, dryRun, counters, createdInstituteRefs);
+    await runCollectionMigration('submissions', institutes, dryRun, counters, createdInstituteRefs);
 
-    summaryEl.textContent = `${dryRun ? 'Dry run complete' : 'Migration complete'} — updated: ${counters.changed}, unchanged: ${counters.skipped}, unresolved: ${counters.unresolved}`;
+    summaryEl.textContent = `${dryRun ? 'Dry run complete' : 'Migration complete'} — updated: ${counters.changed}, unchanged: ${counters.skipped}, created institutes: ${counters.createdInstitutes}, unresolved: ${counters.unresolved}`;
     log(summaryEl.textContent, counters.unresolved > 0 ? 'change' : 'success');
   } catch (err) {
     log(`Migration failed: ${err.message}`, 'error');

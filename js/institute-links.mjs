@@ -22,15 +22,18 @@ export function instituteNamesMatch(a, b) {
 
 export function resolveInstituteRefsFromRecord(record = {}, availableInstitutes = []) {
   const institutesById = new Map(availableInstitutes.map(inst => [inst.id, inst]));
-  const storedNames = toArray(record.institutes || record.institute);
   const storedIds = toArray(record.instituteIds);
 
-  if (storedIds.length > 0) {
-    return storedIds.map((id, index) => ({
+  return storedIds
+    .filter(Boolean)
+    .map(id => ({
       id,
-      name: institutesById.get(id)?.name || storedNames[index] || storedNames[0] || ''
+      name: institutesById.get(id)?.name || ''
     }));
-  }
+}
+
+export function resolveLegacyInstituteRefsFromRecord(record = {}, availableInstitutes = []) {
+  const storedNames = toArray(record.institutes || record.institute);
 
   return storedNames.map(name => {
     const matchedInstitute = availableInstitutes.find(inst => instituteNamesMatch(inst.name, name));
@@ -42,14 +45,11 @@ export function resolveInstituteRefsFromRecord(record = {}, availableInstitutes 
 }
 
 export function buildInstituteFieldData(instituteRefs = []) {
-  const refs = instituteRefs.filter(ref => ref && ref.name);
-  const institutes = refs.map(ref => ref.name);
-  const instituteIds = refs.map(ref => ref.id).filter(Boolean);
+  const refs = instituteRefs.filter(ref => ref?.id);
+  const instituteIds = [...new Set(refs.map(ref => ref.id))];
 
   return {
-    instituteIds,
-    institutes,
-    institute: institutes[0] || ''
+    instituteIds
   };
 }
 

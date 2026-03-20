@@ -1,4 +1,4 @@
-import { getInstituteDisplayNames, instituteNamesMatch, toArray } from './institute-links.mjs';
+import { getInstituteDisplayNames, toArray } from './institute-links.mjs';
 
 export function editDistance(a, b) {
   const m = a.length;
@@ -49,12 +49,9 @@ export function filterVisibleGroups({
   filterValidated = false
 }) {
   return groups.filter(group => {
-    if (activeInstituteId || activeInstituteName) {
+    if (activeInstituteId) {
       const instituteIds = toArray(group.instituteIds);
-      const instituteNames = getInstituteDisplayNames(group, institutes);
-      const matchesId = activeInstituteId && instituteIds.includes(activeInstituteId);
-      const matchesName = activeInstituteName && instituteNames.some(name => instituteNamesMatch(name, activeInstituteName));
-      if (!matchesId && !matchesName) return false;
+      if (!instituteIds.includes(activeInstituteId)) return false;
     }
 
     if (activeKeywords.size > 0) {

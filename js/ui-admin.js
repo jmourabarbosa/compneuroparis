@@ -153,8 +153,8 @@ function notifyAdminDataChanged() {
 
 // Cache for institute status lookups
 let approvedInstitutes = [];
-let approvedInstituteNames = new Set();
 let approvedInstitutesById = new Map();
+let instituteLookupById = new Map();
 const EDIT_PHOTO_WARNING_DEBOUNCE_MS = 500;
 const editPhotoValidationState = {
   validationResult: null,
@@ -165,19 +165,26 @@ const editPhotoValidationState = {
   debounceTimer: null
 };
 
-function setApprovedInstitutesCache(institutes = []) {
-  approvedInstitutes = institutes;
-  approvedInstituteNames = new Set(institutes.map(inst => inst.name));
-  approvedInstitutesById = new Map(institutes.map(inst => [inst.id, inst]));
+function setInstituteCaches(approvedInstitutesList = [], lookupInstitutes = []) {
+  approvedInstitutes = approvedInstitutesList;
+  approvedInstitutesById = new Map(approvedInstitutesList.map(inst => [inst.id, inst]));
+  instituteLookupById = new Map(lookupInstitutes.map(inst => [inst.id, inst]));
+}
+
+function getInstituteLookupList() {
+  return [...instituteLookupById.values()];
 }
 
 async function ensureApprovedInstitutesCache(forceRefresh = false) {
   if (!forceRefresh && approvedInstitutes.length > 0) return approvedInstitutes;
   if (approvedInstitutesPromise) return approvedInstitutesPromise;
 
-  approvedInstitutesPromise = fetchApprovedInstitutes()
-    .then((approved) => {
-      setApprovedInstitutesCache(approved);
+  approvedInstitutesPromise = Promise.all([
+    fetchApprovedInstitutes(),
+    fetchPendingInstitutes().catch(() => [])
+  ])
+    .then(([approved, pending]) => {
+      setInstituteCaches(approved, [...approved, ...pending]);
       return approvedInstitutes;
     })
     .finally(() => {
@@ -447,14 +454,11 @@ async function showSubmissionDetail(sub) {
   setSubfieldDropdown(reviewPrimarySubfield, 'review-secondary', subfields);
 
   // Institute display + warning
-  const instituteRefs = resolveInstituteRefsFromRecord(sub, approvedInstitutes);
-  const institutes = instituteRefs.map(ref => ref.name);
+  const instituteRefs = resolveInstituteRefsFromRecord(sub, getInstituteLookupList());
+  const institutes = instituteRefs.map(ref => ref.name || ref.id);
   const instName = institutes.join(', ') || '';
   reviewInstituteDisplay.textContent = instName || '(none)';
-  const isPending = instituteRefs.length > 0 && instituteRefs.some(ref => {
-    if (ref.id) return !approvedInstitutesById.has(ref.id);
-    return !approvedInstituteNames.has(ref.name);
-  });
+  const isPending = instituteRefs.length > 0 && instituteRefs.some(ref => !approvedInstitutesById.has(ref.id));
   if (isPending) {
     reviewInstituteWarning.classList.remove('hidden');
     btnApprove.disabled = true;
@@ -511,7 +515,7 @@ function getReviewFormData() {
   });
 
   // Institute comes from original submission (read-only in review)
-  const instituteRefs = resolveInstituteRefsFromRecord(currentSubmission, approvedInstitutes);
+  const instituteRefs = resolveInstituteRefsFromRecord(currentSubmission, getInstituteLookupList());
 
   return {
     name,
@@ -649,7 +653,7 @@ async function showEditModal(group) {
   const subfields = toArray(group.subfields || group.subfield || 'computational');
   setSubfieldDropdown(editPrimarySubfield, 'edit-secondary', subfields);
 
-  editSelectedInstitutes = resolveInstituteRefsFromRecord(group, approvedInstitutes);
+  editSelectedInstitutes = resolveInstituteRefsFromRecord(group, getInstituteLookupList());
   renderEditInstitutePills();
   renderLoadingOption(editInstituteSelect, 'Loading institutions...');
 
@@ -690,7 +694,7 @@ async function showEditModal(group) {
 
   void loadEditInstituteOptions().then(() => {
     if (loadToken !== editModalLoadToken || currentEditGroup?.id !== group.id) return;
-    editSelectedInstitutes = resolveInstituteRefsFromRecord(group, approvedInstitutes);
+    editSelectedInstitutes = resolveInstituteRefsFromRecord(group, getInstituteLookupList());
     renderEditInstitutePills();
   });
 
