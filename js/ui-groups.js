@@ -43,6 +43,15 @@ function hasActivePublicFilters() {
   );
 }
 
+function shouldAutoExpandSections() {
+  return Boolean(
+    searchText
+    || activeKeywords.size > 0
+    || activeInstituteId
+    || activeInstituteName
+  );
+}
+
 function getGroupInstituteNames(group) {
   return getInstituteDisplayNames(group, allInstitutes);
 }
@@ -197,6 +206,7 @@ function renderGroups() {
   let totalVisible = 0;
 
   const isSearching = hasActivePublicFilters();
+  const autoExpandSections = shouldAutoExpandSections();
 
   SUBFIELDS.forEach(sf => {
     const { grid, count, countSecondary, el } = sections[sf];
@@ -249,7 +259,7 @@ function renderGroups() {
       }
     }
 
-    if (isSearching) {
+    if (autoExpandSections) {
       el.classList.remove('collapsed');
     }
 
@@ -858,6 +868,7 @@ function renderInstitutes() {
   institutesPublicList.innerHTML = '';
 
   const isSearching = hasActivePublicFilters();
+  const autoExpandSections = shouldAutoExpandSections();
   const piCountMap = buildInstitutePiCountMap(allGroups, allInstitutes);
 
   const filtered = allInstitutes.filter(inst => {
@@ -898,7 +909,7 @@ function renderInstitutes() {
   });
 
   const instHeader = institutesSection.querySelector('.subfield-header');
-  if (isSearching) {
+  if (autoExpandSections) {
     institutesSection.classList.remove('collapsed');
   }
   instHeader.setAttribute('aria-expanded', institutesSection.classList.contains('collapsed') ? 'false' : 'true');
@@ -941,6 +952,7 @@ function renderJobs() {
   jobsPublicList.innerHTML = '';
 
   const isSearching = hasActivePublicFilters();
+  const autoExpandSections = shouldAutoExpandSections();
 
   const filtered = filterVisibleJobs({ jobs: allJobs, groups: allGroups, searchText });
 
@@ -963,7 +975,7 @@ function renderJobs() {
   });
 
   const jobsHeader = jobsSection.querySelector('.subfield-header');
-  if (isSearching) {
+  if (autoExpandSections) {
     jobsSection.classList.remove('collapsed');
   }
   jobsHeader.setAttribute('aria-expanded', jobsSection.classList.contains('collapsed') ? 'false' : 'true');
