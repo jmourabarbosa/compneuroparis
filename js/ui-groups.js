@@ -533,6 +533,7 @@ const claimStepAuth = document.getElementById('claim-step-auth');
 const claimStepJustify = document.getElementById('claim-step-justify');
 const claimAuthEmail = document.getElementById('claim-auth-email');
 const claimAuthPassword = document.getElementById('claim-auth-password');
+const claimRemember = document.getElementById('claim-remember');
 const claimAuthMessage = document.getElementById('claim-auth-message');
 const btnClaimCreate = document.getElementById('btn-claim-create');
 const btnClaimLogin = document.getElementById('btn-claim-login');
@@ -573,6 +574,7 @@ function showClaimMsg(el, text, type) {
 async function handleClaimAuth(isCreate) {
   const email = claimAuthEmail.value.trim();
   const password = claimAuthPassword.value.trim();
+  const rememberMe = !!claimRemember?.checked;
   claimAuthMessage.classList.add('hidden');
 
   if (!email || !password) {
@@ -589,11 +591,11 @@ async function handleClaimAuth(isCreate) {
 
   try {
     if (isCreate) {
-      await createAccount(email, password);
+      await createAccount(email, password, { rememberMe });
       // Show verification notice
       showClaimMsg(claimSubmitMessage, 'Account created! A verification email has been sent. Please verify before submitting your claim.', 'info');
     } else {
-      await login(email, password);
+      await login(email, password, { rememberMe });
     }
     // Auth succeeded — hide auth step
     claimStepAuth.classList.add('hidden');

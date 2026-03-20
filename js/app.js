@@ -23,6 +23,7 @@ const btnLogout = document.getElementById('btn-logout');
 const modalLogin = document.getElementById('modal-login');
 const loginForm = document.getElementById('login-form');
 const loginMessage = document.getElementById('login-message');
+const loginRemember = document.getElementById('login-remember');
 const modalAdmin = document.getElementById('modal-admin');
 
 // Global verification banner
@@ -34,6 +35,7 @@ const btnSignup = document.getElementById('btn-signup');
 const modalSignup = document.getElementById('modal-signup');
 const signupForm = document.getElementById('signup-form');
 const signupMessage = document.getElementById('signup-message');
+const signupRemember = document.getElementById('signup-remember');
 
 // Creator bar
 const creatorBar = document.getElementById('creator-bar');
@@ -98,6 +100,7 @@ loginForm.addEventListener('submit', async (e) => {
 
   const email = document.getElementById('login-email').value.trim();
   const password = document.getElementById('login-password').value;
+  const rememberMe = !!loginRemember?.checked;
 
   if (!email || !password) {
     showLoginMsg('Please enter email and password.', 'error');
@@ -108,7 +111,7 @@ loginForm.addEventListener('submit', async (e) => {
   submitBtn.disabled = true;
 
   try {
-    await login(email, password);
+    await login(email, password, { rememberMe });
     closeModal(modalLogin);
     loginForm.reset();
   } catch (err) {
@@ -167,6 +170,7 @@ signupForm.addEventListener('submit', async (e) => {
 
   const email = document.getElementById('signup-email').value.trim();
   const password = document.getElementById('signup-password').value;
+  const rememberMe = !!signupRemember?.checked;
 
   if (!email || !password) {
     showSignupMsg('Please enter email and password.', 'error');
@@ -181,7 +185,7 @@ signupForm.addEventListener('submit', async (e) => {
   submitBtn.disabled = true;
 
   try {
-    await createAccount(email, password);
+    await createAccount(email, password, { rememberMe });
     // Show verification banner inside the signup modal
     signupMessage.innerHTML = `
       <span>Account created! Please verify your email. Check your spam inbox for a confirmation link.</span>

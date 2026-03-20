@@ -1,6 +1,7 @@
 import { createSubmission, createGroup, fetchApprovedInstitutes, createInstitute, createMessage, fetchGroupsClaimedBy, createJob, fetchGroups } from './db.js';
 import { getCurrentUser, getIsAdmin, createAccount, login, logout, resetPassword, isEmailVerified, resendVerification, getAuthErrorMessage } from './auth.js';
 import { loadGroups, loadPublicInstitutes, loadPublicJobs } from './ui-groups.js';
+import { getImageUrlValidationMessage, validateImageUrl } from './image-url-utils.mjs';
 import { buildInstituteFieldData } from './institute-links.mjs';
 import { getPreferredUserName } from './manager-name-utils.mjs';
 
@@ -26,6 +27,7 @@ const instSubAuthEmail = document.getElementById('inst-sub-auth-email');
 const instSubAuthPassword = document.getElementById('inst-sub-auth-password');
 const instSubAuthMessage = document.getElementById('inst-sub-auth-message');
 const instSubAuthUserEmail = document.getElementById('inst-sub-auth-user-email');
+const instSubRemember = document.getElementById('inst-sub-remember');
 const btnInstSubCreate = document.getElementById('btn-inst-sub-create');
 const btnInstSubLogin = document.getElementById('btn-inst-sub-login');
 const btnInstSubLogout = document.getElementById('btn-inst-sub-logout');
@@ -49,6 +51,7 @@ const subAuthEmail = document.getElementById('sub-auth-email');
 const subAuthPassword = document.getElementById('sub-auth-password');
 const subAuthMessage = document.getElementById('sub-auth-message');
 const subAuthUserEmail = document.getElementById('sub-auth-user-email');
+const subRemember = document.getElementById('sub-remember');
 const btnSubCreate = document.getElementById('btn-sub-create');
 const btnSubLogin = document.getElementById('btn-sub-login');
 const btnSubLogout = document.getElementById('btn-sub-logout');
@@ -351,6 +354,7 @@ function showVerificationBanner(container, user) {
 async function handleInstSubAuth(isCreate) {
   const email = instSubAuthEmail.value.trim();
   const password = instSubAuthPassword.value;
+  const rememberMe = !!instSubRemember?.checked;
   instSubAuthMessage.classList.add('hidden');
 
   if (!email || !password) {
@@ -366,10 +370,10 @@ async function handleInstSubAuth(isCreate) {
   btnInstSubLogin.disabled = true;
   try {
     if (isCreate) {
-      await createAccount(email, password);
+      await createAccount(email, password, { rememberMe });
       showInstAuthMsg('Account created! A verification email has been sent. Please verify before submitting.', 'success');
     } else {
-      await login(email, password);
+      await login(email, password, { rememberMe });
     }
   } catch (err) {
     showInstAuthMsg(getAuthErrorMessage(err, 'Authentication failed.'), 'error');
@@ -442,6 +446,7 @@ async function handleCreateAccount() {
   subAuthMessage.classList.add('hidden');
   const email = subAuthEmail.value.trim();
   const password = subAuthPassword.value;
+  const rememberMe = !!subRemember?.checked;
 
   if (!email || !password) {
     showAuthMsg('Please enter email and password.', 'error');
@@ -455,7 +460,7 @@ async function handleCreateAccount() {
   btnSubCreate.disabled = true;
   btnSubLogin.disabled = true;
   try {
-    await createAccount(email, password);
+    await createAccount(email, password, { rememberMe });
     showAuthMsg('Account created! A verification email has been sent. Please check your inbox and verify before submitting.', 'success');
   } catch (err) {
     showAuthMsg(getAuthErrorMessage(err, 'Error creating account.'), 'error');
@@ -469,6 +474,7 @@ async function handleLogin() {
   subAuthMessage.classList.add('hidden');
   const email = subAuthEmail.value.trim();
   const password = subAuthPassword.value;
+  const rememberMe = !!subRemember?.checked;
 
   if (!email || !password) {
     showAuthMsg('Please enter email and password.', 'error');
@@ -478,7 +484,7 @@ async function handleLogin() {
   btnSubCreate.disabled = true;
   btnSubLogin.disabled = true;
   try {
-    await login(email, password);
+    await login(email, password, { rememberMe });
   } catch (err) {
     showAuthMsg(getAuthErrorMessage(err, 'Login failed.'), 'error');
   } finally {
@@ -572,7 +578,7 @@ async function handleSubmit(e) {
   const name = form.elements.name.value.trim();
   const keywordsRaw = form.elements.keywords.value.trim();
   const summary = form.elements.summary.value.trim();
-  const photoURL = form.elements.photoURL.value.trim();
+  const photoInputValue = form.elements.photoURL.value.trim();
   const submitterNote = form.elements.submitterNote.value.trim();
   const subfields = getSelectedSubfields();
 
@@ -581,7 +587,7 @@ async function handleSubmit(e) {
     return;
   }
 
-  if (!photoURL) {
+  if (!photoInputValue) {
     showMessage(formMessage, 'Please add a photo URL for the PI before submitting.', 'error');
     return;
   }
@@ -607,11 +613,18 @@ async function handleSubmit(e) {
     if (label && url) links.push({ label, url });
   });
 
+  const photoValidation = await validateImageUrl(photoInputValue);
+  if (!photoValidation.valid) {
+    showMessage(formMessage, getImageUrlValidationMessage(photoValidation, 'PI photo URL'), 'error');
+    return;
+  }
+
   const submitBtn = document.getElementById('btn-submit');
   submitBtn.disabled = true;
   submitBtn.textContent = 'Submitting...';
 
   try {
+    const photoURL = photoInputValue;
     const isAdmin = getIsAdmin();
 
     const resolvedInstitutes = [];

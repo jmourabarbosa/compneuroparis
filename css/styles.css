@@ -239,6 +239,7 @@ img {
   border-color: var(--color-text-secondary);
 }
 
+
 .btn-text {
   background: transparent;
   color: var(--color-primary);
@@ -285,6 +286,19 @@ img {
 .btn-outline-dark:hover:not(:disabled) {
   background: var(--color-bg);
   border-color: var(--color-text-secondary);
+}
+
+.remember-choice {
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+  margin: 0.35rem 0 0.75rem;
+  font-size: 0.85rem;
+  color: var(--color-text-secondary);
+}
+
+.remember-choice input {
+  margin: 0;
 }
 
 /* ========== SEARCH SECTION ========== */

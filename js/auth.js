@@ -1,7 +1,8 @@
 import {
   signInWithEmailAndPassword, signOut, onAuthStateChanged,
   createUserWithEmailAndPassword, sendPasswordResetEmail,
-  sendEmailVerification
+  sendEmailVerification, setPersistence,
+  browserLocalPersistence, browserSessionPersistence
 } from 'https://www.gstatic.com/firebasejs/11.4.0/firebase-auth.js';
 import { auth } from './firebase-config.js';
 import { isAdmin, addAdmin } from './db.js';
@@ -19,12 +20,18 @@ export function getIsAdmin() {
   return currentIsAdmin;
 }
 
-export async function login(email, password) {
+async function applyAuthPersistence(rememberMe = false) {
+  await setPersistence(auth, rememberMe ? browserLocalPersistence : browserSessionPersistence);
+}
+
+export async function login(email, password, { rememberMe = false } = {}) {
+  await applyAuthPersistence(rememberMe);
   const cred = await signInWithEmailAndPassword(auth, email, password);
   return cred.user;
 }
 
-export async function createAccount(email, password) {
+export async function createAccount(email, password, { rememberMe = false } = {}) {
+  await applyAuthPersistence(rememberMe);
   const cred = await createUserWithEmailAndPassword(auth, email, password);
   await sendEmailVerification(cred.user);
   return cred.user;
