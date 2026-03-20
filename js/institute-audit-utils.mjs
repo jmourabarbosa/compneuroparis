@@ -5,6 +5,8 @@ function arraysEqual(a = [], b = []) {
 }
 
 export function auditInstituteLinks(record = {}, institutes = []) {
+  const hasLegacyFields = Object.prototype.hasOwnProperty.call(record, 'institutes')
+    || Object.prototype.hasOwnProperty.call(record, 'institute');
   const storedIds = toArray(record.instituteIds);
   const storedNames = toArray(record.institutes || record.institute);
   const resolvedRefs = storedIds.length > 0
@@ -12,15 +14,15 @@ export function auditInstituteLinks(record = {}, institutes = []) {
     : resolveLegacyInstituteRefsFromRecord(record, institutes);
   const unresolved = resolvedRefs.filter(ref => !ref.id);
   const nextFields = buildInstituteFieldData(resolvedRefs);
-  const needsUpdate = resolvedRefs.length > 0 && unresolved.length === 0 && (
-    !arraysEqual(storedIds, nextFields.instituteIds)
-    || storedNames.length > 0
+  const needsUpdate = hasLegacyFields || (
+    resolvedRefs.length > 0 && unresolved.length === 0 && !arraysEqual(storedIds, nextFields.instituteIds)
   );
 
   return {
-    hasLinks: storedIds.length > 0 || storedNames.length > 0,
+    hasLinks: storedIds.length > 0 || storedNames.length > 0 || hasLegacyFields,
     storedIds,
     storedNames,
+    hasLegacyFields,
     resolvedRefs,
     unresolved,
     nextFields,

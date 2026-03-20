@@ -20,6 +20,11 @@ test('auditInstituteLinks detects clean records, updates, and unresolved mapping
     auditInstituteLinks({ institutes: ['Unknown Institute'] }, institutes).unresolved.length,
     1
   );
+
+  assert.equal(
+    auditInstituteLinks({ instituteIds: [], institutes: [], institute: '' }, institutes).needsUpdate,
+    true
+  );
 });
 
 test('summarizeInstituteLinkAudit classifies record sets', () => {
@@ -28,14 +33,14 @@ test('summarizeInstituteLinkAudit classifies record sets', () => {
     { instituteIds: ['inst-1'], institutes: ['NeuroSpin (CEA)'], institute: 'NeuroSpin (CEA)' },
     { institutes: ['NeuroSpin'] },
     { institutes: ['Unknown Institute'] },
-    {}
+    { instituteIds: [], institutes: [], institute: '' }
   ], institutes);
 
   assert.deepEqual(summary, {
     total: 4,
-    noLinks: 1,
+    noLinks: 0,
     clean: 0,
-    needsUpdate: 2,
+    needsUpdate: 3,
     unresolved: 1
   });
 });

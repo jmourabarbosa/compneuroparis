@@ -59,6 +59,7 @@ const summaryEl = document.getElementById('summary');
 const auditBtn = document.getElementById('auditBtn');
 const dryRunBtn = document.getElementById('dryRunBtn');
 const migrateBtn = document.getElementById('migrateBtn');
+let seedInstituteFallbacksPromise = null;
 
 function log(msg, cls = '') {
   const span = document.createElement('span');
@@ -127,6 +128,31 @@ async function loadCollectionRecords(collectionName) {
   return snapshot.docs.map(docSnap => ({ id: docSnap.id, ...docSnap.data() }));
 }
 
+async function loadSeedInstituteFallbacks() {
+  if (seedInstituteFallbacksPromise) return seedInstituteFallbacksPromise;
+
+  seedInstituteFallbacksPromise = fetch('./seed.html')
+    .then(response => {
+      if (!response.ok) throw new Error(`Failed to load seed.html (${response.status})`);
+      return response.text();
+    })
+    .then(text => {
+      const fallbackMap = new Map();
+      const entryRegex = /\{\s*name:"([^"]+)"[\s\S]*?institutes:\[([^\]]*)\]/g;
+      let match;
+      while ((match = entryRegex.exec(text))) {
+        const name = match[1].trim();
+        const institutes = [...match[2].matchAll(/"([^"]+)"/g)].map(item => item[1]).filter(Boolean);
+        if (name && institutes.length > 0) {
+          fallbackMap.set(name, institutes);
+        }
+      }
+      return fallbackMap;
+    });
+
+  return seedInstituteFallbacksPromise;
+}
+
 function arraysEqual(a = [], b = []) {
   return JSON.stringify(a) === JSON.stringify(b);
 }
@@ -176,11 +202,25 @@ function arraysEqual(a = [], b = []) {
    return createdRef;
  }
 
- async function computeMigration(record, institutes, dryRun, counters, createdInstituteRefs) {
-   const resolvedRefs = resolveLegacyInstituteRefsFromRecord(record, institutes);
+ async function computeMigration(record, institutes, dryRun, counters, createdInstituteRefs, seedInstituteFallbacks) {
+   let resolvedRefs = resolveLegacyInstituteRefsFromRecord(record, institutes);
+   const hasLegacyFields = Object.prototype.hasOwnProperty.call(record, 'institutes')
+     || Object.prototype.hasOwnProperty.call(record, 'institute');
+
+   if (resolvedRefs.length === 0 && record.name && seedInstituteFallbacks.has(record.name)) {
+     resolvedRefs = resolveLegacyInstituteRefsFromRecord({ institutes: seedInstituteFallbacks.get(record.name) }, institutes);
+     if (resolvedRefs.length > 0) {
+       log(`[fallback] using seeded institute data for ${record.name}: ${seedInstituteFallbacks.get(record.name).join(', ')}`, 'info');
+     }
+   }
+
    if (resolvedRefs.length === 0) {
      return {
-       updateData: null,
+       updateData: hasLegacyFields ? {
+         instituteIds: [],
+         institutes: deleteField(),
+         institute: deleteField()
+       } : null,
        unresolved: []
      };
    }
@@ -206,7 +246,8 @@ function arraysEqual(a = [], b = []) {
      : (record.institute ? [record.institute] : []);
 
    const changed = !arraysEqual(currentIds, nextFields.instituteIds)
-     || currentNames.length > 0;
+     || currentNames.length > 0
+     || hasLegacyFields;
 
    return {
      updateData: changed ? {
@@ -218,13 +259,13 @@ function arraysEqual(a = [], b = []) {
     };
   }
 
- async function runCollectionMigration(collectionName, institutes, dryRun, counters, createdInstituteRefs) {
+ async function runCollectionMigration(collectionName, institutes, dryRun, counters, createdInstituteRefs, seedInstituteFallbacks) {
   const snapshot = await getDocs(collection(db, collectionName));
   log(`Scanning ${snapshot.size} documents in ${collectionName}...`, 'info');
 
   for (const docSnap of snapshot.docs) {
     const data = docSnap.data();
-    const { updateData, unresolved } = await computeMigration(data, institutes, dryRun, counters, createdInstituteRefs);
+    const { updateData, unresolved } = await computeMigration(data, institutes, dryRun, counters, createdInstituteRefs, seedInstituteFallbacks);
     const label = data.name || data.submitterEmail || docSnap.id;
 
     if (unresolved.length > 0) {
@@ -258,11 +299,14 @@ window.runMigration = async (dryRun) => {
 
   try {
     log(`Starting ${dryRun ? 'dry run' : 'live migration'}...`, 'info');
-    const institutes = await loadInstitutesForMigration();
+    const [institutes, seedInstituteFallbacks] = await Promise.all([
+      loadInstitutesForMigration(),
+      loadSeedInstituteFallbacks()
+    ]);
     log(`Loaded ${institutes.length} approved/pending institute documents.`, 'info');
 
-    await runCollectionMigration('groups', institutes, dryRun, counters, createdInstituteRefs);
-    await runCollectionMigration('submissions', institutes, dryRun, counters, createdInstituteRefs);
+    await runCollectionMigration('groups', institutes, dryRun, counters, createdInstituteRefs, seedInstituteFallbacks);
+    await runCollectionMigration('submissions', institutes, dryRun, counters, createdInstituteRefs, seedInstituteFallbacks);
 
     summaryEl.textContent = `${dryRun ? 'Dry run complete' : 'Migration complete'} — updated: ${counters.changed}, unchanged: ${counters.skipped}, created institutes: ${counters.createdInstitutes}, unresolved: ${counters.unresolved}`;
     log(summaryEl.textContent, counters.unresolved > 0 ? 'change' : 'success');
