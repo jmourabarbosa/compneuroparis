@@ -32,6 +32,17 @@ let filterValidated = false;
 const normalizedGroupKeywordsCache = new WeakMap();
 const keywordSearchMatchCache = new Map();
 
+function hasActivePublicFilters() {
+  return Boolean(
+    searchText
+    || activeKeywords.size > 0
+    || activeInstituteId
+    || activeInstituteName
+    || filterHiring
+    || filterValidated
+  );
+}
+
 function getGroupInstituteNames(group) {
   return getInstituteDisplayNames(group, allInstitutes);
 }
@@ -185,7 +196,7 @@ function renderGroups() {
 
   let totalVisible = 0;
 
-  const isSearching = searchText || activeKeywords.size > 0 || activeInstituteId || activeInstituteName || filterHiring || filterValidated;
+  const isSearching = hasActivePublicFilters();
 
   SUBFIELDS.forEach(sf => {
     const { grid, count, countSecondary, el } = sections[sf];
@@ -236,6 +247,10 @@ function renderGroups() {
         el.querySelector('.subfield-content').appendChild(alsoSection);
         totalVisible += secondary.length;
       }
+    }
+
+    if (isSearching) {
+      el.classList.remove('collapsed');
     }
 
     sections[sf].header.setAttribute('aria-expanded', el.classList.contains('collapsed') ? 'false' : 'true');
@@ -842,7 +857,7 @@ export async function loadPublicInstitutes() {
 function renderInstitutes() {
   institutesPublicList.innerHTML = '';
 
-  const isSearching = !!searchText;
+  const isSearching = hasActivePublicFilters();
   const piCountMap = buildInstitutePiCountMap(allGroups, allInstitutes);
 
   const filtered = allInstitutes.filter(inst => {
@@ -883,6 +898,9 @@ function renderInstitutes() {
   });
 
   const instHeader = institutesSection.querySelector('.subfield-header');
+  if (isSearching) {
+    institutesSection.classList.remove('collapsed');
+  }
   instHeader.setAttribute('aria-expanded', institutesSection.classList.contains('collapsed') ? 'false' : 'true');
 }
 
@@ -922,7 +940,7 @@ export async function loadPublicJobs() {
 function renderJobs() {
   jobsPublicList.innerHTML = '';
 
-  const isSearching = !!searchText;
+  const isSearching = hasActivePublicFilters();
 
   const filtered = filterVisibleJobs({ jobs: allJobs, groups: allGroups, searchText });
 
@@ -945,6 +963,9 @@ function renderJobs() {
   });
 
   const jobsHeader = jobsSection.querySelector('.subfield-header');
+  if (isSearching) {
+    jobsSection.classList.remove('collapsed');
+  }
   jobsHeader.setAttribute('aria-expanded', jobsSection.classList.contains('collapsed') ? 'false' : 'true');
 }
 
