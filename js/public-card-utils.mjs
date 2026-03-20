@@ -44,15 +44,16 @@ export function buildPiCardMarkup(group, {
   const jobBadgeHTML = isHiring ? '<span class="card-job-badge">Hiring</span>' : '';
   const primarySubfield = group.subfields?.[0] || group.subfield || 'computational';
   const subfieldBadgeHTML = `<span class="card-subfield-badge" data-subfield="${escapeHTML(primarySubfield)}">${escapeHTML(subfieldLabel)}</span>`;
+  const metaBadges = [subfieldBadgeHTML, jobBadgeHTML, managedHTML].filter(Boolean).join('');
 
   return {
     html: `
       <div class="card-body">
-        <div class="card-name-row">
+        <div class="card-name-stack">
           <h3 class="card-name">${escapeHTML(group.name)}</h3>
-          ${subfieldBadgeHTML}
-          ${jobBadgeHTML}
-          ${managedHTML}
+          <div class="card-meta-row">
+            ${metaBadges}
+          </div>
         </div>
         ${institutesHTML}
         <div class="card-keywords">${visiblePills}${overflowHTML}</div>
@@ -62,7 +63,7 @@ export function buildPiCardMarkup(group, {
   };
 }
 
-export function buildInstituteCardMarkup(institute) {
+export function buildInstituteCardMarkup(institute, { piCount = 0 } = {}) {
   const keywordHTML = (institute.keywords || [])
     .map(keyword => `<span class="keyword-pill keyword-pill-institute">${escapeHTML(keyword)}</span>`)
     .join('');
@@ -75,6 +76,7 @@ export function buildInstituteCardMarkup(institute) {
   const managedHTML = institute.claimedBy
     ? '<span class="card-managed-badge">Claimed</span>'
     : '<span class="card-unclaimed-badge">Unclaimed</span>';
+  const piCountLabel = `${piCount} PI${piCount === 1 ? '' : 's'}`;
 
   return `
     <div class="card-body">
@@ -82,6 +84,7 @@ export function buildInstituteCardMarkup(institute) {
         <h3 class="card-name">${escapeHTML(institute.name)}</h3>
         ${managedHTML}
       </div>
+      <div class="card-meta-line">${escapeHTML(piCountLabel)} linked</div>
       ${keywordHTML ? `<div class="card-keywords">${keywordHTML}</div>` : ''}
       ${truncatedSummary ? `<p class="card-summary">${escapeHTML(truncatedSummary)}</p>` : ''}
       ${websiteHTML}

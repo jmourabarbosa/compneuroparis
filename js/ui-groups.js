@@ -2,6 +2,7 @@ import { fetchGroups, fetchApprovedInstitutes, fetchJobs, fetchJobsByPi, updateJ
 import { getCurrentUser, getIsAdmin, createAccount, login, isEmailVerified, resendVerification, getAuthErrorMessage } from './auth.js';
 import { getInstituteDisplayNames, instituteNamesMatch, resolveInstituteRefsFromRecord, toArray } from './institute-links.mjs';
 import { filterVisibleGroups, fuzzyMatch, partitionGroupsBySubfield } from './group-filter-utils.mjs';
+import { buildInstitutePiCountMap, getInstitutePiCount } from './institute-count-utils.mjs';
 import { filterVisibleJobs, getCombinedJobKeywords } from './job-filter-utils.mjs';
 import { buildInstituteCardMarkup, buildJobCardMarkup, buildPiCardMarkup, escapeHTML, formatCardDate } from './public-card-utils.mjs';
 
@@ -833,6 +834,7 @@ function renderInstitutes() {
   institutesPublicList.innerHTML = '';
 
   const isSearching = !!searchText;
+  const piCountMap = buildInstitutePiCountMap(allGroups, allInstitutes);
 
   const filtered = allInstitutes.filter(inst => {
     if (!searchText) return true;
@@ -868,7 +870,7 @@ function renderInstitutes() {
   }
 
   filtered.forEach(inst => {
-    institutesPublicList.appendChild(createInstituteCard(inst));
+    institutesPublicList.appendChild(createInstituteCard(inst, getInstitutePiCount(inst, piCountMap)));
   });
 
   // Auto-expand institutes section when searching with results, collapse when not
@@ -882,7 +884,7 @@ function renderInstitutes() {
   }
 }
 
-function createInstituteCard(inst) {
+function createInstituteCard(inst, piCount = 0) {
   const card = document.createElement('article');
   card.className = 'group-card institute-card-rich';
   card.dataset.instituteId = inst.id || '';
@@ -890,7 +892,7 @@ function createInstituteCard(inst) {
   if ((activeInstituteId && inst.id === activeInstituteId) || (!activeInstituteId && instituteNamesMatch(inst.name, activeInstituteName))) {
     card.classList.add('active');
   }
-  card.innerHTML = buildInstituteCardMarkup(inst);
+  card.innerHTML = buildInstituteCardMarkup(inst, { piCount });
 
   card.addEventListener('click', (e) => {
     if (e.target.closest('a') || e.target.closest('button')) return;

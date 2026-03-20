@@ -1046,6 +1046,24 @@ img {
   margin-bottom: 0;
 }
 
+.card-name-stack {
+  display: flex;
+  flex-direction: column;
+  gap: 0.4rem;
+  margin-bottom: 0.5rem;
+}
+
+.card-name-stack .card-name {
+  margin-bottom: 0;
+}
+
+.card-meta-row {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.35rem;
+  align-items: center;
+}
+
 .card-managed-badge {
   font-size: 0.65rem;
   font-weight: 500;
@@ -1084,6 +1102,25 @@ img {
   color: var(--color-text-secondary);
   margin-bottom: 0.5rem;
   font-style: italic;
+}
+
+.card-institute-link {
+  color: inherit;
+  text-decoration: underline;
+  text-decoration-color: rgba(107, 114, 128, 0.35);
+  text-underline-offset: 0.12em;
+}
+
+.card-institute-link:hover {
+  color: var(--color-primary);
+  text-decoration-color: currentColor;
+}
+
+.card-meta-line {
+  font-size: 0.78rem;
+  color: var(--color-text-secondary);
+  margin-bottom: 0.5rem;
+  font-weight: 500;
 }
 
 .card-summary {

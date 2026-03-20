@@ -28,6 +28,8 @@ test('buildPiCardMarkup includes hiring badge, managed state, and keyword overfl
   assert.equal(overflowCount, 1);
   assert.match(html, /Managed by PI/);
   assert.match(html, /Hiring/);
+  assert.match(html, /card-name-stack/);
+  assert.match(html, /card-meta-row/);
   assert.match(html, /ICM/);
   assert.match(html, /card-institute-link/);
   assert.match(html, /data-institute-key="inst-1"/);
@@ -40,10 +42,11 @@ test('buildInstituteCardMarkup truncates summaries and shows website links', () 
     summary: 'x'.repeat(130),
     website: 'https://example.org',
     keywords: ['systems']
-  });
+  }, { piCount: 12 });
 
   assert.match(html, /Website/);
   assert.match(html, /systems/);
+  assert.match(html, /12 PIs linked/);
   assert.match(html, /\.\.\./);
 });
 
