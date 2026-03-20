@@ -1,6 +1,7 @@
 import { fetchGroups, fetchApprovedInstitutes, fetchJobs, fetchJobsByPi, updateJob, deleteJob, updateGroup, createClaim, fetchMyClaimForTarget, fetchApprovedClaimForTarget, revokeClaim, deleteGroup, deleteInstitute, createReport } from './db.js';
 import { getCurrentUser, getIsAdmin, createAccount, login, isEmailVerified, resendVerification, getAuthErrorMessage } from './auth.js';
 import { getInstituteDisplayNames, resolveInstituteRefsFromRecord, toArray } from './institute-links.mjs';
+import { buildKeywordCounts, getMatchingKeywords } from './keyword-pill-utils.mjs';
 import { filterVisibleGroups, fuzzyMatch, partitionGroupsBySubfield } from './group-filter-utils.mjs';
 import { buildInstitutePiCountMap, getInstitutePiCount } from './institute-count-utils.mjs';
 import { filterVisibleJobs, getCombinedJobKeywords } from './job-filter-utils.mjs';
@@ -28,6 +29,8 @@ const SUBFIELD_LABELS = {
 
 let filterHiring = false;
 let filterValidated = false;
+const normalizedGroupKeywordsCache = new WeakMap();
+const keywordSearchMatchCache = new Map();
 
 function getGroupInstituteNames(group) {
   return getInstituteDisplayNames(group, allInstitutes);
@@ -262,22 +265,15 @@ function rebuildKeywordPills(filteredGroups) {
     return;
   }
 
-  // Collect all keywords from filtered PIs and count how many PIs have each
-  const kwCounts = new Map();
-  filteredGroups.forEach(g => {
-    (g.keywords || []).forEach(k => {
-      const kl = k.trim().toLowerCase();
-      kwCounts.set(kl, (kwCounts.get(kl) || 0) + 1);
-    });
-  });
+  const kwCounts = buildKeywordCounts(filteredGroups, normalizedGroupKeywordsCache);
 
   // Only show keywords that themselves match the search query
-  const matching = [...kwCounts.keys()].filter(kw => fuzzyMatch(kw, searchText))
-    .sort((a, b) => kwCounts.get(b) - kwCounts.get(a));
+  const matching = getMatchingKeywords(kwCounts, searchText, fuzzyMatch, keywordSearchMatchCache);
+  const matchingSet = new Set(matching);
 
   // Remove active keywords that are no longer in the matching set
   for (const ak of [...activeKeywords]) {
-    if (!matching.includes(ak)) activeKeywords.delete(ak);
+    if (!matchingSet.has(ak)) activeKeywords.delete(ak);
   }
 
   if (matching.length === 0) {
@@ -285,6 +281,7 @@ function rebuildKeywordPills(filteredGroups) {
     return;
   }
 
+  const fragment = document.createDocumentFragment();
   matching.forEach(kw => {
     const btn = document.createElement('button');
     btn.className = 'keyword-btn';
@@ -296,8 +293,9 @@ function rebuildKeywordPills(filteredGroups) {
     }
     btn.textContent = `${kw} (${kwCounts.get(kw)})`;
     btn.addEventListener('click', () => toggleKeyword(kw, btn));
-    keywordFilters.appendChild(btn);
+    fragment.appendChild(btn);
   });
+  keywordFilters.appendChild(fragment);
   keywordFilters.classList.remove('hidden');
 }
 
