@@ -1,0 +1,349 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<title>Backfill Institute Logos</title>
+<style>
+  body { font-family: system-ui; max-width: 980px; margin: 40px auto; padding: 0 20px; background: #111; color: #eee; }
+  button { padding: 10px 24px; font-size: 16px; cursor: pointer; border: none; border-radius: 6px; }
+  #loginBtn { background: #4285f4; color: white; }
+  #auditBtn { background: #f59e0b; color: #111; }
+  #migrateBtn { background: #34a853; color: white; }
+  button:disabled { background: #555; cursor: not-allowed; color: #999; }
+  #log { background: #1a1a1a; padding: 16px; border-radius: 8px; max-height: 720px; overflow-y: auto; font-family: monospace; font-size: 12px; white-space: pre-wrap; margin-top: 16px; }
+  .success { color: #34a853; }
+  .error { color: #ea4335; }
+  .info { color: #4285f4; }
+  .warn { color: #f59e0b; }
+  .skip { color: #999; }
+  input { padding: 8px 12px; font-size: 14px; border-radius: 4px; border: 1px solid #444; background: #222; color: #eee; width: 240px; }
+  #authSection { margin-bottom: 24px; }
+  p.desc { color: #bbb; line-height: 1.6; }
+  code { background: #1a1a1a; padding: 0.1rem 0.3rem; border-radius: 4px; }
+  table { width: 100%; border-collapse: collapse; margin-top: 20px; font-size: 14px; }
+  th, td { border-bottom: 1px solid #333; padding: 10px 8px; text-align: left; vertical-align: top; }
+  th { color: #ddd; }
+  a { color: #8ab4f8; }
+  .section-title { margin-top: 28px; }
+</style>
+</head>
+<body>
+<h1>Backfill Institute Logos</h1>
+<p class="desc">
+  Audits approved institute records and fills missing <code>logoURL</code> values with first-party images sourced from each institute's linked website when a reliable candidate was found.
+  Some institutes still need manual follow-up because they currently have no website or their linked page does not expose a clean reusable image.
+</p>
+
+<div id="authSection">
+  <p id="authStatus">Not logged in</p>
+  <div id="loginForm">
+    <input type="email" id="email" placeholder="Admin email">
+    <input type="password" id="password" placeholder="Password">
+    <button id="loginBtn" onclick="doLogin()">Login</button>
+  </div>
+</div>
+
+<button id="auditBtn" disabled onclick="runAudit()">Audit Planned Updates</button>
+<button id="migrateBtn" disabled onclick="runMigration()">Apply Logo Updates</button>
+
+<h2 class="section-title">High-confidence updates</h2>
+<table>
+  <thead>
+    <tr>
+      <th>Institute</th>
+      <th>Source website</th>
+      <th>Planned image</th>
+      <th>Note</th>
+    </tr>
+  </thead>
+  <tbody id="planned-table-body"></tbody>
+</table>
+
+<h2 class="section-title">Manual follow-up still needed</h2>
+<table>
+  <thead>
+    <tr>
+      <th>Institute</th>
+      <th>Website</th>
+      <th>Reason</th>
+    </tr>
+  </thead>
+  <tbody id="manual-table-body"></tbody>
+</table>
+
+<div id="log"></div>
+
+<script type="module">
+import { getAuth, signInWithEmailAndPassword, onAuthStateChanged } from 'https://www.gstatic.com/firebasejs/11.4.0/firebase-auth.js';
+import { getFirestore, collection, doc, getDoc, getDocs, query, serverTimestamp, updateDoc, where } from 'https://www.gstatic.com/firebasejs/11.4.0/firebase-firestore.js';
+import { db } from './js/firebase-config.js';
+
+const auth = getAuth();
+const logEl = document.getElementById('log');
+const auditBtn = document.getElementById('auditBtn');
+const migrateBtn = document.getElementById('migrateBtn');
+const plannedTableBody = document.getElementById('planned-table-body');
+const manualTableBody = document.getElementById('manual-table-body');
+
+const LOGO_UPDATES = [
+  {
+    id: '440VFLSB0RJ9FyJEzKDp',
+    name: 'Group for Neural Theory (GNT)',
+    website: 'https://gnt.dec.ens.fr/en',
+    logoURL: 'https://www.ens.psl.eu/sites/default/files/logo_ens_psl_en_png.png',
+    note: 'Linked site is hosted under ENS; using the official ENS logo as the cleanest first-party brand asset.'
+  },
+  {
+    id: '51eQvEHlb5uQuYBddtJd',
+    name: "Département d'Études Cognitives (ENS)",
+    website: 'https://cognition.ens.fr',
+    logoURL: 'https://www.ens.psl.eu/sites/default/files/logo_ens_psl_en_png.png',
+    note: 'Linked site is hosted under ENS; using the official ENS logo as the cleanest first-party brand asset.'
+  },
+  {
+    id: 'PxVMf4g6OJbMAOdoAm9e',
+    name: 'MIRCen - CEA',
+    website: 'https://jacob.cea.fr/drf/ifas/Pages/MIRCen.aspx',
+    logoURL: 'https://www.cea.fr/drf/ifrancoisjacob/SiteAssets/logo-cea-JACOB.png',
+    note: 'The linked MIRCen page now 404s; this uses the official CEA/Jacob logo from the same institutional host family.'
+  },
+  {
+    id: 'htAa30FonAJ2kl0wrhXr',
+    name: 'IMAGINE - Universite Paris Cite',
+    website: 'https://www.institutimagine.org',
+    logoURL: 'https://www.institutimagine.org/sites/default/files/logo-institut-imagine_0.png',
+    note: 'Pulled from the site logo element on the linked homepage.'
+  },
+  {
+    id: 'qh8zDad7XXarevoG8g2Z',
+    name: 'Institut Jacques Monod',
+    website: 'https://www.ijm.fr',
+    logoURL: 'https://www.ijm.fr/wp-content/uploads/2024/07/cropped-Fichier-1.png',
+    note: 'Pulled from the organization/logo metadata exposed by the linked homepage.'
+  },
+  {
+    id: 'sUtmMUHa8ZMN5rcxyOBh',
+    name: 'IBPS - Sorbonne Universite',
+    website: 'https://www.ibps.sorbonne-universite.fr',
+    logoURL: 'https://www.ibps.sorbonne-universite.fr/58498ed9/img/lg_ibps.svg',
+    note: 'Pulled from the header logo image on the linked homepage.'
+  },
+  {
+    id: 'vTJhaBRCakaYfq3TZChD',
+    name: 'Neuromodulation Institute',
+    website: 'https://computationalbrainteam.com/',
+    logoURL: 'https://computationalbrainteam.com/prod/file/computational_brain/home_text/home_introcution_image/EN.jpg',
+    note: 'The linked site exposes a strong first-party intro image but no separate institute logo asset.'
+  }
+];
+
+const MANUAL_REVIEW = [
+  {
+    name: 'BFA - Universite Paris Cite',
+    website: 'https://bfa.u-pariscite.fr',
+    reason: 'Linked site did not expose a stable, clean first-party logo/image in fetchable metadata.'
+  },
+  {
+    name: 'EDC - Universite Paris Cite',
+    website: 'https://epigenetics.u-paris.fr',
+    reason: 'Linked site did not expose a stable, clean first-party logo/image in fetchable metadata.'
+  },
+  {
+    name: "Laboratoire d'Imagerie Biomedicale (LIB)",
+    website: 'https://www.lib.upmc.fr/',
+    reason: 'Linked site did not expose a stable, clean first-party logo/image in fetchable metadata.'
+  },
+  {
+    name: 'NeuroDiderot - Universite Paris Cite',
+    website: 'https://neurodiderot.u-paris.fr',
+    reason: 'Linked site did not expose a stable, clean first-party logo/image in fetchable metadata.'
+  },
+  {
+    name: 'EPN-R',
+    website: '',
+    reason: 'No website is currently stored on the institute record, so there was no linked source to derive an image from.'
+  },
+  {
+    name: 'S2CH - CNRS',
+    website: '',
+    reason: 'No website is currently stored on the institute record, so there was no linked source to derive an image from.'
+  }
+];
+
+function renderTables() {
+  plannedTableBody.innerHTML = LOGO_UPDATES.map(item => `
+    <tr>
+      <td>${escapeHTML(item.name)}</td>
+      <td><a href="${escapeHTML(item.website)}" target="_blank" rel="noopener noreferrer">${escapeHTML(item.website)}</a></td>
+      <td><a href="${escapeHTML(item.logoURL)}" target="_blank" rel="noopener noreferrer">${escapeHTML(item.logoURL)}</a></td>
+      <td>${escapeHTML(item.note)}</td>
+    </tr>
+  `).join('');
+
+  manualTableBody.innerHTML = MANUAL_REVIEW.map(item => `
+    <tr>
+      <td>${escapeHTML(item.name)}</td>
+      <td>${item.website ? `<a href="${escapeHTML(item.website)}" target="_blank" rel="noopener noreferrer">${escapeHTML(item.website)}</a>` : '<span style="color:#999">—</span>'}</td>
+      <td>${escapeHTML(item.reason)}</td>
+    </tr>
+  `).join('');
+}
+
+function escapeHTML(str) {
+  return String(str ?? '')
+    .replaceAll('&', '&amp;')
+    .replaceAll('<', '&lt;')
+    .replaceAll('>', '&gt;')
+    .replaceAll('"', '&quot;')
+    .replaceAll("'", '&#39;');
+}
+
+function log(message, className = '') {
+  const span = document.createElement('span');
+  span.className = className;
+  span.textContent = message + '\n';
+  logEl.appendChild(span);
+  logEl.scrollTop = logEl.scrollHeight;
+}
+
+function setButtonsEnabled(enabled) {
+  auditBtn.disabled = !enabled;
+  migrateBtn.disabled = !enabled;
+}
+
+async function checkAdmin(user) {
+  const adminSnap = await getDoc(doc(db, 'admins', user.uid));
+  return adminSnap.exists();
+}
+
+onAuthStateChanged(auth, async user => {
+  if (!user) return;
+  try {
+    const isAdmin = await checkAdmin(user);
+    if (!isAdmin) {
+      document.getElementById('authStatus').textContent = `Logged in as ${user.email}, but this account is not an admin`;
+      log('Admin access required to run this migration.', 'error');
+      return;
+    }
+    document.getElementById('authStatus').textContent = `Logged in as admin ${user.email}`;
+    document.getElementById('loginForm').style.display = 'none';
+    setButtonsEnabled(true);
+  } catch (err) {
+    log(`Failed to verify admin access: ${err.message}`, 'error');
+  }
+});
+
+window.doLogin = async () => {
+  const email = document.getElementById('email').value;
+  const password = document.getElementById('password').value;
+  try {
+    await signInWithEmailAndPassword(auth, email, password);
+    log('Logged in.', 'success');
+  } catch (err) {
+    log(`Login error: ${err.message}`, 'error');
+  }
+};
+
+async function loadApprovedInstitutesById() {
+  const snapshot = await getDocs(query(collection(db, 'institutes'), where('status', '==', 'approved')));
+  const map = new Map();
+  snapshot.forEach(docSnap => {
+    map.set(docSnap.id, { id: docSnap.id, ...docSnap.data() });
+  });
+  return map;
+}
+
+window.runAudit = async () => {
+  logEl.innerHTML = '';
+  setButtonsEnabled(false);
+  try {
+    const institutesById = await loadApprovedInstitutesById();
+    let missingDocs = 0;
+    let needsUpdate = 0;
+    let alreadySet = 0;
+
+    for (const item of LOGO_UPDATES) {
+      const inst = institutesById.get(item.id);
+      if (!inst) {
+        missingDocs += 1;
+        log(`[missing] ${item.name} (${item.id}) not found among approved institutes`, 'error');
+        continue;
+      }
+
+      const currentLogo = inst.logoURL || '';
+      if (currentLogo === item.logoURL) {
+        alreadySet += 1;
+        log(`[ok] ${item.name} already uses the planned logo URL`, 'skip');
+        continue;
+      }
+
+      if (currentLogo) {
+        alreadySet += 1;
+        log(`[skip] ${item.name} already has a logoURL set: ${currentLogo}`, 'warn');
+        continue;
+      }
+
+      needsUpdate += 1;
+      log(`[plan] ${item.name} -> ${item.logoURL}`, 'info');
+    }
+
+    log(`Manual follow-up list: ${MANUAL_REVIEW.length} institute(s) still need human review.`, 'warn');
+    log(`Audit complete — planned updates: ${needsUpdate}, already set/skipped: ${alreadySet}, missing docs: ${missingDocs}`, missingDocs > 0 ? 'warn' : 'success');
+  } catch (err) {
+    log(`Audit failed: ${err.message}`, 'error');
+  } finally {
+    setButtonsEnabled(true);
+  }
+};
+
+window.runMigration = async () => {
+  logEl.innerHTML = '';
+  setButtonsEnabled(false);
+  try {
+    const institutesById = await loadApprovedInstitutesById();
+    let updated = 0;
+    let skipped = 0;
+    let missingDocs = 0;
+
+    for (const item of LOGO_UPDATES) {
+      const inst = institutesById.get(item.id);
+      if (!inst) {
+        missingDocs += 1;
+        log(`[missing] ${item.name} (${item.id}) not found among approved institutes`, 'error');
+        continue;
+      }
+
+      const currentLogo = inst.logoURL || '';
+      if (currentLogo === item.logoURL) {
+        skipped += 1;
+        log(`[skip] ${item.name} already matches planned logo`, 'skip');
+        continue;
+      }
+
+      if (currentLogo) {
+        skipped += 1;
+        log(`[skip] ${item.name} already has a non-empty logoURL; leaving it untouched`, 'warn');
+        continue;
+      }
+
+      await updateDoc(doc(db, 'institutes', item.id), {
+        logoURL: item.logoURL,
+        updatedAt: serverTimestamp()
+      });
+      updated += 1;
+      log(`[updated] ${item.name}`, 'success');
+    }
+
+    log(`Migration complete — updated: ${updated}, skipped: ${skipped}, missing docs: ${missingDocs}`, missingDocs > 0 ? 'warn' : 'success');
+    log(`Still unresolved for manual review: ${MANUAL_REVIEW.map(item => item.name).join(', ')}`, 'warn');
+  } catch (err) {
+    log(`Migration failed: ${err.message}`, 'error');
+  } finally {
+    setButtonsEnabled(true);
+  }
+};
+
+renderTables();
+</script>
+</body>
+</html>
