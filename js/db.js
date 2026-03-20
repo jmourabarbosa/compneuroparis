@@ -4,6 +4,8 @@ import {
 } from 'https://www.gstatic.com/firebasejs/11.4.0/firebase-firestore.js';
 import { getFunctions, httpsCallable } from 'https://www.gstatic.com/firebasejs/11.4.0/firebase-functions.js';
 import { db } from './firebase-config.js';
+import { buildClaimedByUpdate, getClaimTargetCollection, getClaimTargetId } from './claim-record-utils.mjs';
+import { buildInstituteRenameUpdate } from './institute-record-utils.mjs';
 import { buildApprovedGroupData } from './ownership-utils.mjs';
 
 const functions = getFunctions();
@@ -151,27 +153,16 @@ export async function updateInstitute(id, data) {
   if (previousName && nextName && previousName !== nextName) {
     const groupsSnap = await getDocs(collection(db, 'groups'));
     const updates = groupsSnap.docs
-      .filter(groupDoc => {
-        const groupData = groupDoc.data();
-        const institutes = Array.isArray(groupData.institutes)
-          ? groupData.institutes
-          : (groupData.institute ? [groupData.institute] : []);
-        return institutes.includes(previousName);
-      })
       .map(groupDoc => {
         const groupData = groupDoc.data();
-        const institutes = Array.isArray(groupData.institutes)
-          ? groupData.institutes.map(name => (name === previousName ? nextName : name))
-          : [];
-        const updateData = {
-          institutes,
+        const updateData = buildInstituteRenameUpdate(groupData, previousName, nextName);
+        if (!updateData) return null;
+        return updateDoc(groupDoc.ref, {
+          ...updateData,
           updatedAt: serverTimestamp()
-        };
-        if ((groupData.institute || '') === previousName) {
-          updateData.institute = nextName;
-        }
-        return updateDoc(groupDoc.ref, updateData);
-      });
+        });
+      })
+      .filter(Boolean);
 
     await Promise.all(updates);
   }
@@ -234,13 +225,12 @@ export async function approveClaim(claimId) {
   if (!claimSnap.exists()) throw new Error('Claim not found');
 
   const claim = claimSnap.data();
-  const targetId = claim.targetId || claim.piId;
-  const targetCollection = claim.type === 'institute' ? 'institutes' : 'groups';
+  const targetId = getClaimTargetId(claim);
+  const targetCollection = getClaimTargetCollection(claim.type);
 
   // Set claimedBy on the target doc
   await updateDoc(doc(db, targetCollection, targetId), {
-    claimedBy: claim.claimantUid,
-    claimedByEmail: claim.claimantEmail || '',
+    ...buildClaimedByUpdate(claim),
     updatedAt: serverTimestamp()
   });
 
@@ -275,7 +265,7 @@ export async function rejectClaim(claimId) {
 }
 
 export async function revokeClaim(targetId, type = 'pi') {
-  const targetCollection = type === 'institute' ? 'institutes' : 'groups';
+  const targetCollection = getClaimTargetCollection(type);
 
   // Remove claimedBy fields from the target document
   await updateDoc(doc(db, targetCollection, targetId), {

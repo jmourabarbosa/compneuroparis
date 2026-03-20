@@ -15,7 +15,19 @@ import { getCurrentUser, getIsAdmin, createAdminUser } from './auth.js';
 import { loadGroups, loadPublicInstitutes } from './ui-groups.js';
 import { getSubfieldsFromPicker, setSubfieldDropdown, syncSecondaryCheckboxes } from './ui-form.js';
 import { loadInstituteOptions } from './ui-form.js';
+import {
+  buildClaimantOptionData,
+  buildInstitutePillsMarkup,
+  buildManageGroupItemMarkup,
+  buildUserAdminItemMarkup,
+  filterManageGroups,
+  filterUsers,
+  getClaimSectionSummary,
+  getManageGroupsEmptyMessage,
+  getUsersEmptyMessage
+} from './admin-utils.mjs';
 import { buildInstituteFieldData, resolveInstituteRefsFromRecord, toArray } from './institute-links.mjs';
+import { escapeHTML } from './public-card-utils.mjs';
 
 // DOM refs
 const pendingList = document.getElementById('pending-list');
@@ -376,39 +388,18 @@ function renderManageGroups() {
   manageEmpty.classList.add('hidden');
 
   const term = (manageSearchInput?.value || '').trim().toLowerCase();
-  const filteredGroups = cachedManageGroups.filter(g => {
-    if (!term) return true;
-    const haystack = [
-      g.name || '',
-      ...(g.keywords || []),
-      ...toArray(g.subfields || g.subfield),
-      g.claimedByEmail || ''
-    ].join(' ').toLowerCase();
-    return haystack.includes(term);
-  });
+  const filteredGroups = filterManageGroups(cachedManageGroups, term);
 
   if (filteredGroups.length === 0) {
     manageEmpty.classList.remove('hidden');
-    manageEmpty.querySelector('p').textContent = term ? 'No PI pages match your search.' : 'No PIs yet.';
+    manageEmpty.querySelector('p').textContent = getManageGroupsEmptyMessage(term);
     return;
   }
 
   filteredGroups.forEach(g => {
     const item = document.createElement('div');
     item.className = 'admin-item';
-    const sfs = toArray(g.subfields || g.subfield);
-    const subfieldLabel = sfs.length > 0 ? ` [${sfs.join(', ')}]` : '';
-    const claimedLabel = g.claimedBy ? ' (claimed)' : '';
-    item.innerHTML = `
-      <div class="admin-item-info">
-        <div class="admin-item-name">${escapeHTML(g.name)}${escapeHTML(subfieldLabel)}${claimedLabel}</div>
-        <div class="admin-item-meta">${(g.keywords || []).join(', ')}</div>
-      </div>
-      <div class="admin-item-actions">
-        <button class="btn btn-primary btn-sm btn-edit" aria-label="Edit ${escapeHTML(g.name)}">Edit</button>
-        <button class="btn btn-danger btn-sm btn-delete" aria-label="Delete ${escapeHTML(g.name)}">Delete</button>
-      </div>
-    `;
+    item.innerHTML = buildManageGroupItemMarkup(g);
 
     item.querySelector('.btn-edit').addEventListener('click', () => { void showEditModal(g); });
     item.querySelector('.btn-delete').addEventListener('click', () => handleDelete(g));
@@ -417,12 +408,7 @@ function renderManageGroups() {
 }
 
 function updateClaimSectionSummary(group) {
-  if (!group?.claimedBy) {
-    editClaimCurrent.textContent = 'Currently unclaimed.';
-    return;
-  }
-  const email = group.claimedByEmail || 'unknown email';
-  editClaimCurrent.textContent = `Currently claimed by ${email}.`;
+  editClaimCurrent.textContent = getClaimSectionSummary(group);
 }
 
 async function populateClaimantOptions(group) {
@@ -431,31 +417,14 @@ async function populateClaimantOptions(group) {
   editClaimedBySelect.innerHTML = '';
 
   const unclaimedOption = document.createElement('option');
-  unclaimedOption.value = '';
-  unclaimedOption.textContent = 'Unclaimed';
-  editClaimedBySelect.appendChild(unclaimedOption);
-
   try {
     const users = await listAllUsers();
-    users
-      .slice()
-      .sort((a, b) => (a.email || '').localeCompare(b.email || ''))
-      .forEach(user => {
-        const opt = document.createElement('option');
-        opt.value = user.uid;
-        const verifiedLabel = user.emailVerified ? '' : ' (unverified)';
-        opt.textContent = `${user.email || user.uid}${user.displayName ? ` (${user.displayName})` : ''}${verifiedLabel}`;
-        editClaimedBySelect.appendChild(opt);
-      });
-
-    if (group.claimedBy && !users.some(user => user.uid === group.claimedBy)) {
-      const missingOpt = document.createElement('option');
-      missingOpt.value = group.claimedBy;
-      missingOpt.textContent = group.claimedByEmail
-        ? `${group.claimedByEmail} (account not found)`
-        : `${group.claimedBy} (account not found)`;
-      editClaimedBySelect.appendChild(missingOpt);
-    }
+    buildClaimantOptionData(users, group).forEach(optionData => {
+      const option = document.createElement('option');
+      option.value = optionData.value;
+      option.textContent = optionData.label;
+      editClaimedBySelect.appendChild(option);
+    });
 
     editClaimedBySelect.value = group.claimedBy || '';
     editClaimedBySelect.disabled = false;
@@ -565,9 +534,7 @@ function handleEditAddInstitute() {
 }
 
 function renderEditInstitutePills() {
-  editInstitutePills.innerHTML = editSelectedInstitutes.map(inst =>
-    `<span class="institute-pill">${escapeHTML(inst.name)} <button type="button" class="institute-pill-remove" data-key="${escapeHTML(inst.id || inst.name)}">&times;</button></span>`
-  ).join('');
+  editInstitutePills.innerHTML = buildInstitutePillsMarkup(editSelectedInstitutes);
   editInstitutePills.querySelectorAll('.institute-pill-remove').forEach(btn => {
     btn.addEventListener('click', () => {
       editSelectedInstitutes = editSelectedInstitutes.filter(inst => (inst.id || inst.name) !== btn.dataset.key);
@@ -1209,39 +1176,18 @@ function renderUsers() {
   usersEmpty.classList.add('hidden');
 
   const term = (usersSearchInput?.value || '').trim().toLowerCase();
-  const filteredUsers = cachedUsers.filter(u => {
-    if (!term) return true;
-    const haystack = [
-      u.email || '',
-      u.displayName || '',
-      u.uid || ''
-    ].join(' ').toLowerCase();
-    return haystack.includes(term);
-  });
+  const filteredUsers = filterUsers(cachedUsers, term);
 
   if (filteredUsers.length === 0) {
     usersEmpty.classList.remove('hidden');
-    usersEmpty.querySelector('p').textContent = term ? 'No users match your search.' : 'No registered users.';
+    usersEmpty.querySelector('p').textContent = getUsersEmptyMessage(term);
     return;
   }
 
   filteredUsers.forEach(u => {
     const item = document.createElement('div');
     item.className = 'admin-item';
-    const created = u.createdAt ? new Date(u.createdAt).toLocaleDateString() : '';
-    const verifiedLabel = u.emailVerified ? '' : ' (unverified)';
-    const verifyBtn = u.emailVerified ? '' : `<button class="btn btn-success btn-sm btn-verify-user" aria-label="Verify ${escapeHTML(u.email)}">Verify</button>`;
-    item.innerHTML = `
-      <div class="admin-item-info">
-        <div class="admin-item-name">${escapeHTML(u.email)}${u.displayName ? ` (${escapeHTML(u.displayName)})` : ''}${verifiedLabel}</div>
-        <div class="admin-item-meta">UID: ${escapeHTML(u.uid)}${created ? ` | Joined: ${created}` : ''}${u.disabled ? ' | Disabled' : ''}</div>
-      </div>
-      <div class="admin-item-actions">
-        ${verifyBtn}
-        <button class="btn btn-primary btn-sm btn-edit-user" aria-label="Edit ${escapeHTML(u.email)}">Edit</button>
-        <button class="btn btn-danger btn-sm btn-delete-user" aria-label="Delete ${escapeHTML(u.email)}">Delete</button>
-      </div>
-    `;
+    item.innerHTML = buildUserAdminItemMarkup(u);
 
     const verifyEl = item.querySelector('.btn-verify-user');
     if (verifyEl) {
@@ -1449,12 +1395,6 @@ export function initSettings() {
 }
 
 // ========== HELPERS ==========
-
-function escapeHTML(str) {
-  const div = document.createElement('div');
-  div.textContent = str || '';
-  return div.innerHTML;
-}
 
 function showMsg(el, text, type) {
   el.textContent = text;

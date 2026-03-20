@@ -1,7 +1,10 @@
 const functions = require("firebase-functions");
 const admin = require("firebase-admin");
 const nodemailer = require("nodemailer");
-const { planClaimReconciliation } = require("./ownership-logic");
+const { createAuthService } = require("./auth-service");
+const { createClaimService } = require("./claim-service");
+const { createEmailService } = require("./email-service");
+const { planGroupClaimChange } = require("./group-claim-logic");
 
 admin.initializeApp();
 
@@ -18,73 +21,15 @@ const SITE_URL = "https://jmourabarbosa.github.io/compneuroparis";
 const ADMIN_LINK = `<p><a href="${SITE_URL}/#admin">Open admin panel</a></p>`;
 const NOTIFY_EMAIL = "neuroinparis@gmail.com";
 
-async function sendEmail(to, subject, html) {
-  try {
-    await transporter.sendMail({ from: FROM, to, subject, html });
-    console.log(`Email sent to ${to}: ${subject}`);
-  } catch (err) {
-    console.error(`Failed to send email to ${to}:`, err);
-  }
-}
-
-async function getEmailFromUid(uid) {
-  if (!uid) return null;
-  try {
-    const user = await admin.auth().getUser(uid);
-    return user.email || null;
-  } catch (err) {
-    console.error(`Failed to look up user ${uid}:`, err);
-    return null;
-  }
-}
-
-async function isCallerAdmin(uid) {
-  const snap = await admin.firestore().collection("admins").doc(uid).get();
-  return snap.exists;
-}
-
-async function getAdminEmails() {
-  const snapshot = await admin.firestore().collection("admins").get();
-  return snapshot.docs.map((d) => d.data().email).filter(Boolean);
-}
-
-async function notifyAdmins(subject, html) {
-  const adminEmails = await getAdminEmails();
-  const emails = [...new Set([NOTIFY_EMAIL, ...adminEmails])];
-  for (const email of emails) {
-    await sendEmail(email, subject, html + ADMIN_LINK);
-  }
-}
-
-async function reconcileClaimsForTarget(targetId, claimantUid = null) {
-  const firestore = admin.firestore();
-  const [targetClaimsSnap, legacyClaimsSnap] = await Promise.all([
-    firestore.collection("claims").where("targetId", "==", targetId).get(),
-    firestore.collection("claims").where("piId", "==", targetId).get(),
-  ]);
-
-  const claimDocs = new Map();
-  for (const snap of [targetClaimsSnap, legacyClaimsSnap]) {
-    for (const claimDoc of snap.docs) {
-      claimDocs.set(claimDoc.id, claimDoc);
-    }
-  }
-
-  const { promotedPendingClaim, updates } = planClaimReconciliation(
-    [...claimDocs.values()].map((claimDoc) => ({ id: claimDoc.id, ...claimDoc.data() })),
-    claimantUid,
-  );
-
-  for (const update of updates) {
-    const claimDoc = claimDocs.get(update.id);
-    await claimDoc.ref.update({
-      status: update.status,
-      [update.timestampField]: admin.firestore.FieldValue.serverTimestamp(),
-    });
-  }
-
-  return { promotedPendingClaim };
-}
+const { getAdminEmails, getEmailFromUid, isCallerAdmin } = createAuthService({ admin });
+const { sendEmail, notifyAdmins } = createEmailService({
+  transporter,
+  from: FROM,
+  notifyEmail: NOTIFY_EMAIL,
+  adminLink: ADMIN_LINK,
+  getAdminEmails,
+});
+const { reconcileClaimsForTarget } = createClaimService({ admin });
 
 // ========== SUBMISSIONS ==========
 
@@ -639,12 +584,9 @@ exports.setGroupClaim = functions.https.onCall(async (data, context) => {
   }
 
   const group = groupSnap.data();
-  const previousClaimedBy = group.claimedBy || null;
-  let nextClaimedBy = null;
-  let nextClaimedByEmail = "";
+  let claimantUser = null;
 
   if (claimantUid) {
-    let claimantUser;
     try {
       claimantUser = await admin.auth().getUser(claimantUid);
     } catch (err) {
@@ -653,14 +595,15 @@ exports.setGroupClaim = functions.https.onCall(async (data, context) => {
     if (!claimantUser.email) {
       throw new functions.https.HttpsError("invalid-argument", "Assigned account must have an email.");
     }
-    nextClaimedBy = claimantUser.uid;
-    nextClaimedByEmail = claimantUser.email;
   }
 
-  if (nextClaimedBy) {
+  const { promotedPendingClaim } = await reconcileClaimsForTarget(groupId, claimantUser?.uid || null);
+  const claimPlan = planGroupClaimChange(group, claimantUser, promotedPendingClaim);
+
+  if (claimPlan.mode === "assign") {
     await groupRef.update({
-      claimedBy: nextClaimedBy,
-      claimedByEmail: nextClaimedByEmail,
+      claimedBy: claimPlan.nextClaimedBy,
+      claimedByEmail: claimPlan.nextClaimedByEmail,
       updatedAt: admin.firestore.FieldValue.serverTimestamp(),
     });
   } else {
@@ -671,20 +614,17 @@ exports.setGroupClaim = functions.https.onCall(async (data, context) => {
     });
   }
 
-  const { promotedPendingClaim } = await reconcileClaimsForTarget(groupId, nextClaimedBy);
-
-  if (nextClaimedBy && previousClaimedBy !== nextClaimedBy && !promotedPendingClaim) {
+  if (claimPlan.shouldNotifyClaimant) {
     await sendEmail(
-      nextClaimedByEmail,
-      `You have been granted ownership of ${group.name || "a PI page"}`,
-      `<p>An administrator has granted your account ownership of the PI page for <strong>${group.name || "this PI"}</strong> on Neuroscience in Paris.</p>
-       <p>You can now edit the profile and manage related actions from your account.</p>`,
+      claimPlan.nextClaimedByEmail,
+      claimPlan.emailSubject,
+      claimPlan.emailHtml,
     );
   }
 
   return {
     success: true,
-    claimedBy: nextClaimedBy,
-    claimedByEmail: nextClaimedByEmail,
+    claimedBy: claimPlan.nextClaimedBy,
+    claimedByEmail: claimPlan.nextClaimedByEmail,
   };
 });

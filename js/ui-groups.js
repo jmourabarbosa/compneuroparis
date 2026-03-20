@@ -1,6 +1,9 @@
 import { fetchGroups, fetchApprovedInstitutes, fetchJobs, fetchJobsByPi, updateJob, deleteJob, updateGroup, createClaim, fetchMyClaimForTarget, fetchApprovedClaimForTarget, revokeClaim, deleteGroup, deleteInstitute, createReport } from './db.js';
 import { getCurrentUser, getIsAdmin, createAccount, login, isEmailVerified, resendVerification, getAuthErrorMessage } from './auth.js';
 import { getInstituteDisplayNames, instituteNamesMatch, toArray } from './institute-links.mjs';
+import { filterVisibleGroups, fuzzyMatch, partitionGroupsBySubfield } from './group-filter-utils.mjs';
+import { filterVisibleJobs, getCombinedJobKeywords } from './job-filter-utils.mjs';
+import { buildInstituteCardMarkup, buildJobCardMarkup, buildPiCardMarkup, escapeHTML, formatCardDate } from './public-card-utils.mjs';
 
 let allGroups = [];
 let allInstitutes = [];
@@ -23,10 +26,6 @@ const SUBFIELD_LABELS = {
 
 let filterHiring = false;
 let filterValidated = false;
-
-function getGroupInstituteIds(group) {
-  return toArray(group.instituteIds);
-}
 
 function getGroupInstituteNames(group) {
   return getInstituteDisplayNames(group, allInstitutes);
@@ -151,112 +150,20 @@ export function filterGroups() {
   renderJobs();
 }
 
-// Levenshtein edit distance
-function editDistance(a, b) {
-  const m = a.length, n = b.length;
-  const dp = Array.from({ length: m + 1 }, () => new Array(n + 1));
-  for (let i = 0; i <= m; i++) dp[i][0] = i;
-  for (let j = 0; j <= n; j++) dp[0][j] = j;
-  for (let i = 1; i <= m; i++) {
-    for (let j = 1; j <= n; j++) {
-      dp[i][j] = a[i - 1] === b[j - 1]
-        ? dp[i - 1][j - 1]
-        : 1 + Math.min(dp[i - 1][j], dp[i][j - 1], dp[i - 1][j - 1]);
-    }
-  }
-  return dp[m][n];
-}
-
-// Fuzzy match: splits query into words, each must match at least one word in
-// the haystack via substring (short words) or Levenshtein distance ≤ 2 (≥ 4 chars).
-function fuzzyMatch(haystack, query) {
-  const haystackLower = haystack.toLowerCase();
-  const queryWords = query.toLowerCase().split(/\s+/).filter(Boolean);
-  if (queryWords.length === 0) return true;
-
-  const haystackWords = haystackLower.split(/\s+/).filter(Boolean);
-
-  return queryWords.every(qw => {
-    // Substring match first (fast path)
-    if (haystackLower.includes(qw)) return true;
-    // For short query words (< 4 chars), only allow substring match
-    if (qw.length < 4) return false;
-    // Levenshtein fuzzy match against individual haystack words
-    return haystackWords.some(hw => {
-      if (Math.abs(hw.length - qw.length) > 2) return false;
-      return editDistance(qw, hw) <= 2;
-    });
-  });
-}
-
 function renderGroups() {
-  const filtered = allGroups.filter(g => {
-    // Institute filter
-    if (activeInstituteId || activeInstituteName) {
-      const instituteIds = getGroupInstituteIds(g);
-      const instituteNames = getGroupInstituteNames(g);
-      const matchesId = activeInstituteId && instituteIds.includes(activeInstituteId);
-      const matchesName = activeInstituteName && instituteNames.some(name => instituteNamesMatch(name, activeInstituteName));
-      if (!matchesId && !matchesName) return false;
-    }
-    // Keyword filter (PI must have ALL selected keywords)
-    if (activeKeywords.size > 0) {
-      const kws = (g.keywords || []).map(k => k.trim().toLowerCase());
-      for (const ak of activeKeywords) {
-        if (!kws.includes(ak)) return false;
-      }
-    }
-    // Text search (fuzzy)
-    if (searchText) {
-      const institutes = getGroupInstituteNames(g);
-      const haystack = [
-        g.name,
-        g.summary,
-        ...(g.keywords || []),
-        ...institutes
-      ].join(' ');
-      if (!fuzzyMatch(haystack, searchText)) return false;
-    }
-    // Hiring filter
-    if (filterHiring) {
-      const isHiring = g.hiring || allJobs.some(j => j.piId === g.id);
-      if (!isHiring) return false;
-    }
-    // Validated filter
-    if (filterValidated) {
-      if (!g.claimedBy) return false;
-    }
-    return true;
+  const filtered = filterVisibleGroups({
+    groups: allGroups,
+    institutes: allInstitutes,
+    jobs: allJobs,
+    activeKeywords,
+    searchText,
+    activeInstituteId,
+    activeInstituteName,
+    filterHiring,
+    filterValidated
   });
 
-  // Partition by subfield into primary (first in array) and secondary
-  const primaryBySubfield = { computational: [], systems: [], human: [], molecular: [], developmental: [], clinical: [] };
-  const secondaryBySubfield = { computational: [], systems: [], human: [], molecular: [], developmental: [], clinical: [] };
-  filtered.forEach(g => {
-    const sfs = toArray(g.subfields || g.subfield);
-    const validSfs = sfs.filter(sf => primaryBySubfield[sf]);
-    if (validSfs.length === 0) validSfs.push('computational');
-    validSfs.forEach((sf, i) => {
-      if (i === 0 || sf === sfs[0]) {
-        primaryBySubfield[sf].push(g);
-      } else {
-        secondaryBySubfield[sf].push(g);
-      }
-    });
-  });
-
-  // Sort helper: claimed first, then alphabetical
-  const sortGroups = (arr) => arr.sort((a, b) => {
-    const aClaimed = a.claimedBy ? 0 : 1;
-    const bClaimed = b.claimedBy ? 0 : 1;
-    if (aClaimed !== bClaimed) return aClaimed - bClaimed;
-    return (a.name || '').localeCompare(b.name || '');
-  });
-
-  for (const sf of SUBFIELDS) {
-    sortGroups(primaryBySubfield[sf]);
-    sortGroups(secondaryBySubfield[sf]);
-  }
+  const { primaryBySubfield, secondaryBySubfield } = partitionGroupsBySubfield(filtered, SUBFIELDS);
 
   let totalVisible = 0;
 
@@ -385,43 +292,15 @@ function createCard(group) {
   const sfs = toArray(group.subfields || group.subfield);
   const sf = sfs[0] || 'computational';
   card.dataset.subfield = sf;
-
-  const MAX_VISIBLE_KEYWORDS = 5;
-  const keywords = group.keywords || [];
-  const pills = keywords.map(k => `<button class="keyword-pill" data-keyword="${escapeHTML(k)}">${escapeHTML(k)}</button>`);
-  const visiblePills = pills.slice(0, MAX_VISIBLE_KEYWORDS).join('');
-  const overflowHTML = pills.length > MAX_VISIBLE_KEYWORDS
-    ? `<span class="keywords-overflow keywords-hidden">${pills.slice(MAX_VISIBLE_KEYWORDS).join('')}</span><button class="keyword-more">+${pills.length - MAX_VISIBLE_KEYWORDS}</button>`
-    : '';
-  const keywordHTML = visiblePills + overflowHTML;
-
   const institutes = getGroupInstituteNames(group);
-  const instituteHTML = institutes.length > 0
-    ? `<div class="card-institute">${escapeHTML(institutes.join(', '))}</div>`
-    : '';
-
-  const managedHTML = group.claimedBy
-    ? '<span class="card-managed-badge">Managed by PI</span>'
-    : '<span class="card-unclaimed-badge">Unclaimed</span>';
-
   const isHiring = group.hiring || allJobs.some(j => j.piId === group.id);
-  const jobBadgeHTML = isHiring ? '<span class="card-job-badge">Hiring</span>' : '';
+  const { html, overflowCount } = buildPiCardMarkup(group, {
+    subfieldLabel: SUBFIELD_LABELS[sf] || sf,
+    instituteNames: institutes,
+    isHiring
+  });
 
-  const sfLabel = SUBFIELD_LABELS[sf] || sf;
-  const sfBadgeHTML = `<span class="card-subfield-badge" data-subfield="${escapeHTML(sf)}">${escapeHTML(sfLabel)}</span>`;
-
-  card.innerHTML = `
-    <div class="card-body">
-      <div class="card-name-row">
-        <h3 class="card-name">${escapeHTML(group.name)}</h3>
-        ${sfBadgeHTML}
-        ${jobBadgeHTML}
-        ${managedHTML}
-      </div>
-      ${instituteHTML}
-      <div class="card-keywords">${keywordHTML}</div>
-    </div>
-  `;
+  card.innerHTML = html;
 
   // Click card to open PI detail (skip if clicking a link, keyword pill, or more button)
   card.addEventListener('click', (e) => {
@@ -437,7 +316,7 @@ function createCard(group) {
       const overflow = card.querySelector('.keywords-overflow');
       overflow.classList.toggle('keywords-hidden');
       moreBtn.textContent = overflow.classList.contains('keywords-hidden')
-        ? `+${pills.length - MAX_VISIBLE_KEYWORDS}`
+        ? `+${overflowCount}`
         : 'show less';
     });
   }
@@ -543,7 +422,7 @@ async function openPiDetail(group) {
             <div class="pi-job-item-title">${escapeHTML(job.title)}</div>
             <div class="pi-job-item-meta">
               <span class="job-position-badge">${escapeHTML(job.positionType)}</span>
-              ${job.createdAt?.toDate ? ' · ' + job.createdAt.toDate().toLocaleDateString('en-GB', { day: 'numeric', month: 'short', year: 'numeric' }) : ''}
+              ${formatCardDate(job.createdAt) ? ' · ' + formatCardDate(job.createdAt) : ''}
             </div>
           </div>
         `;
@@ -858,12 +737,6 @@ function showReportMsg(el, text, type) {
   el.classList.remove('hidden');
 }
 
-function escapeHTML(str) {
-  const div = document.createElement('div');
-  div.textContent = str;
-  return div.innerHTML;
-}
-
 export function initSearch() {
   searchInput.addEventListener('input', filterGroups);
 
@@ -999,33 +872,7 @@ function createInstituteCard(inst) {
   if ((activeInstituteId && inst.id === activeInstituteId) || (!activeInstituteId && instituteNamesMatch(inst.name, activeInstituteName))) {
     card.classList.add('active');
   }
-
-  const keywordHTML = (inst.keywords || [])
-    .map(k => `<span class="keyword-pill keyword-pill-institute">${escapeHTML(k)}</span>`)
-    .join('');
-
-  const summaryText = inst.summary || '';
-  const truncated = summaryText.length > 120 ? summaryText.slice(0, 120) + '...' : summaryText;
-
-  const websiteHTML = inst.website
-    ? `<div class="card-links"><a href="${escapeHTML(inst.website)}" class="card-link" target="_blank" rel="noopener noreferrer">Website</a></div>`
-    : '';
-
-  const managedHTML = inst.claimedBy
-    ? '<span class="card-managed-badge">Claimed</span>'
-    : '<span class="card-unclaimed-badge">Unclaimed</span>';
-
-  card.innerHTML = `
-    <div class="card-body">
-      <div class="card-name-row">
-        <h3 class="card-name">${escapeHTML(inst.name)}</h3>
-        ${managedHTML}
-      </div>
-      ${keywordHTML ? `<div class="card-keywords">${keywordHTML}</div>` : ''}
-      ${truncated ? `<p class="card-summary">${escapeHTML(truncated)}</p>` : ''}
-      ${websiteHTML}
-    </div>
-  `;
+  card.innerHTML = buildInstituteCardMarkup(inst);
 
   card.addEventListener('click', (e) => {
     if (e.target.closest('a') || e.target.closest('button')) return;
@@ -1055,19 +902,7 @@ function renderJobs() {
 
   const isSearching = !!searchText;
 
-  const filtered = allJobs.filter(job => {
-    if (!searchText) return true;
-    const piGroupForSearch = allGroups.find(g => g.id === job.piId);
-    const piKwsForSearch = piGroupForSearch ? (piGroupForSearch.keywords || []) : [];
-    const haystack = [
-      job.piName || '',
-      job.title || '',
-      job.positionType || '',
-      ...(job.keywords || []),
-      ...piKwsForSearch
-    ].join(' ').toLowerCase();
-    return haystack.includes(searchText);
-  });
+  const filtered = filterVisibleJobs({ jobs: allJobs, groups: allGroups, searchText });
 
   jobsPublicCount.textContent = filtered.length;
 
@@ -1101,34 +936,8 @@ function renderJobs() {
 function createJobCard(job) {
   const card = document.createElement('article');
   card.className = 'job-card';
-
-  const dateStr = job.createdAt?.toDate
-    ? job.createdAt.toDate().toLocaleDateString('en-GB', { day: 'numeric', month: 'short', year: 'numeric' })
-    : '';
-
-  // Gather keywords: PI keywords + job-specific keywords
-  const piGroupForCard = allGroups.find(g => g.id === job.piId);
-  const piKws = piGroupForCard ? (piGroupForCard.keywords || []) : [];
-  const jobKws = job.keywords || [];
-  const allKwsForCard = [...piKws, ...jobKws.filter(k => !piKws.map(pk => pk.toLowerCase()).includes(k.toLowerCase()))];
-  const kwHTML = allKwsForCard.length > 0
-    ? `<div class="card-keywords">${allKwsForCard.map(k => `<span class="keyword-pill">${escapeHTML(k)}</span>`).join('')}</div>`
-    : '';
-
-  card.innerHTML = `
-    <div class="card-body">
-      <div class="card-name-row">
-        <h3 class="job-card-title">${escapeHTML(job.title)}</h3>
-      </div>
-      <div class="job-card-pi">${escapeHTML(job.piName || '')}</div>
-      ${kwHTML}
-      ${job.description ? `<p class="job-card-description">${escapeHTML(job.description)}</p>` : ''}
-      <div class="job-card-meta">
-        <span class="job-position-badge">${escapeHTML(job.positionType)}</span>
-        ${dateStr ? `<span class="job-card-date">${dateStr}</span>` : ''}
-      </div>
-    </div>
-  `;
+  const allKwsForCard = getCombinedJobKeywords(job, allGroups);
+  card.innerHTML = buildJobCardMarkup(job, allKwsForCard);
 
   card.addEventListener('click', (e) => {
     if (e.target.closest('a') || e.target.closest('button')) return;
@@ -1177,9 +986,7 @@ function openJobDetail(job, fromPiDetail = false) {
   }
 
   // Date
-  const dateStr = job.createdAt?.toDate
-    ? job.createdAt.toDate().toLocaleDateString('en-GB', { day: 'numeric', month: 'short', year: 'numeric' })
-    : '';
+  const dateStr = formatCardDate(job.createdAt);
   document.getElementById('job-detail-date').textContent = dateStr ? `Posted ${dateStr}` : '';
 
   // Job-specific keywords

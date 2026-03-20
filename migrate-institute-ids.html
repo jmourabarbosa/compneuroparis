@@ -40,32 +40,23 @@
   </div>
 </div>
 
+<button id="auditBtn" disabled onclick="runAudit()">Audit Data</button>
 <button id="dryRunBtn" disabled onclick="runMigration(true)">Dry Run (Preview)</button>
 <button id="migrateBtn" disabled onclick="runMigration(false)">Run Migration</button>
 <div id="summary"></div>
 <div id="log"></div>
 
 <script type="module">
-import { initializeApp } from 'https://www.gstatic.com/firebasejs/11.4.0/firebase-app.js';
 import { getAuth, signInWithEmailAndPassword, onAuthStateChanged } from 'https://www.gstatic.com/firebasejs/11.4.0/firebase-auth.js';
 import { getFirestore, collection, doc, getDoc, getDocs, query, updateDoc, where } from 'https://www.gstatic.com/firebasejs/11.4.0/firebase-firestore.js';
+import { db } from './js/firebase-config.js';
+import { summarizeInstituteLinkAudit } from './js/institute-audit-utils.mjs';
 import { buildInstituteFieldData, resolveInstituteRefsFromRecord } from './js/institute-links.mjs';
-
-const firebaseConfig = {
-  apiKey: "AIzaSyCEUSVBEAPYfsoG00GKPqw_lHJQKelgVbk",
-  authDomain: "compneuroparis.firebaseapp.com",
-  projectId: "compneuroparis",
-  storageBucket: "compneuroparis.firebasestorage.app",
-  messagingSenderId: "768335946036",
-  appId: "1:768335946036:web:61184dde3b4b66c58bc561"
-};
-
-const app = initializeApp(firebaseConfig);
-const auth = getAuth(app);
-const db = getFirestore(app);
+const auth = getAuth();
 
 const logEl = document.getElementById('log');
 const summaryEl = document.getElementById('summary');
+const auditBtn = document.getElementById('auditBtn');
 const dryRunBtn = document.getElementById('dryRunBtn');
 const migrateBtn = document.getElementById('migrateBtn');
 
@@ -78,6 +69,7 @@ function log(msg, cls = '') {
 }
 
 function setButtonsEnabled(enabled) {
+  auditBtn.disabled = !enabled;
   dryRunBtn.disabled = !enabled;
   migrateBtn.disabled = !enabled;
 }
@@ -128,6 +120,11 @@ async function loadInstitutesForMigration() {
     });
   });
   return [...institutesById.values()];
+}
+
+async function loadCollectionRecords(collectionName) {
+  const snapshot = await getDocs(collection(db, collectionName));
+  return snapshot.docs.map(docSnap => ({ id: docSnap.id, ...docSnap.data() }));
 }
 
 function arraysEqual(a = [], b = []) {
@@ -209,6 +206,31 @@ window.runMigration = async (dryRun) => {
     log(summaryEl.textContent, counters.unresolved > 0 ? 'change' : 'success');
   } catch (err) {
     log(`Migration failed: ${err.message}`, 'error');
+  } finally {
+    setButtonsEnabled(true);
+  }
+};
+
+window.runAudit = async () => {
+  logEl.innerHTML = '';
+  summaryEl.textContent = '';
+  setButtonsEnabled(false);
+
+  try {
+    const institutes = await loadInstitutesForMigration();
+    const [groups, submissions] = await Promise.all([
+      loadCollectionRecords('groups'),
+      loadCollectionRecords('submissions')
+    ]);
+
+    const groupSummary = summarizeInstituteLinkAudit(groups, institutes);
+    const submissionSummary = summarizeInstituteLinkAudit(submissions, institutes);
+
+    log(`Groups audit: ${JSON.stringify(groupSummary)}`, groupSummary.unresolved > 0 || groupSummary.needsUpdate > 0 ? 'change' : 'success');
+    log(`Submissions audit: ${JSON.stringify(submissionSummary)}`, submissionSummary.unresolved > 0 || submissionSummary.needsUpdate > 0 ? 'change' : 'success');
+    summaryEl.textContent = `Audit complete — groups unresolved: ${groupSummary.unresolved}, groups needing update: ${groupSummary.needsUpdate}; submissions unresolved: ${submissionSummary.unresolved}, submissions needing update: ${submissionSummary.needsUpdate}`;
+  } catch (err) {
+    log(`Audit failed: ${err.message}`, 'error');
   } finally {
     setButtonsEnabled(true);
   }
