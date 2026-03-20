@@ -113,7 +113,26 @@ img {
   margin: 0 auto;
   padding: 0 1.5rem;
   display: flex;
-  justify-content: flex-end;
+  justify-content: space-between;
+  align-items: center;
+  gap: 1rem;
+}
+
+.nav-links-text {
+  display: flex;
+  align-items: center;
+  gap: 1rem;
+  flex-wrap: wrap;
+  min-width: 0;
+}
+
+.nav-links-text a {
+  font-size: 0.9rem;
+  color: var(--color-text-secondary);
+}
+
+.nav-links-text a:hover {
+  color: var(--color-primary);
 }
 
 .header-title {
@@ -2343,6 +2362,20 @@ body.admin-page #modal-admin .modal-header .modal-close {
 
 /* ========== RESPONSIVE ========== */
 @media (max-width: 768px) {
+  .nav-bar-inner {
+    flex-direction: column;
+    align-items: flex-start;
+  }
+
+  .nav-links-text {
+    gap: 0.75rem;
+  }
+
+  .header-actions {
+    width: 100%;
+    flex-wrap: wrap;
+  }
+
   .site-header {
     padding: 5rem 0;
   }
