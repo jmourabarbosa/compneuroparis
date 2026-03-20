@@ -115,21 +115,26 @@ let currentDetailInstitute = null;
 // Generic claim target: { id, name, type }
 let currentClaimTarget = null;
 
-export async function loadGroups() {
-  groupsLoading.classList.remove('hidden');
-  groupsEmpty.classList.add('hidden');
-  SUBFIELDS.forEach(sf => { sections[sf].grid.innerHTML = ''; });
+export async function loadGroups(shouldFetch = true) {
+  if (shouldFetch) {
+    groupsLoading.classList.remove('hidden');
+    groupsEmpty.classList.add('hidden');
+    SUBFIELDS.forEach(sf => { sections[sf].grid.innerHTML = ''; });
 
-  try {
-    allGroups = await fetchGroups();
-  } catch (err) {
-    console.error('Error loading groups:', err);
-    allGroups = [];
+    try {
+      allGroups = await fetchGroups();
+    } catch (err) {
+      console.error('Error loading groups:', err);
+      allGroups = [];
+    }
+
+    groupsLoading.classList.add('hidden');
   }
 
-  groupsLoading.classList.add('hidden');
   buildKeywordFilters();
   renderGroups();
+  renderInstitutes();
+  renderJobs();
 }
 
 function buildKeywordFilters() {
@@ -940,6 +945,7 @@ export async function loadPublicJobs() {
     allJobs = [];
   }
   renderJobs();
+  renderGroups();
 }
 
 function renderJobs() {

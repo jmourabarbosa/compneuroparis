@@ -148,6 +148,61 @@ let approvedInstitutes = [];
 let approvedInstituteNames = new Set();
 let approvedInstitutesById = new Map();
 
+function setApprovedInstitutesCache(institutes = []) {
+  approvedInstitutes = institutes;
+  approvedInstituteNames = new Set(institutes.map(inst => inst.name));
+  approvedInstitutesById = new Map(institutes.map(inst => [inst.id, inst]));
+}
+
+async function ensureApprovedInstitutesCache(forceRefresh = false) {
+  if (!forceRefresh && approvedInstitutes.length > 0) return approvedInstitutes;
+  const approved = await fetchApprovedInstitutes();
+  setApprovedInstitutesCache(approved);
+  return approvedInstitutes;
+}
+
+async function ensureUsersCache(forceRefresh = false) {
+  if (!forceRefresh && cachedUsers.length > 0) return cachedUsers;
+  cachedUsers = await listAllUsers();
+  return cachedUsers;
+}
+
+function renderEditInstituteOptions() {
+  editInstituteSelect.innerHTML = '';
+  const placeholder = document.createElement('option');
+  placeholder.value = '';
+  placeholder.disabled = true;
+  placeholder.selected = true;
+  placeholder.textContent = 'Select institution...';
+  editInstituteSelect.appendChild(placeholder);
+
+  approvedInstitutes.forEach(inst => {
+    const opt = document.createElement('option');
+    opt.value = inst.id;
+    opt.textContent = inst.name;
+    editInstituteSelect.appendChild(opt);
+  });
+}
+
+async function refreshManageAndPublicGroups() {
+  await Promise.all([loadManageGroups(), loadGroups()]);
+}
+
+async function refreshInstituteViews() {
+  await Promise.all([loadApprovedInstitutes(), loadInstituteOptions(), loadPublicInstitutes()]);
+}
+
+export function primeEditModalReferenceData() {
+  void ensureApprovedInstitutesCache().then(() => {
+    renderEditInstituteOptions();
+  }).catch(err => {
+    console.error('Error preloading institute cache:', err);
+  });
+  void ensureUsersCache().catch(err => {
+    console.error('Error preloading users cache:', err);
+  });
+}
+
 // ========== TABS ==========
 
 export function initTabs() {
@@ -227,10 +282,7 @@ async function showSubmissionDetail(sub) {
 
   // Refresh approved institutes cache
   try {
-    const approved = await fetchApprovedInstitutes();
-    approvedInstitutes = approved;
-    approvedInstituteNames = new Set(approved.map(i => i.name));
-    approvedInstitutesById = new Map(approved.map(i => [i.id, i]));
+    await ensureApprovedInstitutesCache(true);
   } catch (err) {
     console.error('Error fetching approved institutes:', err);
   }
@@ -336,8 +388,7 @@ export function initSubmissionActions() {
       const overrideData = getReviewFormData();
       await approveSubmission(currentSubmission.id, user.uid, overrideData);
       modalSubmission.classList.add('hidden');
-      await loadPending();
-      await loadGroups();
+      await Promise.all([loadPending(), loadGroups()]);
       notifyAdminDataChanged();
     } catch (err) {
       console.error('Approve error:', err);
@@ -418,7 +469,7 @@ async function populateClaimantOptions(group) {
 
   const unclaimedOption = document.createElement('option');
   try {
-    const users = await listAllUsers();
+    const users = await ensureUsersCache();
     buildClaimantOptionData(users, group).forEach(optionData => {
       const option = document.createElement('option');
       option.value = optionData.value;
@@ -501,24 +552,8 @@ function addEditLinkRow(label = '', url = '') {
 
 async function loadEditInstituteOptions() {
   try {
-    const institutes = await fetchApprovedInstitutes();
-    approvedInstitutes = institutes;
-    approvedInstituteNames = new Set(institutes.map(inst => inst.name));
-    approvedInstitutesById = new Map(institutes.map(inst => [inst.id, inst]));
-    editInstituteSelect.innerHTML = '';
-    const placeholder = document.createElement('option');
-    placeholder.value = '';
-    placeholder.disabled = true;
-    placeholder.selected = true;
-    placeholder.textContent = 'Select institution...';
-    editInstituteSelect.appendChild(placeholder);
-
-    institutes.forEach(inst => {
-      const opt = document.createElement('option');
-      opt.value = inst.id;
-      opt.textContent = inst.name;
-      editInstituteSelect.appendChild(opt);
-    });
+    await ensureApprovedInstitutesCache();
+    renderEditInstituteOptions();
   } catch (err) {
     console.error('Error loading edit institute options:', err);
   }
@@ -583,8 +618,7 @@ export function initEditForm() {
       if (!changed) {
         showMsg(editClaimMessage, 'No claimant change to save.', 'success');
       }
-      await loadManageGroups();
-      await loadGroups();
+      await refreshManageAndPublicGroups();
       notifyAdminDataChanged();
     } catch (err) {
       console.error('Set claimant error:', err);
@@ -641,8 +675,7 @@ export function initEditForm() {
       await updateGroup(id, updateData);
       const claimChanged = getIsAdmin() ? await persistClaimantSelection() : false;
       modalEdit.classList.add('hidden');
-      await loadManageGroups();
-      await loadGroups();
+      await refreshManageAndPublicGroups();
       if (claimChanged) {
         notifyAdminDataChanged();
       }
@@ -661,8 +694,7 @@ async function handleDelete(group) {
 
   try {
     await deleteGroup(group.id);
-    await loadManageGroups();
-    await loadGroups();
+    await refreshManageAndPublicGroups();
   } catch (err) {
     console.error('Delete error:', err);
     alert('Error deleting group.');
@@ -709,9 +741,7 @@ export async function loadPendingClaims() {
         btn.disabled = true;
         try {
           await approveClaim(claim.id);
-          await loadPendingClaims();
-          await loadGroups();
-          await loadPublicInstitutes();
+          await Promise.all([loadPendingClaims(), loadGroups(), loadPublicInstitutes()]);
           notifyAdminDataChanged();
         } catch (err) {
           console.error('Approve claim error:', err);
@@ -848,10 +878,7 @@ export async function loadPendingInstitutes() {
       item.querySelector('.btn-approve-inst').addEventListener('click', async () => {
         try {
           await approveInstitute(inst.id);
-          await loadPendingInstitutes();
-          await loadApprovedInstitutes();
-          await loadInstituteOptions();
-          await loadPublicInstitutes();
+          await Promise.all([loadPendingInstitutes(), refreshInstituteViews()]);
           notifyAdminDataChanged();
         } catch (err) {
           console.error('Approve institute error:', err);
@@ -883,7 +910,7 @@ export async function loadApprovedInstitutes() {
   institutesApprovedEmpty.classList.add('hidden');
 
   try {
-    const approved = await fetchApprovedInstitutes();
+    const approved = await ensureApprovedInstitutesCache(true);
 
     if (approved.length === 0) {
       institutesApprovedEmpty.classList.remove('hidden');
@@ -909,9 +936,7 @@ export async function loadApprovedInstitutes() {
         if (!confirm(`Delete "${inst.name}"? This cannot be undone.`)) return;
         try {
           await deleteInstitute(inst.id);
-          await loadApprovedInstitutes();
-          await loadPublicInstitutes();
-          await loadInstituteOptions();
+          await refreshInstituteViews();
           notifyAdminDataChanged();
         } catch (err) {
           console.error('Delete institute error:', err);
@@ -1006,9 +1031,7 @@ export function initEditInstituteForm() {
     try {
       await updateInstitute(id, updateData);
       modalEditInstitute.classList.add('hidden');
-      await loadApprovedInstitutes();
-      await loadPublicInstitutes();
-      await loadInstituteOptions();
+      await refreshInstituteViews();
     } catch (err) {
       console.error('Edit institute error:', err);
       showMsg(editInstMessage, 'Error saving changes.', 'error');
@@ -1162,8 +1185,7 @@ export async function loadUsers() {
   usersLoading.classList.remove('hidden');
 
   try {
-    const users = await listAllUsers();
-    cachedUsers = users;
+    const users = await ensureUsersCache(true);
     usersLoading.classList.add('hidden');
     renderUsers();
   } catch (err) {
@@ -1269,8 +1291,7 @@ async function showEditUserModal(user) {
         try {
           await revokeClaim(g.id, 'pi');
           await showEditUserModal(user);
-          await loadManageGroups();
-          await loadGroups();
+          await refreshManageAndPublicGroups();
           notifyAdminDataChanged();
         } catch (err) {
           console.error('Revoke claim error:', err);
@@ -1299,8 +1320,7 @@ async function showEditUserModal(user) {
         try {
           await revokeClaim(inst.id, 'institute');
           await showEditUserModal(user);
-          await loadApprovedInstitutes();
-          await loadPublicInstitutes();
+          await Promise.all([loadApprovedInstitutes(), loadPublicInstitutes()]);
           notifyAdminDataChanged();
         } catch (err) {
           console.error('Revoke claim error:', err);
@@ -1320,12 +1340,14 @@ async function handleDeleteUser(user) {
 
   try {
     await deleteUserAccount(user.uid);
-    await loadUsers();
-    await loadManageGroups();
-    await loadPendingClaims();
-    await loadApprovedInstitutes();
-    await loadGroups();
-    await loadPublicInstitutes();
+    await Promise.all([
+      loadUsers(),
+      loadManageGroups(),
+      loadPendingClaims(),
+      loadApprovedInstitutes(),
+      loadGroups(),
+      loadPublicInstitutes()
+    ]);
     notifyAdminDataChanged();
   } catch (err) {
     console.error('Delete user error:', err);

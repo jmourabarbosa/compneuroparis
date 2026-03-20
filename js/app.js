@@ -7,7 +7,7 @@ import {
   showEditModalForCreator,
   showEditInstituteModalForCreator, initEditInstituteForm,
   loadPendingInstitutes, loadApprovedInstitutes,
-  loadPendingClaims, loadMessages,
+  loadPendingClaims, loadMessages, primeEditModalReferenceData,
   initEditUserForm, initSettings
 } from './ui-admin.js';
 import { fetchPendingSubmissions, fetchPendingClaims as dbFetchPendingClaims, fetchPendingInstitutes as dbFetchPendingInstitutes, fetchOpenReports, fetchOpenMessages as dbFetchOpenMessages } from './db.js';
@@ -50,6 +50,7 @@ function openAdminWorkspace() {
   loadAdmins();
   loadPendingInstitutes();
   loadApprovedInstitutes();
+  primeEditModalReferenceData();
   updateAdminBadge();
 }
 
@@ -328,8 +329,8 @@ onAuthChange((user, isAdmin) => {
     }
   }
 
-  // Refresh groups to update edit buttons
-  loadGroups();
+  // Re-render groups to update edit buttons without re-fetching everything.
+  loadGroups(false);
 });
 
 // ========== CREATOR EDIT EVENTS ==========
@@ -363,9 +364,8 @@ initJobDetail();
 initJobForm();
 initCreatorPanel();
 
-// Load jobs first (needed for Hiring badges on PI cards), then groups + institutes, then deep links
-loadPublicJobs()
-  .then(() => Promise.all([loadGroups(), loadPublicInstitutes()]))
+// Load public datasets in parallel and let each section render as its data arrives.
+Promise.all([loadGroups(), loadPublicInstitutes(), loadPublicJobs()])
   .then(() => handleDeepLink());
 
 // Handle #admin deep link (wait for auth to resolve)
