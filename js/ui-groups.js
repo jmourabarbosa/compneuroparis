@@ -1197,6 +1197,12 @@ async function openInstituteDetail(inst) {
     .map(l => `<a href="${escapeHTML(l.url)}" class="card-link" target="_blank" rel="noopener noreferrer">${escapeHTML(l.label)}</a>`)
     .join('');
 
+  const piCountMap = buildInstitutePiCountMap(allGroups, allInstitutes);
+  const piCount = getInstitutePiCount(inst, piCountMap);
+  if (btnInstViewPis) {
+    btnInstViewPis.textContent = `View ${piCount} PI${piCount === 1 ? '' : 's'} from this institute`;
+  }
+
   // Reset sections
   instDetailEditSection.classList.add('hidden');
   instDetailClaimSection.classList.add('hidden');
