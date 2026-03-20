@@ -13,7 +13,7 @@ test('escapeHTML escapes basic HTML characters', () => {
   assert.equal(escapeHTML('<script>"x"&\'y\''), '&lt;script&gt;&quot;x&quot;&amp;&#39;y&#39;');
 });
 
-test('buildPiCardMarkup includes hiring badge, managed state, and keyword overflow', () => {
+test('buildPiCardMarkup includes hiring badge, validated state, and keyword overflow', () => {
   const { html, overflowCount } = buildPiCardMarkup({
     name: 'Alice Example',
     keywords: ['a', 'b', 'c', 'd', 'e', 'f'],
@@ -26,7 +26,7 @@ test('buildPiCardMarkup includes hiring badge, managed state, and keyword overfl
   });
 
   assert.equal(overflowCount, 1);
-  assert.match(html, /Claimed/);
+  assert.match(html, /Validated/);
   assert.match(html, /Hiring/);
   assert.match(html, /card-name-stack/);
   assert.match(html, /card-meta-row/);

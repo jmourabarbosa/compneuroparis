@@ -12,6 +12,7 @@ import {
 } from './ui-admin.js';
 import { fetchPendingSubmissions, fetchPendingClaims as dbFetchPendingClaims, fetchPendingInstitutes as dbFetchPendingInstitutes, fetchOpenReports, fetchOpenMessages as dbFetchOpenMessages } from './db.js';
 import { initCreatorPanel } from './ui-creator.js';
+import { getPreferredUserName } from './manager-name-utils.mjs';
 
 // ========== DOM REFS ==========
 const btnAdminLogin = document.getElementById('btn-admin-login');
@@ -298,7 +299,7 @@ onAuthChange((user, isAdmin) => {
     btnSignup.classList.add('hidden');
     adminBar.classList.remove('hidden');
     creatorBar.classList.add('hidden');
-    adminEmail.textContent = user.email;
+    adminEmail.textContent = getPreferredUserName(user);
     closeModal(modalSignup);
     updateAdminBadge();
     if (isAdminWorkspace) {
@@ -311,7 +312,7 @@ onAuthChange((user, isAdmin) => {
     btnSignup.classList.add('hidden');
     adminBar.classList.add('hidden');
     creatorBar.classList.remove('hidden');
-    creatorEmail.textContent = user.email;
+    creatorEmail.textContent = getPreferredUserName(user);
     // Close admin modals if open
     closeModal(modalAdmin);
     closeModal(modalSignup);

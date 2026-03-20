@@ -238,14 +238,7 @@ function renderGroups() {
       }
     }
 
-    // Auto-expand sections with results when searching, collapse otherwise
-    if (isSearching && primary.length > 0) {
-      el.classList.remove('collapsed');
-      sections[sf].header.setAttribute('aria-expanded', 'true');
-    } else {
-      el.classList.add('collapsed');
-      sections[sf].header.setAttribute('aria-expanded', 'false');
-    }
+    sections[sf].header.setAttribute('aria-expanded', el.classList.contains('collapsed') ? 'false' : 'true');
   });
 
   // Hide "No PIs found" message when searching (sections handle their own visibility)
@@ -823,11 +816,6 @@ export function setInstituteFilter(institute) {
     activeInstituteName = nextInstituteName;
     instituteFilterName.textContent = nextInstituteName;
     instituteFilterBanner.classList.remove('hidden');
-    // Expand subfield sections so filtered groups are visible
-    SUBFIELDS.forEach(sf => {
-      sections[sf].el.classList.remove('collapsed');
-      sections[sf].header.setAttribute('aria-expanded', 'true');
-    });
   }
   // Update active state on institute cards
   institutesPublicList.querySelectorAll('.institute-card').forEach(card => {
@@ -894,15 +882,8 @@ function renderInstitutes() {
     institutesPublicList.appendChild(createInstituteCard(inst, getInstitutePiCount(inst, piCountMap)));
   });
 
-  // Auto-expand institutes section when searching with results, collapse when not
   const instHeader = institutesSection.querySelector('.subfield-header');
-  if (isSearching && filtered.length > 0) {
-    institutesSection.classList.remove('collapsed');
-    instHeader.setAttribute('aria-expanded', 'true');
-  } else if (!isSearching) {
-    institutesSection.classList.add('collapsed');
-    instHeader.setAttribute('aria-expanded', 'false');
-  }
+  instHeader.setAttribute('aria-expanded', institutesSection.classList.contains('collapsed') ? 'false' : 'true');
 }
 
 function createInstituteCard(inst, piCount = 0) {
@@ -963,15 +944,8 @@ function renderJobs() {
     jobsPublicList.appendChild(createJobCard(job));
   });
 
-  // Auto-expand jobs section when searching with results
   const jobsHeader = jobsSection.querySelector('.subfield-header');
-  if (isSearching && filtered.length > 0) {
-    jobsSection.classList.remove('collapsed');
-    jobsHeader.setAttribute('aria-expanded', 'true');
-  } else if (!isSearching) {
-    jobsSection.classList.add('collapsed');
-    jobsHeader.setAttribute('aria-expanded', 'false');
-  }
+  jobsHeader.setAttribute('aria-expanded', jobsSection.classList.contains('collapsed') ? 'false' : 'true');
 }
 
 function createJobCard(job) {
@@ -1352,7 +1326,15 @@ export function initInstituteDetail() {
 
   btnInstViewPis.addEventListener('click', () => {
     if (!currentDetailInstitute) return;
+    searchInput.value = '';
+    searchText = '';
+    activeKeywords.clear();
+    activeInstituteId = null;
+    activeInstituteName = '';
+    instituteFilterBanner.classList.add('hidden');
     modalInstDetail.classList.add('hidden');
+    renderInstitutes();
+    renderJobs();
     setInstituteFilter(currentDetailInstitute);
   });
 }

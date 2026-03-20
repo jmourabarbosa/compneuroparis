@@ -40,7 +40,7 @@ export function buildPiCardMarkup(group, {
     : '';
 
   const managedHTML = group.claimedBy
-    ? '<span class="card-managed-badge">Claimed</span>'
+    ? '<span class="card-managed-badge">Validated</span>'
     : '<span class="card-unclaimed-badge">Unclaimed</span>';
 
   const jobBadgeHTML = isHiring ? '<span class="card-job-badge">Hiring</span>' : '';

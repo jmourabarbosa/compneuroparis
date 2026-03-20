@@ -48,7 +48,7 @@ async function loadCreatorPages(uid) {
       const item = document.createElement('div');
       item.className = 'admin-item';
       const badges = [];
-      if (g.claimedBy === uid) badges.push('<span class="badge badge-claimed">Claimed</span>');
+      if (g.claimedBy === uid) badges.push('<span class="badge badge-claimed">Validated</span>');
       if (g.creatorUid === uid) badges.push('<span class="badge badge-created">Created</span>');
       item.innerHTML = `
         <div class="admin-item-info">
@@ -242,4 +242,3 @@ export function initCreatorPanel() {
     }
   });
 }
-
