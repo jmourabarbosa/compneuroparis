@@ -138,6 +138,9 @@ let currentSubmission = null;
 let currentEditGroup = null;
 let cachedManageGroups = [];
 let cachedUsers = [];
+let approvedInstitutesPromise = null;
+let usersCachePromise = null;
+let editModalLoadToken = 0;
 
 function notifyAdminDataChanged() {
   document.dispatchEvent(new CustomEvent('admin-data-changed'));
@@ -156,15 +159,34 @@ function setApprovedInstitutesCache(institutes = []) {
 
 async function ensureApprovedInstitutesCache(forceRefresh = false) {
   if (!forceRefresh && approvedInstitutes.length > 0) return approvedInstitutes;
-  const approved = await fetchApprovedInstitutes();
-  setApprovedInstitutesCache(approved);
-  return approvedInstitutes;
+  if (approvedInstitutesPromise) return approvedInstitutesPromise;
+
+  approvedInstitutesPromise = fetchApprovedInstitutes()
+    .then((approved) => {
+      setApprovedInstitutesCache(approved);
+      return approvedInstitutes;
+    })
+    .finally(() => {
+      approvedInstitutesPromise = null;
+    });
+
+  return approvedInstitutesPromise;
 }
 
 async function ensureUsersCache(forceRefresh = false) {
   if (!forceRefresh && cachedUsers.length > 0) return cachedUsers;
-  cachedUsers = await listAllUsers();
-  return cachedUsers;
+  if (usersCachePromise) return usersCachePromise;
+
+  usersCachePromise = listAllUsers()
+    .then((users) => {
+      cachedUsers = users;
+      return cachedUsers;
+    })
+    .finally(() => {
+      usersCachePromise = null;
+    });
+
+  return usersCachePromise;
 }
 
 function renderEditInstituteOptions() {
@@ -182,6 +204,17 @@ function renderEditInstituteOptions() {
     opt.textContent = inst.name;
     editInstituteSelect.appendChild(opt);
   });
+}
+
+function renderLoadingOption(selectEl, text) {
+  selectEl.innerHTML = '';
+  const option = document.createElement('option');
+  option.value = '';
+  option.textContent = text;
+  option.disabled = true;
+  option.selected = true;
+  selectEl.appendChild(option);
+  selectEl.disabled = true;
 }
 
 async function refreshManageAndPublicGroups() {
@@ -462,14 +495,12 @@ function updateClaimSectionSummary(group) {
   editClaimCurrent.textContent = getClaimSectionSummary(group);
 }
 
-async function populateClaimantOptions(group) {
+async function populateClaimantOptions(group, loadToken = editModalLoadToken) {
   editClaimMessage.classList.add('hidden');
-  editClaimedBySelect.disabled = true;
-  editClaimedBySelect.innerHTML = '';
-
-  const unclaimedOption = document.createElement('option');
+  renderLoadingOption(editClaimedBySelect, 'Loading accounts...');
   try {
     const users = await ensureUsersCache();
+    if (loadToken !== editModalLoadToken || currentEditGroup?.id !== group.id) return;
     buildClaimantOptionData(users, group).forEach(optionData => {
       const option = document.createElement('option');
       option.value = optionData.value;
@@ -486,6 +517,7 @@ async function populateClaimantOptions(group) {
 }
 
 async function showEditModal(group) {
+  const loadToken = ++editModalLoadToken;
   currentEditGroup = { ...group };
   editId.value = group.id;
   editName.value = group.name || '';
@@ -496,10 +528,9 @@ async function showEditModal(group) {
   const subfields = toArray(group.subfields || group.subfield || 'computational');
   setSubfieldDropdown(editPrimarySubfield, 'edit-secondary', subfields);
 
-  // Institute picker — pre-populate with existing institutes
-  await loadEditInstituteOptions();
   editSelectedInstitutes = resolveInstituteRefsFromRecord(group, approvedInstitutes);
   renderEditInstitutePills();
+  renderLoadingOption(editInstituteSelect, 'Loading institutions...');
 
   // Populate links
   editLinksContainer.innerHTML = '';
@@ -526,7 +557,7 @@ async function showEditModal(group) {
   updateClaimSectionSummary(group);
   if (getIsAdmin()) {
     editClaimSection.classList.remove('hidden');
-    await populateClaimantOptions(group);
+    renderLoadingOption(editClaimedBySelect, 'Loading accounts...');
   } else {
     editClaimSection.classList.add('hidden');
     editClaimMessage.classList.add('hidden');
@@ -534,6 +565,18 @@ async function showEditModal(group) {
     editClaimedBySelect.value = '';
   }
   modalEdit.classList.remove('hidden');
+
+  void loadEditInstituteOptions().then(() => {
+    if (loadToken !== editModalLoadToken || currentEditGroup?.id !== group.id) return;
+    editSelectedInstitutes = resolveInstituteRefsFromRecord(group, approvedInstitutes);
+    renderEditInstitutePills();
+  });
+
+  if (getIsAdmin()) {
+    void populateClaimantOptions(group, loadToken).catch((err) => {
+      console.error('Error hydrating claimant options:', err);
+    });
+  }
 }
 
 export function showEditModalForCreator(group) {
