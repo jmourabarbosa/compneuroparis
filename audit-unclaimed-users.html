@@ -1,0 +1,235 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<title>Audit Unclaimed Users</title>
+<style>
+  body { font-family: system-ui; max-width: 1100px; margin: 40px auto; padding: 0 20px; background: #111; color: #eee; }
+  button { padding: 10px 24px; font-size: 16px; cursor: pointer; border: none; border-radius: 6px; }
+  #loginBtn { background: #4285f4; color: white; }
+  #auditBtn { background: #34a853; color: white; font-size: 18px; padding: 14px 32px; }
+  #auditBtn:disabled { background: #555; cursor: not-allowed; color: #999; }
+  #log { background: #1a1a1a; padding: 16px; border-radius: 8px; max-height: 260px; overflow-y: auto; font-family: monospace; font-size: 13px; white-space: pre-wrap; margin-top: 16px; }
+  .success { color: #34a853; }
+  .error { color: #ea4335; }
+  .info { color: #4285f4; }
+  input { padding: 8px 12px; font-size: 14px; border-radius: 4px; border: 1px solid #444; background: #222; color: #eee; width: 240px; }
+  #authSection { margin-bottom: 24px; }
+  .summary { margin: 20px 0; padding: 16px; border-radius: 8px; background: #171717; border: 1px solid #2b2b2b; }
+  table { width: 100%; border-collapse: collapse; margin-top: 18px; }
+  th, td { text-align: left; padding: 10px 12px; border-bottom: 1px solid #2b2b2b; vertical-align: top; }
+  th { color: #aaa; font-size: 13px; text-transform: uppercase; letter-spacing: 0.04em; }
+  .muted { color: #aaa; }
+</style>
+</head>
+<body>
+<h1>Audit Users Without Claimed Pages</h1>
+<p class="muted">This checks live Firebase Auth users against live Firestore <code>claimedBy</code> links on PI pages and institute pages. Pending claims are not counted.</p>
+
+<div id="authSection">
+  <p id="authStatus">Not logged in</p>
+  <div id="loginForm">
+    <input type="email" id="email" placeholder="Admin email">
+    <input type="password" id="password" placeholder="Password">
+    <button id="loginBtn" onclick="doLogin()">Login</button>
+  </div>
+</div>
+
+<button id="auditBtn" disabled onclick="runAudit()">Run audit</button>
+
+<div id="summary" class="summary hidden"></div>
+<table id="resultsTable" class="hidden">
+  <thead>
+    <tr>
+      <th>Name</th>
+      <th>Email</th>
+      <th>Claimed PI pages</th>
+      <th>Claimed institutes</th>
+      <th>UID</th>
+      <th>Created</th>
+    </tr>
+  </thead>
+  <tbody id="resultsBody"></tbody>
+</table>
+
+<div id="log"></div>
+
+<script type="module">
+import { initializeApp } from 'https://www.gstatic.com/firebasejs/11.4.0/firebase-app.js';
+import { getAuth, signInWithEmailAndPassword, onAuthStateChanged } from 'https://www.gstatic.com/firebasejs/11.4.0/firebase-auth.js';
+import { getFunctions, httpsCallable } from 'https://www.gstatic.com/firebasejs/11.4.0/firebase-functions.js';
+import { getFirestore, collection, getDocs, query, where } from 'https://www.gstatic.com/firebasejs/11.4.0/firebase-firestore.js';
+
+const firebaseConfig = {
+  apiKey: "AIzaSyCEUSVBEAPYfsoG00GKPqw_lHJQKelgVbk",
+  authDomain: "compneuroparis.firebaseapp.com",
+  projectId: "compneuroparis",
+  storageBucket: "compneuroparis.firebasestorage.app",
+  messagingSenderId: "768335946036",
+  appId: "1:768335946036:web:61184dde3b4b66c58bc561"
+};
+
+const app = initializeApp(firebaseConfig);
+const auth = getAuth(app);
+const db = getFirestore(app);
+const functions = getFunctions(app);
+
+const logEl = document.getElementById('log');
+const summaryEl = document.getElementById('summary');
+const resultsTableEl = document.getElementById('resultsTable');
+const resultsBodyEl = document.getElementById('resultsBody');
+
+function log(message, cls = '') {
+  const span = document.createElement('span');
+  span.className = cls;
+  span.textContent = `${message}\n`;
+  logEl.appendChild(span);
+  logEl.scrollTop = logEl.scrollHeight;
+}
+
+function escapeHtml(value) {
+  return String(value || '')
+    .replaceAll('&', '&amp;')
+    .replaceAll('<', '&lt;')
+    .replaceAll('>', '&gt;')
+    .replaceAll('"', '&quot;')
+    .replaceAll("'", '&#39;');
+}
+
+function formatUserLabel(user) {
+  const displayName = String(user.displayName || '').trim();
+  return displayName || '(no display name)';
+}
+
+function formatDate(value) {
+  if (!value) return '';
+  const date = new Date(value);
+  if (Number.isNaN(date.getTime())) return String(value);
+  return date.toLocaleString();
+}
+
+function renderResults(users, claimCounts) {
+  const rows = users
+    .map((user) => {
+      const counts = claimCounts.get(user.uid) || { groups: 0, institutes: 0 };
+      return {
+        ...user,
+        groups: counts.groups,
+        institutes: counts.institutes
+      };
+    })
+    .filter((user) => user.groups === 0 && user.institutes === 0)
+    .sort((a, b) => {
+      const aName = `${a.displayName || ''} ${a.email || ''}`.trim().toLowerCase();
+      const bName = `${b.displayName || ''} ${b.email || ''}`.trim().toLowerCase();
+      return aName.localeCompare(bName);
+    });
+
+  summaryEl.classList.remove('hidden');
+  summaryEl.innerHTML = `
+    <strong>${rows.length}</strong> of <strong>${users.length}</strong> users have no claimed PI pages and no claimed institutes.
+  `;
+
+  resultsBodyEl.innerHTML = '';
+  if (rows.length === 0) {
+    resultsTableEl.classList.add('hidden');
+    return;
+  }
+
+  for (const user of rows) {
+    const tr = document.createElement('tr');
+    tr.innerHTML = `
+      <td>${escapeHtml(formatUserLabel(user))}</td>
+      <td>${escapeHtml(user.email || '')}</td>
+      <td>0</td>
+      <td>0</td>
+      <td><code>${escapeHtml(user.uid || '')}</code></td>
+      <td>${escapeHtml(formatDate(user.createdAt || ''))}</td>
+    `;
+    resultsBodyEl.appendChild(tr);
+  }
+
+  resultsTableEl.classList.remove('hidden');
+}
+
+function buildClaimCounts(groups, institutes) {
+  const counts = new Map();
+
+  function increment(uid, field) {
+    if (!uid) return;
+    if (!counts.has(uid)) {
+      counts.set(uid, { groups: 0, institutes: 0 });
+    }
+    counts.get(uid)[field] += 1;
+  }
+
+  for (const groupDoc of groups) increment(groupDoc.claimedBy, 'groups');
+  for (const instituteDoc of institutes) increment(instituteDoc.claimedBy, 'institutes');
+
+  return counts;
+}
+
+let currentUser = null;
+
+onAuthStateChanged(auth, (user) => {
+  currentUser = user;
+  if (user) {
+    document.getElementById('authStatus').textContent = `Logged in as ${user.email}`;
+    document.getElementById('loginForm').style.display = 'none';
+    document.getElementById('auditBtn').disabled = false;
+  }
+});
+
+window.doLogin = async () => {
+  const email = document.getElementById('email').value;
+  const password = document.getElementById('password').value;
+  try {
+    await signInWithEmailAndPassword(auth, email, password);
+    log('Logged in.', 'success');
+  } catch (error) {
+    log(`Login error: ${error.message}`, 'error');
+  }
+};
+
+async function runUserAudit() {
+  if (!currentUser) {
+    throw new Error('Login required.');
+  }
+
+  const listUsers = httpsCallable(functions, 'listUsers');
+
+  log('Fetching users...', 'info');
+  const usersResult = await listUsers();
+  const users = usersResult.data.users || [];
+
+  log('Fetching claimed PI pages...', 'info');
+  const groupsSnap = await getDocs(collection(db, 'groups'));
+  const groups = groupsSnap.docs.map((doc) => ({ id: doc.id, ...doc.data() }));
+
+  log('Fetching claimed institutes...', 'info');
+  const institutesSnap = await getDocs(query(collection(db, 'institutes'), where('status', '==', 'approved')));
+  const institutes = institutesSnap.docs.map((doc) => ({ id: doc.id, ...doc.data() }));
+
+  const claimCounts = buildClaimCounts(groups, institutes);
+  renderResults(users, claimCounts);
+  log('Audit complete.', 'success');
+}
+
+window.runAudit = async () => {
+  document.getElementById('auditBtn').disabled = true;
+  summaryEl.classList.add('hidden');
+  resultsTableEl.classList.add('hidden');
+  resultsBodyEl.innerHTML = '';
+  logEl.textContent = '';
+
+  try {
+    await runUserAudit();
+  } catch (error) {
+    log(`ERROR: ${error.message}`, 'error');
+  }
+
+  document.getElementById('auditBtn').disabled = false;
+};
+</script>
+</body>
+</html>
