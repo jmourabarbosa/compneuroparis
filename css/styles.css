@@ -131,6 +131,13 @@ img {
   color: var(--color-text-secondary);
 }
 
+.nav-links-text a:not(:last-child)::after {
+  content: '•';
+  display: inline-block;
+  margin-left: 1rem;
+  color: var(--color-border);
+}
+
 .nav-links-text a:hover {
   color: var(--color-primary);
 }
