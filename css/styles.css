@@ -135,7 +135,8 @@ img {
   content: '•';
   display: inline-block;
   margin-left: 1rem;
-  color: var(--color-border);
+  color: var(--color-text-secondary);
+  font-weight: 700;
 }
 
 .nav-links-text a:hover {
