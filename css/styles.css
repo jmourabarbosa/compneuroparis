@@ -1328,6 +1328,43 @@ img {
   gap: 1rem;
 }
 
+.identity-choice-options {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 0.75rem;
+}
+
+.identity-choice-option {
+  display: flex;
+  align-items: center;
+  gap: 0.65rem;
+  padding: 0.8rem 0.9rem;
+  border: 1.5px solid var(--color-border);
+  border-radius: var(--radius-md);
+  background: var(--color-surface);
+  cursor: pointer;
+  transition: border-color 0.2s, box-shadow 0.2s, background 0.2s;
+}
+
+.identity-choice-option:hover {
+  border-color: var(--color-primary);
+  background: rgba(13, 115, 119, 0.04);
+}
+
+.identity-choice-option input[type="radio"] {
+  margin: 0;
+  width: 16px;
+  height: 16px;
+  accent-color: var(--color-primary);
+  cursor: pointer;
+}
+
+.identity-choice-option:has(input[type="radio"]:checked) {
+  border-color: var(--color-primary);
+  box-shadow: 0 0 0 3px rgba(13, 115, 119, 0.1);
+  background: rgba(13, 115, 119, 0.06);
+}
+
 .link-row {
   display: grid;
   grid-template-columns: 1fr 2fr;
@@ -2422,6 +2459,10 @@ body.admin-page #modal-admin .modal-header .modal-close {
   }
 
   .form-row {
+    grid-template-columns: 1fr;
+  }
+
+  .identity-choice-options {
     grid-template-columns: 1fr;
   }
 

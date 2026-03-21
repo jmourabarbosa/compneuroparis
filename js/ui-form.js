@@ -18,6 +18,8 @@ const linksContainer = document.getElementById('links-container');
 const btnAddLink = document.getElementById('btn-add-link');
 const subNameInput = document.getElementById('sub-name');
 const subPhotoUrlInput = document.getElementById('sub-photo-url');
+const submissionDetails = document.getElementById('submission-form-details');
+const subSubmitterRoleInputs = [...document.querySelectorAll('input[name="sub-submitter-role"]')];
 
 // Institute submission form
 const instForm = document.getElementById('institute-submission-form');
@@ -101,6 +103,7 @@ export function initForm() {
   btnShowForm.addEventListener('click', () => {
     hideAllForms();
     formWrapper.classList.remove('hidden');
+    updateSubmissionRoleUi();
   });
 
   btnShowInstForm.addEventListener('click', () => {
@@ -170,6 +173,14 @@ export function initForm() {
   });
 
   form.addEventListener('submit', handleSubmit);
+  subSubmitterRoleInputs.forEach((input) => {
+    input.addEventListener('change', () => {
+      updateSubmissionRoleUi();
+      if (input.checked) {
+        subNameInput.focus();
+      }
+    });
+  });
   subNameInput.addEventListener('input', () => {
     void updateDuplicatePiWarning(subNameInput.value);
   });
@@ -182,6 +193,7 @@ export function initForm() {
     renderPhotoWarningState();
   });
   void preloadExistingGroups();
+  updateSubmissionRoleUi();
   renderPhotoWarningState();
 
   // Auto-disable primary subfield in secondary checkboxes
@@ -677,6 +689,25 @@ async function validateSubmissionPhotoUrl({ immediate = false } = {}) {
   return pendingPromise;
 }
 
+function getSubmitterIsPiSelection() {
+  const selectedValue = subSubmitterRoleInputs.find((input) => input.checked)?.value || '';
+  if (selectedValue === 'self') return true;
+  if (selectedValue === 'other') return false;
+  return null;
+}
+
+function updateSubmissionRoleUi() {
+  if (!submissionDetails) return;
+  submissionDetails.classList.toggle('hidden', getSubmitterIsPiSelection() === null);
+}
+
+function resetSubmissionRoleSelection() {
+  subSubmitterRoleInputs.forEach((input) => {
+    input.checked = false;
+  });
+  updateSubmissionRoleUi();
+}
+
 async function handleSubmit(e) {
   e.preventDefault();
   hideMessage(formMessage);
@@ -688,6 +719,12 @@ async function handleSubmit(e) {
   }
   if (!isEmailVerified()) {
     showMessage(formMessage, 'Please verify your email before submitting. Check your inbox for a confirmation link.', 'error');
+    return;
+  }
+
+  const submitterIsPi = getSubmitterIsPiSelection();
+  if (submitterIsPi === null) {
+    showMessage(formMessage, 'Please say whether you are this PI before filling in the profile.', 'error');
     return;
   }
 
@@ -768,7 +805,7 @@ async function handleSubmit(e) {
 
     if (isAdmin) {
       // Admin: create group directly, skip submission review
-      await createGroup({
+      const groupData = {
         name,
         keywords,
         summary,
@@ -776,9 +813,15 @@ async function handleSubmit(e) {
         photoURL,
         subfields,
         subfield: subfields[0],
-        ...instituteFieldData,
-        creatorUid: user.uid
-      });
+        ...instituteFieldData
+      };
+      if (submitterIsPi) {
+        groupData.creatorUid = user.uid;
+        groupData.claimedBy = user.uid;
+        groupData.claimedByEmail = user.email || '';
+        groupData.claimedByName = getPreferredUserName(user);
+      }
+      await createGroup(groupData);
       showMessage(formMessage, 'PI added successfully!', 'success');
       await loadGroups();
     } else {
@@ -791,6 +834,7 @@ async function handleSubmit(e) {
         subfields,
         subfield: subfields[0],
         ...instituteFieldData,
+        submitterIsPi,
         submitterEmail: user.email,
         submitterName: getPreferredUserName(user),
         submitterNote,
@@ -800,6 +844,7 @@ async function handleSubmit(e) {
     }
 
     form.reset();
+    resetSubmissionRoleSelection();
     submissionDuplicateWarning.classList.add('hidden');
     submissionDuplicateWarning.textContent = '';
     subInstituteNewFields.classList.add('hidden');

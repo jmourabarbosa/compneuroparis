@@ -481,6 +481,7 @@ async function showSubmissionDetail(sub) {
   // Read-only metadata
   const metaParts = [];
   if (sub.submitterEmail) metaParts.push(`<p><strong>Submitter:</strong> ${escapeHTML(sub.submitterEmail)}</p>`);
+  if (typeof sub.submitterIsPi === 'boolean') metaParts.push(`<p><strong>Submitter is this PI:</strong> ${sub.submitterIsPi ? 'Yes' : 'No'}</p>`);
   if (sub.submitterNote) metaParts.push(`<p><strong>Note:</strong> ${escapeHTML(sub.submitterNote)}</p>`);
   if (sub.creatorUid) metaParts.push(`<p><strong>Creator UID:</strong> ${escapeHTML(sub.creatorUid)}</p>`);
   reviewMeta.innerHTML = metaParts.join('');

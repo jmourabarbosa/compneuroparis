@@ -361,91 +361,109 @@
           </div>
         </div>
 
-        <form id="submission-form" class="submission-form" novalidate>
+      <form id="submission-form" class="submission-form" novalidate>
+        <div class="form-group">
+          <label>Who are you adding? <span class="required">*</span></label>
+          <div class="identity-choice-options" role="radiogroup" aria-label="Who are you adding?">
+            <label class="identity-choice-option">
+              <input type="radio" name="sub-submitter-role" value="self">
+              <span>I am this PI</span>
+            </label>
+            <label class="identity-choice-option">
+              <input type="radio" name="sub-submitter-role" value="other">
+              <span>I am not this PI</span>
+            </label>
+          </div>
+          <p class="form-help">If you are this PI, your account will be linked to the profile after approval. Otherwise the page will remain unclaimed.</p>
+        </div>
+
+        <div id="form-message" class="form-message hidden" role="alert"></div>
+
+        <div id="submission-form-details" class="hidden">
           <div class="form-group">
             <label for="sub-name">PI Name <span class="required">*</span></label>
             <input type="text" id="sub-name" name="name" required>
             <div id="submission-duplicate-warning" class="form-message info hidden" role="alert"></div>
           </div>
-        <div class="form-row">
-          <div class="form-group">
-            <label for="sub-primary-subfield">Primary subfield <span class="required">*</span></label>
-            <select id="sub-primary-subfield">
-              <option value="" disabled selected>Select primary subfield...</option>
-              <option value="computational">Computational</option>
-              <option value="systems">Systems</option>
-              <option value="human">Human</option>
-              <option value="molecular">Molecular</option>
-              <option value="developmental">Developmental</option>
-              <option value="clinical">Clinical</option>
-            </select>
-            <div class="secondary-subfields">
-              <span class="secondary-label">Also list under:</span>
-              <label class="subfield-checkbox"><input type="checkbox" name="sub-secondary" value="computational"> Computational</label>
-              <label class="subfield-checkbox"><input type="checkbox" name="sub-secondary" value="systems"> Systems</label>
-              <label class="subfield-checkbox"><input type="checkbox" name="sub-secondary" value="human"> Human</label>
-              <label class="subfield-checkbox"><input type="checkbox" name="sub-secondary" value="molecular"> Molecular</label>
-              <label class="subfield-checkbox"><input type="checkbox" name="sub-secondary" value="developmental"> Developmental</label>
-              <label class="subfield-checkbox"><input type="checkbox" name="sub-secondary" value="clinical"> Clinical</label>
-            </div>
-          </div>
-          <div class="form-group">
-            <label>Institution(s) <span class="required">*</span></label>
-            <div class="institute-picker">
-              <div class="institute-picker-row">
-                <select id="sub-institute">
-                  <option value="" disabled selected>Select institution...</option>
-                  <option value="__new__">Propose new...</option>
-                </select>
-              </div>
-              <div id="sub-institute-pills" class="institute-pills"></div>
-              <div id="sub-institute-new-fields" class="institute-new-fields hidden">
-                <input type="text" id="sub-institute-new-name" placeholder="New institute name">
-                <input type="url" id="sub-institute-new-website" placeholder="Institution website (https://...)">
-                <button type="button" id="btn-add-new-institute" class="btn btn-outline btn-sm">Add</button>
+          <div class="form-row">
+            <div class="form-group">
+              <label for="sub-primary-subfield">Primary subfield <span class="required">*</span></label>
+              <select id="sub-primary-subfield">
+                <option value="" disabled selected>Select primary subfield...</option>
+                <option value="computational">Computational</option>
+                <option value="systems">Systems</option>
+                <option value="human">Human</option>
+                <option value="molecular">Molecular</option>
+                <option value="developmental">Developmental</option>
+                <option value="clinical">Clinical</option>
+              </select>
+              <div class="secondary-subfields">
+                <span class="secondary-label">Also list under:</span>
+                <label class="subfield-checkbox"><input type="checkbox" name="sub-secondary" value="computational"> Computational</label>
+                <label class="subfield-checkbox"><input type="checkbox" name="sub-secondary" value="systems"> Systems</label>
+                <label class="subfield-checkbox"><input type="checkbox" name="sub-secondary" value="human"> Human</label>
+                <label class="subfield-checkbox"><input type="checkbox" name="sub-secondary" value="molecular"> Molecular</label>
+                <label class="subfield-checkbox"><input type="checkbox" name="sub-secondary" value="developmental"> Developmental</label>
+                <label class="subfield-checkbox"><input type="checkbox" name="sub-secondary" value="clinical"> Clinical</label>
               </div>
             </div>
-          </div>
-        </div>
-        <div class="form-group">
-          <label for="sub-keywords">Keywords <span class="hint">(comma-separated)</span> <span class="required">*</span></label>
-          <input type="text" id="sub-keywords" name="keywords" placeholder="e.g. neural coding, machine learning, vision" required>
-        </div>
-        <div class="form-group">
-          <label for="sub-summary">Summary <span class="required">*</span></label>
-          <textarea id="sub-summary" name="summary" rows="4" required></textarea>
-        </div>
-
-        <div class="form-group">
-          <label>Links</label>
-          <div id="links-container">
-            <div class="link-row">
-              <input type="text" name="link-label" placeholder="Label (e.g. Website)">
-              <input type="url" name="link-url" placeholder="https://...">
+            <div class="form-group">
+              <label>Institution(s) <span class="required">*</span></label>
+              <div class="institute-picker">
+                <div class="institute-picker-row">
+                  <select id="sub-institute">
+                    <option value="" disabled selected>Select institution...</option>
+                    <option value="__new__">Propose new...</option>
+                  </select>
+                </div>
+                <div id="sub-institute-pills" class="institute-pills"></div>
+                <div id="sub-institute-new-fields" class="institute-new-fields hidden">
+                  <input type="text" id="sub-institute-new-name" placeholder="New institute name">
+                  <input type="url" id="sub-institute-new-website" placeholder="Institution website (https://...)">
+                  <button type="button" id="btn-add-new-institute" class="btn btn-outline btn-sm">Add</button>
+                </div>
+              </div>
             </div>
           </div>
-          <button type="button" id="btn-add-link" class="btn btn-text btn-sm">+ Add another link</button>
-        </div>
+          <div class="form-group">
+            <label for="sub-keywords">Keywords <span class="hint">(comma-separated)</span> <span class="required">*</span></label>
+            <input type="text" id="sub-keywords" name="keywords" placeholder="e.g. neural coding, machine learning, vision" required>
+          </div>
+          <div class="form-group">
+            <label for="sub-summary">Summary <span class="required">*</span></label>
+            <textarea id="sub-summary" name="summary" rows="4" required></textarea>
+          </div>
 
-        <div class="form-group">
-          <label for="sub-photo-url">Photo or preferred profile image URL <span class="hint">(link to an image)</span> <span class="required">*</span></label>
-          <input type="url" id="sub-photo-url" name="photoURL" placeholder="https://example.com/photo.jpg" required>
-          <div id="submission-photo-warning" class="form-message hidden" role="alert"></div>
-          <label id="submission-photo-warning-ack-row" class="photo-warning-ack hidden">
-            <input type="checkbox" id="submission-photo-warning-ack">
-            <span>The photo link may be broken. Submit anyway.</span>
-          </label>
-        </div>
+          <div class="form-group">
+            <label>Links</label>
+            <div id="links-container">
+              <div class="link-row">
+                <input type="text" name="link-label" placeholder="Label (e.g. Website)">
+                <input type="url" name="link-url" placeholder="https://...">
+              </div>
+            </div>
+            <button type="button" id="btn-add-link" class="btn btn-text btn-sm">+ Add another link</button>
+          </div>
 
-        <div class="form-group">
-          <label for="sub-note">Note for Admins <span class="hint">(optional)</span></label>
-          <input type="text" id="sub-note" name="submitterNote" placeholder="Any context for the admins">
-        </div>
+          <div class="form-group">
+            <label for="sub-photo-url">Photo or preferred profile image URL <span class="hint">(link to an image)</span> <span class="required">*</span></label>
+            <input type="url" id="sub-photo-url" name="photoURL" placeholder="https://example.com/photo.jpg" required>
+            <div id="submission-photo-warning" class="form-message hidden" role="alert"></div>
+            <label id="submission-photo-warning-ack-row" class="photo-warning-ack hidden">
+              <input type="checkbox" id="submission-photo-warning-ack">
+              <span>The photo link may be broken. Submit anyway.</span>
+            </label>
+          </div>
 
-        <div id="form-message" class="form-message hidden" role="alert"></div>
-        <div style="display:flex;gap:0.5rem">
-          <button type="submit" id="btn-submit" class="btn btn-primary">Submit for Review</button>
-          <button type="button" id="btn-cancel-form" class="btn btn-outline">Cancel</button>
+          <div class="form-group">
+            <label for="sub-note">Note for Admins <span class="hint">(optional)</span></label>
+            <input type="text" id="sub-note" name="submitterNote" placeholder="Any context for the admins">
+          </div>
+
+          <div style="display:flex;gap:0.5rem">
+            <button type="submit" id="btn-submit" class="btn btn-primary">Submit for Review</button>
+            <button type="button" id="btn-cancel-form" class="btn btn-outline">Cancel</button>
+          </div>
         </div>
       </form>
       </div>
