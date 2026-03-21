@@ -15,7 +15,7 @@ import { getCurrentUser, getIsAdmin, createAdminUser } from './auth.js';
 import { loadGroups, loadPublicInstitutes } from './ui-groups.js';
 import { getSubfieldsFromPicker, setSubfieldDropdown, syncSecondaryCheckboxes } from './ui-form.js';
 import { loadInstituteOptions } from './ui-form.js';
-import { getImageUrlValidationMessage, validateImageUrl } from './image-url-utils.mjs';
+import { validateImageUrl } from './image-url-utils.mjs';
 import { canSubmitWithPhotoUrlWarning, getPhotoUrlWarningState } from './photo-url-warning-utils.mjs';
 import {
   buildClaimantOptionData,
@@ -540,11 +540,6 @@ export function initSubmissionActions() {
     try {
       const user = getCurrentUser();
       const overrideData = getReviewFormData();
-      const photoValidation = await validateImageUrl(overrideData.photoURL);
-      if (!photoValidation.valid) {
-        alert(getImageUrlValidationMessage(photoValidation, 'PI photo URL'));
-        return;
-      }
       await approveSubmission(currentSubmission.id, user.uid, overrideData);
       modalSubmission.classList.add('hidden');
       await Promise.all([loadPending(), loadGroups()]);
