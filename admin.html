@@ -1151,6 +1151,11 @@
         <div class="form-group">
           <label for="review-photo-url">Photo URL</label>
           <input type="url" id="review-photo-url" placeholder="https://example.com/photo.jpg">
+          <div id="review-photo-warning" class="form-message hidden" role="alert"></div>
+          <label id="review-photo-warning-ack-row" class="photo-warning-ack hidden">
+            <input type="checkbox" id="review-photo-warning-ack">
+            <span>I reviewed this warning and want to approve anyway.</span>
+          </label>
         </div>
         <div id="review-meta" class="review-meta"></div>
         <div class="submission-actions">

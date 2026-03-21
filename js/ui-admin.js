@@ -15,7 +15,7 @@ import { getCurrentUser, getIsAdmin, createAdminUser } from './auth.js';
 import { loadGroups, loadPublicInstitutes } from './ui-groups.js';
 import { getSubfieldsFromPicker, setSubfieldDropdown, syncSecondaryCheckboxes } from './ui-form.js';
 import { loadInstituteOptions } from './ui-form.js';
-import { validateImageUrl } from './image-url-utils.mjs';
+import { getImageUrlValidationMessage, validateImageUrl } from './image-url-utils.mjs';
 import { canSubmitWithPhotoUrlWarning, getPhotoUrlWarningState } from './photo-url-warning-utils.mjs';
 import {
   buildClaimantOptionData,
@@ -49,6 +49,9 @@ const reviewSummary = document.getElementById('review-summary');
 const reviewLinksContainer = document.getElementById('review-links-container');
 const btnReviewAddLink = document.getElementById('btn-review-add-link');
 const reviewPhotoURL = document.getElementById('review-photo-url');
+const reviewPhotoWarning = document.getElementById('review-photo-warning');
+const reviewPhotoWarningAckRow = document.getElementById('review-photo-warning-ack-row');
+const reviewPhotoWarningAck = document.getElementById('review-photo-warning-ack');
 const reviewMeta = document.getElementById('review-meta');
 const btnApprove = document.getElementById('btn-approve');
 const btnReject = document.getElementById('btn-reject');
@@ -143,6 +146,7 @@ let currentSubmission = null;
 let currentEditGroup = null;
 let cachedManageGroups = [];
 let cachedUsers = [];
+let reviewPhotoWarningUrl = '';
 let approvedInstitutesPromise = null;
 let usersCachePromise = null;
 let editModalLoadToken = 0;
@@ -225,6 +229,26 @@ function renderEditInstituteOptions() {
     opt.textContent = inst.name;
     editInstituteSelect.appendChild(opt);
   });
+}
+
+function resetReviewPhotoApprovalWarning() {
+  reviewPhotoWarningUrl = '';
+  if (reviewPhotoWarning) {
+    reviewPhotoWarning.classList.add('hidden');
+    reviewPhotoWarning.textContent = '';
+  }
+  if (reviewPhotoWarningAckRow) reviewPhotoWarningAckRow.classList.add('hidden');
+  if (reviewPhotoWarningAck) reviewPhotoWarningAck.checked = false;
+}
+
+function showReviewPhotoApprovalWarning(message, photoUrl) {
+  reviewPhotoWarningUrl = photoUrl;
+  if (reviewPhotoWarning) {
+    reviewPhotoWarning.textContent = `${message} Tick the box below if you still want to approve this profile.`;
+    reviewPhotoWarning.className = 'form-message warning';
+    reviewPhotoWarning.classList.remove('hidden');
+  }
+  if (reviewPhotoWarningAckRow) reviewPhotoWarningAckRow.classList.remove('hidden');
 }
 
 function renderLoadingOption(selectEl, text) {
@@ -448,6 +472,7 @@ async function showSubmissionDetail(sub) {
   reviewKeywords.value = (sub.keywords || []).join(', ');
   reviewSummary.value = sub.summary || '';
   reviewPhotoURL.value = sub.photoURL || '';
+  resetReviewPhotoApprovalWarning();
 
   // Subfield dropdown
   const subfields = toArray(sub.subfields || sub.subfield || 'computational');
@@ -533,6 +558,9 @@ function getReviewFormData() {
 export function initSubmissionActions() {
   reviewPrimarySubfield.addEventListener('change', () => syncSecondaryCheckboxes(reviewPrimarySubfield, 'review-secondary'));
   btnReviewAddLink.addEventListener('click', () => addReviewLinkRow());
+  reviewPhotoURL?.addEventListener('input', () => {
+    resetReviewPhotoApprovalWarning();
+  });
 
   btnApprove.addEventListener('click', async () => {
     if (!currentSubmission) return;
@@ -540,6 +568,23 @@ export function initSubmissionActions() {
     try {
       const user = getCurrentUser();
       const overrideData = getReviewFormData();
+      if (overrideData.photoURL) {
+        const photoValidation = await validateImageUrl(overrideData.photoURL);
+        if (!photoValidation.valid) {
+          const warningMessage = getImageUrlValidationMessage(photoValidation, 'PI photo URL');
+          const approvalAcknowledged = reviewPhotoWarningAck?.checked && reviewPhotoWarningUrl === overrideData.photoURL;
+          showReviewPhotoApprovalWarning(warningMessage, overrideData.photoURL);
+          if (!approvalAcknowledged) {
+            reviewPhotoWarningAck?.scrollIntoView({ block: 'nearest', behavior: 'smooth' });
+            reviewPhotoWarningAck?.focus();
+            return;
+          }
+        } else {
+          resetReviewPhotoApprovalWarning();
+        }
+      } else {
+        resetReviewPhotoApprovalWarning();
+      }
       await approveSubmission(currentSubmission.id, user.uid, overrideData);
       modalSubmission.classList.add('hidden');
       await Promise.all([loadPending(), loadGroups()]);
