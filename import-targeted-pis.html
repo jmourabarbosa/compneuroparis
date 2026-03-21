@@ -1,0 +1,210 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<title>Import Targeted PIs</title>
+<style>
+  body { font-family: system-ui; max-width: 860px; margin: 40px auto; padding: 0 20px; background: #111; color: #eee; }
+  button { padding: 10px 24px; font-size: 16px; cursor: pointer; border: none; border-radius: 6px; }
+  #loginBtn { background: #4285f4; color: white; }
+  #importBtn { background: #34a853; color: white; font-size: 18px; padding: 14px 32px; }
+  #importBtn:disabled { background: #555; cursor: not-allowed; color: #999; }
+  #log { background: #1a1a1a; padding: 16px; border-radius: 8px; max-height: 600px; overflow-y: auto; font-family: monospace; font-size: 13px; white-space: pre-wrap; margin-top: 16px; }
+  .success { color: #34a853; }
+  .error { color: #ea4335; }
+  .info { color: #4285f4; }
+  input { padding: 8px 12px; font-size: 14px; border-radius: 4px; border: 1px solid #444; background: #222; color: #eee; width: 240px; }
+  #authSection { margin-bottom: 24px; }
+  .candidate-list { margin: 20px 0; padding: 16px; border: 1px solid #2b2b2b; border-radius: 8px; background: #171717; }
+  .candidate { display: flex; gap: 12px; align-items: flex-start; padding: 12px 0; border-top: 1px solid #2b2b2b; }
+  .candidate:first-child { border-top: 0; padding-top: 0; }
+  .candidate:last-child { padding-bottom: 0; }
+  .candidate input[type="checkbox"] { width: auto; margin-top: 3px; }
+  .candidate-meta { color: #aaa; font-size: 14px; margin-top: 4px; }
+</style>
+</head>
+<body>
+<h1>Import Targeted PIs</h1>
+<p style="color:#aaa;">This page only imports the two requested PI profiles. It does not bulk-seed the full <code>seed-new-pis.html</code> list.</p>
+
+<div id="authSection">
+  <p id="authStatus">Not logged in</p>
+  <div id="loginForm">
+    <input type="email" id="email" placeholder="Admin email">
+    <input type="password" id="password" placeholder="Password">
+    <button id="loginBtn" onclick="doLogin()">Login</button>
+  </div>
+</div>
+
+<div class="candidate-list" id="candidateList"></div>
+
+<button id="importBtn" disabled onclick="runImport()">Import selected PIs</button>
+<div id="log"></div>
+
+<script type="module">
+import { initializeApp } from 'https://www.gstatic.com/firebasejs/11.4.0/firebase-app.js';
+import { getAuth, signInWithEmailAndPassword, onAuthStateChanged } from 'https://www.gstatic.com/firebasejs/11.4.0/firebase-auth.js';
+import { getFirestore, collection, addDoc, serverTimestamp, query, where, getDocs } from 'https://www.gstatic.com/firebasejs/11.4.0/firebase-firestore.js';
+
+const firebaseConfig = {
+  apiKey: "AIzaSyCEUSVBEAPYfsoG00GKPqw_lHJQKelgVbk",
+  authDomain: "compneuroparis.firebaseapp.com",
+  projectId: "compneuroparis",
+  storageBucket: "compneuroparis.firebasestorage.app",
+  messagingSenderId: "768335946036",
+  appId: "1:768335946036:web:61184dde3b4b66c58bc561"
+};
+
+const candidates = [
+  {
+    name: "Daniela Popa",
+    keywords: ["cerebellum", "cerebello-thalamic circuits", "fear extinction", "motor learning", "dystonia", "Parkinson's disease", "in vivo electrophysiology"],
+    summary: "Studies reciprocal communication between the cerebellum and forebrain circuits in normal and pathological states. Uses multi-scale approaches combining in vivo electrophysiology, optogenetics, pharmacogenetics, anatomical tracing, and signal processing to investigate fear extinction, motor learning, and circuit dysfunction in disorders such as dystonia and Parkinsonian dyskinesia.",
+    photoURL: "https://images.squarespace-cdn.com/content/v1/5c4dcd5975f9eef676ca907b/901ec31c-1c85-415e-8f74-7c732d130dc3/DanielaPopa2025_WIN.jpg",
+    subfields: ["systems"],
+    institutes: ["IBENS - ENS"],
+    links: [
+      { label: "Lab Website", url: "https://www.ibens.bio.ens.psl.eu/?rubrique53&lang=en" },
+      { label: "IBENS Profile", url: "https://www.ibens.bio.ens.psl.eu/spip.php?article219&lang=en" }
+    ]
+  },
+  {
+    name: "Olivier Sigaud",
+    keywords: ["reinforcement learning", "robot learning", "robotics", "decision-making", "computational neuroscience", "machine learning"],
+    summary: "Studies reinforcement learning, robot learning, and computational neuroscience of animal decision-making. Trained as an engineer, with a PhD in Computer Science from Paris XI and a PhD in Philosophy from Paris I, he worked at Dassault Aviation before becoming professor at LIP6 and then ISIR, where he leads research on learning for robotics and sequential decision-making.",
+    photoURL: "https://www.isir.upmc.fr/wp-content/uploads/2022/03/919_ISIR_SIGAUD_Olivier.jpg",
+    subfields: ["computational"],
+    institutes: ["ISIR - Sorbonne Universite"],
+    links: [
+      { label: "ISIR Profile", url: "https://www.isir.upmc.fr/personnel/sigaud?lang=en" },
+      { label: "MLIA Team", url: "https://www.isir.upmc.fr/teams/mlia/?lang=en" }
+    ]
+  }
+];
+
+const app = initializeApp(firebaseConfig);
+const auth = getAuth(app);
+const db = getFirestore(app);
+
+const logEl = document.getElementById('log');
+const candidateListEl = document.getElementById('candidateList');
+
+function log(msg, cls = '') {
+  const span = document.createElement('span');
+  span.className = cls;
+  span.textContent = msg + '\n';
+  logEl.appendChild(span);
+  logEl.scrollTop = logEl.scrollHeight;
+}
+
+function renderCandidates() {
+  candidateListEl.innerHTML = '';
+  for (const pi of candidates) {
+    const row = document.createElement('label');
+    row.className = 'candidate';
+    row.innerHTML = `
+      <input type="checkbox" class="pi-checkbox" value="${pi.name}" checked>
+      <div>
+        <strong>${pi.name}</strong>
+        <div class="candidate-meta">${pi.institutes.join(', ')} · ${pi.subfields.join(', ')}</div>
+      </div>
+    `;
+    candidateListEl.appendChild(row);
+  }
+}
+
+function getSelectedPis() {
+  const selectedNames = [...document.querySelectorAll('.pi-checkbox:checked')].map((input) => input.value);
+  return candidates.filter((pi) => selectedNames.includes(pi.name));
+}
+
+async function verifyInstitutesExist(pis) {
+  const requiredInstitutes = [...new Set(pis.flatMap((pi) => pi.institutes))];
+  for (const instituteName of requiredInstitutes) {
+    const q = query(collection(db, 'institutes'), where('name', '==', instituteName), where('status', '==', 'approved'));
+    const snap = await getDocs(q);
+    if (snap.empty) {
+      throw new Error(`Required institute not found in approved institutes: ${instituteName}`);
+    }
+  }
+}
+
+let currentUser = null;
+
+onAuthStateChanged(auth, (user) => {
+  currentUser = user;
+  if (user) {
+    document.getElementById('authStatus').textContent = `Logged in as ${user.email}`;
+    document.getElementById('loginForm').style.display = 'none';
+    document.getElementById('importBtn').disabled = false;
+  }
+});
+
+window.doLogin = async () => {
+  const email = document.getElementById('email').value;
+  const pw = document.getElementById('password').value;
+  try {
+    await signInWithEmailAndPassword(auth, email, pw);
+    log('Logged in!', 'success');
+  } catch (e) {
+    log('Login error: ' + e.message, 'error');
+  }
+};
+
+async function importSelectedPis() {
+  const selectedPis = getSelectedPis();
+  if (selectedPis.length === 0) {
+    throw new Error('Select at least one PI to import.');
+  }
+
+  await verifyInstitutesExist(selectedPis);
+
+  log('--- Importing selected PIs ---', 'info');
+  let created = 0;
+  let skipped = 0;
+
+  for (const pi of selectedPis) {
+    const existingQuery = query(collection(db, 'groups'), where('name', '==', pi.name));
+    const existingSnap = await getDocs(existingQuery);
+    if (!existingSnap.empty) {
+      log(`  Skip (already exists): ${pi.name}`);
+      skipped++;
+      continue;
+    }
+
+    await addDoc(collection(db, 'groups'), {
+      name: pi.name,
+      keywords: pi.keywords,
+      summary: pi.summary,
+      links: pi.links,
+      photoURL: pi.photoURL || '',
+      subfields: pi.subfields,
+      institutes: pi.institutes,
+      subfield: pi.subfields[0],
+      institute: pi.institutes[0],
+      creatorUid: currentUser.uid,
+      createdAt: serverTimestamp(),
+      updatedAt: serverTimestamp()
+    });
+    log(`  Created: ${pi.name}`, 'success');
+    created++;
+  }
+
+  log(`\nDone! Created ${created}, skipped ${skipped}.`, 'info');
+}
+
+window.runImport = async () => {
+  document.getElementById('importBtn').disabled = true;
+  logEl.textContent = '';
+  try {
+    await importSelectedPis();
+  } catch (e) {
+    log('ERROR: ' + e.message, 'error');
+  }
+  document.getElementById('importBtn').disabled = false;
+};
+
+renderCandidates();
+</script>
+</body>
+</html>
