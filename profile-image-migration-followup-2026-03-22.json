@@ -1,8 +1,27 @@
 {
   "generatedAt": "2026-03-22T14:37:54.240Z",
   "sourceMapping": "profile-image-manifest-2026-03-22 (1).json",
-  "downloadFailureCount": 0,
+  "downloadFailureCount": 2,
   "relinkFollowupCount": 0,
-  "downloadFailures": [],
+  "downloadFailures": [
+    {
+      "groupId": "H88OEhgL3EP91PPx9cDG",
+      "name": "Clement Lena",
+      "currentPhotoURL": "https://i1.rgstatic.net/ii/profile.image/11431281308763552-1739088422995_Q512/Clement-Lena.jpg",
+      "suggestedFileName": "clement-lena-h88oehgl3ep91ppx9cdg.jpg",
+      "suggestedLocalPath": "assets/profile-images/clement-lena-h88oehgl3ep91ppx9cdg.jpg",
+      "status": "failed",
+      "error": "HTTP 403"
+    },
+    {
+      "groupId": "awPqJJfe9h8Ew7uLxQlC",
+      "name": "Vincent De Gardelle",
+      "currentPhotoURL": "https://www.parisschoolofeconomics.eu/app/uploads/2026/02/de-gardelle-vincent_x3-260x260.jpg",
+      "suggestedFileName": "vincent-de-gardelle-awpqjjfe9h8ew7ulxqlc.jpg",
+      "suggestedLocalPath": "assets/profile-images/vincent-de-gardelle-awpqjjfe9h8ew7ulxqlc.jpg",
+      "status": "failed",
+      "error": "HTTP 403"
+    }
+  ],
   "relinkFollowup": []
 }
