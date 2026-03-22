@@ -1,19 +1,9 @@
 {
   "generatedAt": "2026-03-22T14:37:54.240Z",
   "sourceMapping": "profile-image-manifest-2026-03-22 (1).json",
-  "downloadFailureCount": 8,
+  "downloadFailureCount": 7,
   "relinkFollowupCount": 0,
   "downloadFailures": [
-    {
-      "groupId": "nqt6bEqZRbzt02k57Xzq",
-      "name": "Aleksandra Walczak",
-      "currentPhotoURL": "https://lh3.googleusercontent.com/sitesv/APaQ0SQIV9gtIMMxHjoyCiQqAxloauLeiZ5lKBXiDPW4-BrthWuQabtsz8PX_QyItGpibBKX0vQeFhN-Cq30BCDQcx6wibOpEOodG3swfsDPIUdlp7tf1kZKMBVSkuil3ed-U41_PIC_R2DV2YVKG7n9KPV7hIq4Gb2ezwyCPy0TZJzzfY_PATdDSPcTJigjRAD3mUYQm3gObNG3rDw=w1280",
-      "suggestedFileName": "aleksandra-walczak-nqt6beqzrbzt02k57xzq.jpg",
-      "suggestedLocalPath": "assets/profile-images/aleksandra-walczak-nqt6beqzrbzt02k57xzq.jpg",
-      "status": "failed",
-      "error": "HTTP 403",
-      "previousError": "HTTP 403"
-    },
     {
       "groupId": "rlGrCsGNg6lZpdXQDlYC",
       "name": "Alex Cayco Gajic",
