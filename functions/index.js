@@ -653,7 +653,9 @@ exports.setGroupClaim = functions.https.onCall(async (data, context) => {
 
 // ========== CALLABLE: MIGRATE PROFILE IMAGES ==========
 
-exports.migrateProfileImages = functions.https.onCall(async (data, context) => {
+exports.migrateProfileImages = functions
+  .runWith({ timeoutSeconds: 540, memory: "1GB" })
+  .https.onCall(async (data, context) => {
   if (!context.auth) {
     throw new functions.https.HttpsError("unauthenticated", "Must be logged in.");
   }
@@ -711,4 +713,4 @@ exports.migrateProfileImages = functions.https.onCall(async (data, context) => {
     total: groupsSnap.size,
     results,
   };
-});
+  });
