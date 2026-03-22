@@ -108,6 +108,39 @@ function getDefaultStorageBucketName(projectId, explicitBucketName = "") {
   return String(explicitBucketName || "").trim() || `${projectId}.firebasestorage.app`;
 }
 
+function getStorageBucketCandidates(projectId, explicitBucketName = "") {
+  const cleanExplicitBucketName = String(explicitBucketName || "").trim();
+  const cleanProjectId = String(projectId || "").trim();
+  return [...new Set([
+    cleanExplicitBucketName,
+    cleanProjectId ? `${cleanProjectId}.appspot.com` : "",
+    cleanProjectId ? `${cleanProjectId}.firebasestorage.app` : "",
+  ].filter(Boolean))];
+}
+
+async function resolveWorkingStorageBucket(admin, { projectId = "", explicitBucketName = "" } = {}) {
+  const candidates = getStorageBucketCandidates(projectId, explicitBucketName);
+  let lastError = null;
+
+  for (const bucketName of candidates) {
+    try {
+      const bucket = admin.storage().bucket(bucketName);
+      const [exists] = await bucket.exists();
+      if (exists) {
+        return { bucket, bucketName };
+      }
+    } catch (error) {
+      lastError = error;
+    }
+  }
+
+  if (lastError) {
+    throw lastError;
+  }
+
+  throw new Error(`No usable storage bucket found. Tried: ${candidates.join(", ") || "(none)"}`);
+}
+
 function normalizeRequestedGroupIds(value) {
   if (!Array.isArray(value)) return [];
   return [...new Set(
@@ -215,9 +248,11 @@ module.exports = {
   buildFirebaseStorageDownloadUrl,
   buildManagedProfileImagePath,
   getDefaultStorageBucketName,
+  getStorageBucketCandidates,
   isManagedProfileImageUrl,
   isSupportedRemoteImageUrl,
   migrateSingleProfileImage,
   normalizeRequestedGroupIds,
+  resolveWorkingStorageBucket,
   shouldMigrateProfileImageUrl,
 };

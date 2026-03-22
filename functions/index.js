@@ -9,6 +9,7 @@ const {
   getDefaultStorageBucketName,
   migrateSingleProfileImage,
   normalizeRequestedGroupIds,
+  resolveWorkingStorageBucket,
 } = require("./profile-image-migration");
 
 const storageBucket = getDefaultStorageBucketName(
@@ -664,16 +665,24 @@ exports.migrateProfileImages = functions
     throw new functions.https.HttpsError("permission-denied", "Admin access required.");
   }
 
-  const bucketName = getDefaultStorageBucketName(
-    process.env.GCLOUD_PROJECT || "",
-    process.env.STORAGE_BUCKET || storageBucket,
-  );
-  if (!bucketName) {
-    throw new functions.https.HttpsError("internal", "Storage bucket is not configured.");
+  const firestore = admin.firestore();
+  let bucket;
+  let bucketName;
+
+  try {
+    const resolvedBucket = await resolveWorkingStorageBucket(admin, {
+      projectId: process.env.GCLOUD_PROJECT || "",
+      explicitBucketName: process.env.STORAGE_BUCKET || storageBucket,
+    });
+    bucket = resolvedBucket.bucket;
+    bucketName = resolvedBucket.bucketName;
+  } catch (error) {
+    throw new functions.https.HttpsError(
+      "internal",
+      `Storage bucket lookup failed: ${error instanceof Error ? error.message : String(error)}`,
+    );
   }
 
-  const firestore = admin.firestore();
-  const bucket = admin.storage().bucket(bucketName);
   const requestedGroupIds = normalizeRequestedGroupIds(data?.groupIds);
   const groupsSnap = await firestore.collection("groups").orderBy("name").get();
   const groupDocs = requestedGroupIds.length > 0

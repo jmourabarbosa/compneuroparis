@@ -6,6 +6,7 @@ const {
   buildFirebaseStorageDownloadUrl,
   buildManagedProfileImagePath,
   getDefaultStorageBucketName,
+  getStorageBucketCandidates,
   isManagedProfileImageUrl,
   normalizeRequestedGroupIds,
   shouldMigrateProfileImageUrl,
@@ -63,6 +64,17 @@ test("getDefaultStorageBucketName prefers an explicit bucket and falls back to p
   assert.equal(
     getDefaultStorageBucketName("compneuroparis"),
     "compneuroparis.firebasestorage.app",
+  );
+});
+
+test("getStorageBucketCandidates prefers explicit bucket and includes common Firebase defaults", () => {
+  assert.deepEqual(
+    getStorageBucketCandidates("compneuroparis", "custom-bucket.example"),
+    [
+      "custom-bucket.example",
+      "compneuroparis.appspot.com",
+      "compneuroparis.firebasestorage.app",
+    ],
   );
 });
 
