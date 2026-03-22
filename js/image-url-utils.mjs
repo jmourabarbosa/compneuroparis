@@ -7,12 +7,17 @@ export function isSupportedRemoteImageUrl(url) {
   }
 }
 
+export function isSupportedLocalImagePath(url) {
+  const value = String(url || '').trim();
+  return /^\/?assets\/[A-Za-z0-9/_\-.]+$/.test(value);
+}
+
 export async function validateImageUrl(url, { ImageCtor = globalThis.Image, timeoutMs = 5000 } = {}) {
   if (!url) {
     return { valid: false, reason: 'missing' };
   }
 
-  if (!isSupportedRemoteImageUrl(url)) {
+  if (!isSupportedRemoteImageUrl(url) && !isSupportedLocalImagePath(url)) {
     return { valid: false, reason: 'invalid-url' };
   }
 
@@ -46,7 +51,7 @@ export function getImageUrlValidationMessage(result, fieldLabel = 'Image URL') {
     case 'missing':
       return `${fieldLabel} is required.`;
     case 'invalid-url':
-      return `${fieldLabel} must be a valid http(s) URL.`;
+      return `${fieldLabel} must be a valid http(s) URL or local assets path.`;
     case 'timeout':
     case 'not-image':
       return `${fieldLabel} must point to a valid image that can be loaded.`;

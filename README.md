@@ -114,6 +114,26 @@ npm run serve
 
 Then open `http://localhost:4173/index.html`.
 
+## Manual profile image migration workflow
+
+To move existing profile photos away from fragile external URLs without changing the `photoURL` schema:
+
+1. Open `migrate-profile-images.html` as an admin and export the live manifest.
+2. From the repo root, run:
+
+```bash
+node tools/download-profile-images.mjs path/to/profile-image-manifest.json
+```
+
+3. Commit the downloaded files under `assets/profile-images/`.
+4. Upload the generated `*.downloaded.json` mapping file back into `migrate-profile-images.html`.
+5. Apply the relink so the affected Firestore `groups` documents now use local asset paths in `photoURL`.
+
+This keeps backward compatibility because `photoURL` can remain mixed during rollout:
+
+- migrated profiles use local paths like `assets/profile-images/alice-example-abc123.jpg`
+- unmigrated profiles can keep their existing external `http(s)` URLs
+
 This currently covers:
 
 - auto-claim behavior when a user-submitted PI is approved
