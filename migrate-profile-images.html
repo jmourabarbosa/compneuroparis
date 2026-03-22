@@ -30,7 +30,7 @@
 </head>
 <body>
 <h1>Migrate Profile Images</h1>
-<p class="muted">This is a maintainer workflow for moving PI profile images from external URLs into the repository while keeping the existing <code>photoURL</code> field. Export the live manifest here, download the files locally with the Node script, then upload the generated mapping file back here to relink the affected profiles.</p>
+<p class="muted">This page migrates external PI profile images with one click. It runs server-side as an admin-only Firebase callable, copies each external image into managed storage, then updates the corresponding <code>photoURL</code> field automatically.</p>
 
 <div id="authSection">
   <p id="authStatus">Not logged in</p>
@@ -42,49 +42,23 @@
 </div>
 
 <div class="panel">
-  <h2>Step 1: Export the live remote-image manifest</h2>
-  <p class="muted">This only includes profiles whose current <code>photoURL</code> is an external <code>http(s)</code> image URL.</p>
+  <h2>Run one-click migration</h2>
+  <p class="muted">Already migrated storage-backed images are skipped automatically. External image URLs are fetched and mirrored into managed storage.</p>
   <div class="actions">
-    <button id="exportBtn" disabled onclick="runExport()">Export manifest</button>
+    <button id="migrateBtn" disabled onclick="runMigration()">Migrate external profile images</button>
   </div>
-  <div id="exportSummary" class="summary"></div>
-  <table id="exportPreviewTable" style="display:none;">
+  <div id="migrationSummary" class="summary"></div>
+  <ul id="migrationStatusList" class="status-list"></ul>
+  <table id="migrationPreviewTable" style="display:none;">
     <thead>
       <tr>
         <th>Name</th>
         <th>Current photo URL</th>
-        <th>Suggested local path</th>
-      </tr>
-    </thead>
-    <tbody id="exportPreviewBody"></tbody>
-  </table>
-</div>
-
-<div class="panel">
-  <h2>Step 2: Download images locally</h2>
-  <p class="muted">Run this from the repo root after saving the exported manifest:</p>
-  <pre><code>node tools/download-profile-images.mjs path/to/profile-image-manifest.json</code></pre>
-  <p class="muted">The script downloads files into <code>assets/profile-images/</code> and writes a companion mapping file ending in <code>.downloaded.json</code>.</p>
-</div>
-
-<div class="panel">
-  <h2>Step 3: Upload the mapping file and relink live profiles</h2>
-  <div class="actions">
-    <input type="file" id="mappingFile" accept=".json">
-    <button id="applyBtn" disabled onclick="runApply()">Apply relinks</button>
-  </div>
-  <div id="mappingSummary" class="summary"></div>
-  <ul id="mappingStatusList" class="status-list"></ul>
-  <table id="mappingPreviewTable" style="display:none;">
-    <thead>
-      <tr>
-        <th>Name</th>
-        <th>Current photo URL</th>
-        <th>Local photo URL</th>
+        <th>New photo URL</th>
         <th>Status</th>
       </tr>
     </thead>
-    <tbody id="mappingPreviewBody"></tbody>
+    <tbody id="migrationPreviewBody"></tbody>
   </table>
 </div>
 
@@ -93,10 +67,7 @@
 <script type="module">
 import { initializeApp } from 'https://www.gstatic.com/firebasejs/11.4.0/firebase-app.js';
 import { getAuth, signInWithEmailAndPassword, onAuthStateChanged } from 'https://www.gstatic.com/firebasejs/11.4.0/firebase-auth.js';
-import { collection, doc, getDoc, getDocs, getFirestore, orderBy, query, serverTimestamp, updateDoc } from 'https://www.gstatic.com/firebasejs/11.4.0/firebase-firestore.js';
-
-import { isSupportedRemoteImageUrl } from './js/image-url-utils.mjs';
-import { PROFILE_IMAGE_BASE_DIR, buildProfileImageManifestEntry } from './js/profile-image-migration-utils.mjs';
+import { getFunctions, httpsCallable } from 'https://www.gstatic.com/firebasejs/11.4.0/firebase-functions.js';
 
 const firebaseConfig = {
   apiKey: "AIzaSyCEUSVBEAPYfsoG00GKPqw_lHJQKelgVbk",
@@ -109,21 +80,15 @@ const firebaseConfig = {
 
 const app = initializeApp(firebaseConfig);
 const auth = getAuth(app);
-const db = getFirestore(app);
+const functions = getFunctions(app);
 
 const logEl = document.getElementById('log');
-const exportSummaryEl = document.getElementById('exportSummary');
-const exportPreviewTableEl = document.getElementById('exportPreviewTable');
-const exportPreviewBodyEl = document.getElementById('exportPreviewBody');
-const mappingFileEl = document.getElementById('mappingFile');
-const mappingSummaryEl = document.getElementById('mappingSummary');
-const mappingStatusListEl = document.getElementById('mappingStatusList');
-const mappingPreviewTableEl = document.getElementById('mappingPreviewTable');
-const mappingPreviewBodyEl = document.getElementById('mappingPreviewBody');
+const migrationSummaryEl = document.getElementById('migrationSummary');
+const migrationStatusListEl = document.getElementById('migrationStatusList');
+const migrationPreviewTableEl = document.getElementById('migrationPreviewTable');
+const migrationPreviewBodyEl = document.getElementById('migrationPreviewBody');
 
 let currentUser = null;
-let exportedManifest = null;
-let uploadedMapping = null;
 
 function log(message, cls = '') {
   const span = document.createElement('span');
@@ -142,79 +107,26 @@ function escapeHtml(value) {
     .replaceAll("'", '&#39;');
 }
 
-function downloadJsonFile(data, filename) {
-  const blob = new Blob([JSON.stringify(data, null, 2) + '\n'], { type: 'application/json' });
-  const url = URL.createObjectURL(blob);
-  const anchor = document.createElement('a');
-  anchor.href = url;
-  anchor.download = filename;
-  document.body.appendChild(anchor);
-  anchor.click();
-  anchor.remove();
-  URL.revokeObjectURL(url);
-}
-
-function renderExportPreview(manifest) {
-  const items = manifest?.items || [];
-  exportSummaryEl.textContent = items.length
-    ? `Found ${items.length} profiles with external image URLs. The exported manifest uses ${manifest.baseDir || PROFILE_IMAGE_BASE_DIR} for suggested local paths.`
-    : 'No profiles with external image URLs were found.';
-
-  exportPreviewBodyEl.innerHTML = '';
-  if (!items.length) {
-    exportPreviewTableEl.style.display = 'none';
-    return;
-  }
-
-  for (const item of items.slice(0, 20)) {
-    const row = document.createElement('tr');
-    row.innerHTML = `
-      <td>${escapeHtml(item.name)}</td>
-      <td><code>${escapeHtml(item.currentPhotoURL)}</code></td>
-      <td><code>${escapeHtml(item.suggestedLocalPath)}</code></td>
-    `;
-    exportPreviewBodyEl.appendChild(row);
-  }
-
-  exportPreviewTableEl.style.display = '';
-}
-
-function validateMapping(data) {
-  if (!data || !Array.isArray(data.items)) {
-    throw new Error('Mapping file must contain an items array.');
-  }
-
-  const validItems = data.items.filter((item) => item && item.groupId);
-  if (!validItems.length) {
-    throw new Error('Mapping file does not contain any valid items.');
-  }
-
-  return {
-    ...data,
-    items: validItems
-  };
-}
-
-function renderMappingPreview(mapping) {
-  const items = mapping?.items || [];
+function renderMigrationResults(result) {
+  const items = result?.results || [];
   const statusCounts = new Map();
   for (const item of items) {
     const key = item.status || 'unknown';
     statusCounts.set(key, (statusCounts.get(key) || 0) + 1);
   }
 
-  mappingSummaryEl.textContent = `Loaded ${items.length} mapping entries from ${mapping.sourceManifest || 'the uploaded file'}.`;
-  mappingStatusListEl.innerHTML = '';
+  migrationSummaryEl.textContent = `Scanned ${result.total || items.length} groups. Migrated ${result.migrated || 0}, skipped ${result.skipped || 0}, failed ${result.failed || 0}.`;
+  migrationStatusListEl.innerHTML = '';
   for (const [status, count] of [...statusCounts.entries()].sort((a, b) => a[0].localeCompare(b[0]))) {
     const li = document.createElement('li');
     li.textContent = `${status}: ${count}`;
-    mappingStatusListEl.appendChild(li);
+    migrationStatusListEl.appendChild(li);
   }
 
-  mappingPreviewBodyEl.innerHTML = '';
-  const previewItems = items.filter((item) => item.localPhotoURL).slice(0, 20);
+  migrationPreviewBodyEl.innerHTML = '';
+  const previewItems = items.filter((item) => item.status === 'migrated' || item.status === 'failed').slice(0, 50);
   if (!previewItems.length) {
-    mappingPreviewTableEl.style.display = 'none';
+    migrationPreviewTableEl.style.display = 'none';
     return;
   }
 
@@ -223,83 +135,13 @@ function renderMappingPreview(mapping) {
     row.innerHTML = `
       <td>${escapeHtml(item.name)}</td>
       <td><code>${escapeHtml(item.currentPhotoURL)}</code></td>
-      <td><code>${escapeHtml(item.localPhotoURL)}</code></td>
-      <td>${escapeHtml(item.status || '')}</td>
+      <td><code>${escapeHtml(item.managedPhotoURL || '')}</code></td>
+      <td>${escapeHtml(item.status || item.reason || '')}</td>
     `;
-    mappingPreviewBodyEl.appendChild(row);
+    migrationPreviewBodyEl.appendChild(row);
   }
 
-  mappingPreviewTableEl.style.display = '';
-}
-
-async function exportRemoteImageManifest() {
-  if (!currentUser) throw new Error('Login required.');
-
-  log('Fetching groups...', 'info');
-  const groupsSnap = await getDocs(query(collection(db, 'groups'), orderBy('name')));
-  const groups = groupsSnap.docs.map((groupDoc) => ({ id: groupDoc.id, ...groupDoc.data() }));
-  const items = groups
-    .filter((group) => isSupportedRemoteImageUrl(group.photoURL || ''))
-    .map((group) => buildProfileImageManifestEntry(group, { baseDir: PROFILE_IMAGE_BASE_DIR }));
-
-  const manifest = {
-    generatedAt: new Date().toISOString(),
-    baseDir: PROFILE_IMAGE_BASE_DIR,
-    items
-  };
-
-  const fileName = `profile-image-manifest-${new Date().toISOString().slice(0, 10)}.json`;
-  downloadJsonFile(manifest, fileName);
-  exportedManifest = manifest;
-  renderExportPreview(manifest);
-  log(`Exported ${items.length} remote-image entries to ${fileName}.`, 'success');
-}
-
-async function applyMappingToProfiles() {
-  if (!currentUser) throw new Error('Login required.');
-  if (!uploadedMapping) throw new Error('Upload a mapping file first.');
-
-  const readyItems = uploadedMapping.items.filter((item) => item.status === 'downloaded' && item.localPhotoURL);
-  if (!readyItems.length) {
-    throw new Error('The uploaded mapping file has no downloaded items to apply.');
-  }
-
-  let updated = 0;
-  let skipped = 0;
-
-  for (const item of readyItems) {
-    const groupRef = doc(db, 'groups', item.groupId);
-    const groupSnap = await getDoc(groupRef);
-
-    if (!groupSnap.exists()) {
-      log(`Skip missing group: ${item.name || item.groupId}`, 'error');
-      skipped++;
-      continue;
-    }
-
-    const currentPhotoURL = String(groupSnap.data().photoURL || '');
-    if (currentPhotoURL === item.localPhotoURL) {
-      log(`Already linked: ${item.name || item.groupId}`, 'info');
-      skipped++;
-      continue;
-    }
-
-    if (currentPhotoURL !== item.currentPhotoURL) {
-      log(`Skip changed photo URL for ${item.name || item.groupId}: live value no longer matches the manifest.`, 'error');
-      skipped++;
-      continue;
-    }
-
-    await updateDoc(groupRef, {
-      photoURL: item.localPhotoURL,
-      updatedAt: serverTimestamp()
-    });
-
-    log(`Relinked ${item.name || item.groupId} -> ${item.localPhotoURL}`, 'success');
-    updated++;
-  }
-
-  log(`Relink complete. Updated ${updated}, skipped ${skipped}.`, 'info');
+  migrationPreviewTableEl.style.display = '';
 }
 
 onAuthStateChanged(auth, (user) => {
@@ -307,29 +149,7 @@ onAuthStateChanged(auth, (user) => {
   if (user) {
     document.getElementById('authStatus').textContent = `Logged in as ${user.email}`;
     document.getElementById('loginForm').style.display = 'none';
-    document.getElementById('exportBtn').disabled = false;
-  }
-});
-
-mappingFileEl.addEventListener('change', async () => {
-  const file = mappingFileEl.files?.[0];
-  uploadedMapping = null;
-  document.getElementById('applyBtn').disabled = true;
-  mappingSummaryEl.textContent = '';
-  mappingStatusListEl.innerHTML = '';
-  mappingPreviewBodyEl.innerHTML = '';
-  mappingPreviewTableEl.style.display = 'none';
-
-  if (!file) return;
-
-  try {
-    const text = await file.text();
-    uploadedMapping = validateMapping(JSON.parse(text));
-    renderMappingPreview(uploadedMapping);
-    document.getElementById('applyBtn').disabled = false;
-    log(`Loaded mapping file ${file.name}.`, 'success');
-  } catch (error) {
-    log(`Mapping file error: ${error.message}`, 'error');
+    document.getElementById('migrateBtn').disabled = false;
   }
 });
 
@@ -345,28 +165,28 @@ window.doLogin = async () => {
   }
 };
 
-window.runExport = async () => {
-  document.getElementById('exportBtn').disabled = true;
-  logEl.textContent = '';
-  try {
-    await exportRemoteImageManifest();
-  } catch (error) {
-    log(`ERROR: ${error.message}`, 'error');
+window.runMigration = async () => {
+  if (!confirm('Migrate all external profile images now? Already migrated images will be skipped automatically.')) {
+    return;
   }
-  document.getElementById('exportBtn').disabled = false;
-};
 
-window.runApply = async () => {
-  document.getElementById('applyBtn').disabled = true;
+  document.getElementById('migrateBtn').disabled = true;
   logEl.textContent = '';
+  migrationSummaryEl.textContent = '';
+  migrationStatusListEl.innerHTML = '';
+  migrationPreviewBodyEl.innerHTML = '';
+  migrationPreviewTableEl.style.display = 'none';
+
   try {
-    await applyMappingToProfiles();
+    log('Starting one-click image migration...', 'info');
+    const migrateProfileImages = httpsCallable(functions, 'migrateProfileImages');
+    const result = await migrateProfileImages({});
+    renderMigrationResults(result.data || {});
+    log(`Migration finished. Migrated ${result.data?.migrated || 0}, skipped ${result.data?.skipped || 0}, failed ${result.data?.failed || 0}.`, 'success');
   } catch (error) {
     log(`ERROR: ${error.message}`, 'error');
   }
-  if (uploadedMapping) {
-    document.getElementById('applyBtn').disabled = false;
-  }
+  document.getElementById('migrateBtn').disabled = false;
 };
 </script>
 </body>
