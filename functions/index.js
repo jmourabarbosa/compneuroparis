@@ -5,19 +5,8 @@ const { createAuthService } = require("./auth-service");
 const { createClaimService } = require("./claim-service");
 const { createEmailService } = require("./email-service");
 const { planGroupClaimChange } = require("./group-claim-logic");
-const {
-  getDefaultStorageBucketName,
-  migrateSingleProfileImage,
-  normalizeRequestedGroupIds,
-  resolveWorkingStorageBucket,
-} = require("./profile-image-migration");
 
-const storageBucket = getDefaultStorageBucketName(
-  process.env.GCLOUD_PROJECT || "",
-  process.env.STORAGE_BUCKET || "",
-);
-
-admin.initializeApp({ storageBucket });
+admin.initializeApp();
 
 const transporter = nodemailer.createTransport({
   service: "gmail",
@@ -650,81 +639,5 @@ exports.setGroupClaim = functions.https.onCall(async (data, context) => {
     claimedBy: claimPlan.nextClaimedBy,
     claimedByEmail: claimPlan.nextClaimedByEmail,
     claimedByName: claimantUser?.displayName || "",
-  };
-});
-
-// ========== CALLABLE: MIGRATE PROFILE IMAGES ==========
-
-exports.migrateProfileImages = functions
-  .runWith({ timeoutSeconds: 540, memory: "1GB" })
-  .https.onCall(async (data, context) => {
-  if (!context.auth) {
-    throw new functions.https.HttpsError("unauthenticated", "Must be logged in.");
-  }
-  if (!(await isCallerAdmin(context.auth.uid))) {
-    throw new functions.https.HttpsError("permission-denied", "Admin access required.");
-  }
-
-  const firestore = admin.firestore();
-  let bucket;
-  let bucketName;
-
-  try {
-    const resolvedBucket = await resolveWorkingStorageBucket(admin, {
-      projectId: process.env.GCLOUD_PROJECT || "",
-      explicitBucketName: process.env.STORAGE_BUCKET || storageBucket,
-    });
-    bucket = resolvedBucket.bucket;
-    bucketName = resolvedBucket.bucketName;
-  } catch (error) {
-    throw new functions.https.HttpsError(
-      "internal",
-      `Storage bucket lookup failed: ${error instanceof Error ? error.message : String(error)}`,
-    );
-  }
-
-  const requestedGroupIds = normalizeRequestedGroupIds(data?.groupIds);
-  const groupsSnap = await firestore.collection("groups").orderBy("name").get();
-  const groupDocs = requestedGroupIds.length > 0
-    ? groupsSnap.docs.filter((groupDoc) => requestedGroupIds.includes(groupDoc.id))
-    : groupsSnap.docs;
-
-  let migrated = 0;
-  let skipped = 0;
-  let failed = 0;
-  const results = [];
-
-  for (const groupDoc of groupDocs) {
-    try {
-      const result = await migrateSingleProfileImage({
-        groupDoc,
-        bucket,
-        bucketName,
-        firestoreFieldValue: admin.firestore.FieldValue,
-      });
-      results.push(result);
-      if (result.status === "migrated") migrated += 1;
-      else skipped += 1;
-    } catch (error) {
-      failed += 1;
-      const group = groupDoc.data() || {};
-      results.push({
-        status: "failed",
-        groupId: groupDoc.id,
-        name: group.name || "",
-        currentPhotoURL: group.photoURL || "",
-        reason: error instanceof Error ? error.message : String(error),
-      });
-    }
-  }
-
-  return {
-    success: true,
-    bucketName,
-    migrated,
-    skipped,
-    failed,
-    total: groupDocs.length,
-    results,
   };
 });
