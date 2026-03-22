@@ -126,8 +126,16 @@ node tools/download-profile-images.mjs path/to/profile-image-manifest.json
 ```
 
 3. Commit the downloaded files under `assets/profile-images/`.
-4. Upload the generated `*.downloaded.json` mapping file back into `migrate-profile-images.html`.
-5. Apply the relink so the affected Firestore `groups` documents now use local asset paths in `photoURL`.
+4. Apply the generated `*.downloaded.json` mapping file either:
+   - in the browser via `migrate-profile-images.html`, or
+   - from the repo root with:
+
+```bash
+node tools/apply-profile-image-relinks.mjs path/to/profile-image-manifest.downloaded.json
+```
+
+5. Save any unresolved download/relink failures into a committed follow-up report so they can be retried later.
+6. Push the image assets and the failure report once the relink is complete.
 
 This keeps backward compatibility because `photoURL` can remain mixed during rollout:
 

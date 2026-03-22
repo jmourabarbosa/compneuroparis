@@ -1,3 +1,5 @@
+const LOCAL_PROFILE_IMAGE_PATH_PATTERN = /^\/?assets\/profile-images\/[^?#]+\.(?:jpe?g|png|webp|gif|svg|avif|bmp)$/i;
+
 export function isSupportedRemoteImageUrl(url) {
   try {
     const parsed = new URL(url);
@@ -7,9 +9,18 @@ export function isSupportedRemoteImageUrl(url) {
   }
 }
 
+export function isSupportedLocalImagePath(url) {
+  const normalizedUrl = String(url || '').trim();
+  return LOCAL_PROFILE_IMAGE_PATH_PATTERN.test(normalizedUrl);
+}
+
 export async function validateImageUrl(url, { ImageCtor = globalThis.Image, timeoutMs = 5000 } = {}) {
   if (!url) {
     return { valid: false, reason: 'missing' };
+  }
+
+  if (isSupportedLocalImagePath(url)) {
+    return { valid: true, reason: 'ok' };
   }
 
   if (!isSupportedRemoteImageUrl(url)) {
@@ -46,7 +57,7 @@ export function getImageUrlValidationMessage(result, fieldLabel = 'Image URL') {
     case 'missing':
       return `${fieldLabel} is required.`;
     case 'invalid-url':
-      return `${fieldLabel} must be a valid http(s) URL.`;
+      return `${fieldLabel} must be a valid http(s) URL or local assets/profile-images path.`;
     case 'timeout':
     case 'not-image':
       return `${fieldLabel} must point to a valid image that can be loaded.`;
