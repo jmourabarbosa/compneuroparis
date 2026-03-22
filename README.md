@@ -137,6 +137,12 @@ node tools/apply-profile-image-relinks.mjs path/to/profile-image-manifest.downlo
 5. Save any unresolved download/relink failures into a committed follow-up report so they can be retried later.
 6. Push the image assets and the failure report once the relink is complete.
 
+If some public image hosts fail because of certificate-chain issues or flaky TLS handshakes, retry the saved failures with:
+
+```bash
+node tools/retry-failed-profile-images.mjs profile-image-migration-followup-YYYY-MM-DD.json
+```
+
 This keeps backward compatibility because `photoURL` can remain mixed during rollout:
 
 - migrated profiles use local paths like `assets/profile-images/alice-example-abc123.jpg`

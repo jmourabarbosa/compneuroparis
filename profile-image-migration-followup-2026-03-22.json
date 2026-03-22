@@ -1,18 +1,9 @@
 {
-  "generatedAt": "2026-03-22T14:30:07.706Z",
+  "generatedAt": "2026-03-22T14:37:54.240Z",
   "sourceMapping": "profile-image-manifest-2026-03-22 (1).json",
-  "downloadFailureCount": 64,
+  "downloadFailureCount": 8,
   "relinkFollowupCount": 0,
   "downloadFailures": [
-    {
-      "groupId": "1WZbu1HJnYWrJdA7G5yi",
-      "name": "Alain Destexhe",
-      "currentPhotoURL": "https://neuropsi.cnrs.fr/wp-content/uploads/2025/11/alain.jpg",
-      "suggestedFileName": "alain-destexhe-1wzbu1hjnywrjda7g5yi.jpg",
-      "suggestedLocalPath": "assets/profile-images/alain-destexhe-1wzbu1hjnywrjda7g5yi.jpg",
-      "status": "failed",
-      "error": "fetch failed"
-    },
     {
       "groupId": "nqt6bEqZRbzt02k57Xzq",
       "name": "Aleksandra Walczak",
@@ -20,7 +11,8 @@
       "suggestedFileName": "aleksandra-walczak-nqt6beqzrbzt02k57xzq.jpg",
       "suggestedLocalPath": "assets/profile-images/aleksandra-walczak-nqt6beqzrbzt02k57xzq.jpg",
       "status": "failed",
-      "error": "HTTP 403"
+      "error": "HTTP 403",
+      "previousError": "HTTP 403"
     },
     {
       "groupId": "rlGrCsGNg6lZpdXQDlYC",
@@ -29,79 +21,8 @@
       "suggestedFileName": "alex-cayco-gajic-rlgrcsgng6lzpdxqdlyc.jpg",
       "suggestedLocalPath": "assets/profile-images/alex-cayco-gajic-rlgrcsgng6lzpdxqdlyc.jpg",
       "status": "failed",
-      "error": "HTTP 403"
-    },
-    {
-      "groupId": "L4nu9YbRaqC5ZPbAC9MU",
-      "name": "Boris Gutkin",
-      "currentPhotoURL": "https://lnc2.dec.ens.fr/sites/cognition.ens.fr/files/styles/300x300/public/pictures/2017-10/Boris_Gutkin.jpg",
-      "suggestedFileName": "boris-gutkin-l4nu9ybraqc5zpbac9mu.jpg",
-      "suggestedLocalPath": "assets/profile-images/boris-gutkin-l4nu9ybraqc5zpbac9mu.jpg",
-      "status": "failed",
-      "error": "fetch failed"
-    },
-    {
-      "groupId": "ko4wPhdD2eunGy86ly9K",
-      "name": "Bruno Cauli",
-      "currentPhotoURL": "https://www.ibps.sorbonne-universite.fr/ressources/whoswho/1/105x140,1167-E03_Bruno-Cauli.jpeg",
-      "suggestedFileName": "bruno-cauli-ko4wphdd2eungy86ly9k.jpg",
-      "suggestedLocalPath": "assets/profile-images/bruno-cauli-ko4wphdd2eungy86ly9k.jpg",
-      "status": "failed",
-      "error": "fetch failed"
-    },
-    {
-      "groupId": "lVeSN72aXnJdRkpwn2vg",
-      "name": "Carole Escartin",
-      "currentPhotoURL": "https://neuropsi.cnrs.fr/wp-content/uploads/2024/01/Carole-ESCARTIN-2022.jpg",
-      "suggestedFileName": "carole-escartin-lvesn72axnjdrkpwn2vg.jpg",
-      "suggestedLocalPath": "assets/profile-images/carole-escartin-lvesn72axnjdrkpwn2vg.jpg",
-      "status": "failed",
-      "error": "fetch failed"
-    },
-    {
-      "groupId": "frxgAT35dazKk9tqnJgU",
-      "name": "Catalina Betancur",
-      "currentPhotoURL": "https://www.ibps.sorbonne-universite.fr/ressources/whoswho/1/105x140,1191-E01_trombi_Catalina-Betancur.jpeg",
-      "suggestedFileName": "catalina-betancur-frxgat35dazkk9tqnjgu.jpg",
-      "suggestedLocalPath": "assets/profile-images/catalina-betancur-frxgat35dazkk9tqnjgu.jpg",
-      "status": "failed",
-      "error": "fetch failed"
-    },
-    {
-      "groupId": "vodTh0JanYKo8SIti1fW",
-      "name": "Catherine Del Negro",
-      "currentPhotoURL": "https://neuropsi.cnrs.fr/wp-content/uploads/2026/01/Catherine-del-Negro.jpg",
-      "suggestedFileName": "catherine-del-negro-vodth0janyko8siti1fw.jpg",
-      "suggestedLocalPath": "assets/profile-images/catherine-del-negro-vodth0janyko8siti1fw.jpg",
-      "status": "failed",
-      "error": "fetch failed"
-    },
-    {
-      "groupId": "vjDHYnN0zyX22v6lqvtU",
-      "name": "Catherine Tallon-Baudry",
-      "currentPhotoURL": "https://lnc2.dec.ens.fr/sites/cognition.ens.fr/files/styles/300x300/public/pictures/2017-10/CTB2016.png",
-      "suggestedFileName": "catherine-tallon-baudry-vjdhynn0zyx22v6lqvtu.png",
-      "suggestedLocalPath": "assets/profile-images/catherine-tallon-baudry-vjdhynn0zyx22v6lqvtu.png",
-      "status": "failed",
-      "error": "fetch failed"
-    },
-    {
-      "groupId": "dHTLwCkydrii921NGQcE",
-      "name": "Christian Neri",
-      "currentPhotoURL": "https://www.ibps.sorbonne-universite.fr/ressources/whoswho/2/105x140,17443-105x140,828-E04_Christian-Neri.jpeg",
-      "suggestedFileName": "christian-neri-dhtlwckydrii921ngqce.jpg",
-      "suggestedLocalPath": "assets/profile-images/christian-neri-dhtlwckydrii921ngqce.jpg",
-      "status": "failed",
-      "error": "fetch failed"
-    },
-    {
-      "groupId": "h0528pQeF3tNGg02ZOkc",
-      "name": "Claire Eschbach",
-      "currentPhotoURL": "https://neuropsi.cnrs.fr/wp-content/uploads/2023/10/claire-eschbach-200p.jpg",
-      "suggestedFileName": "claire-eschbach-h0528pqef3tngg02zokc.jpg",
-      "suggestedLocalPath": "assets/profile-images/claire-eschbach-h0528pqef3tngg02zokc.jpg",
-      "status": "failed",
-      "error": "fetch failed"
+      "error": "HTTP 403",
+      "previousError": "HTTP 403"
     },
     {
       "groupId": "H88OEhgL3EP91PPx9cDG",
@@ -110,43 +31,8 @@
       "suggestedFileName": "clement-lena-h88oehgl3ep91ppx9cdg.jpg",
       "suggestedLocalPath": "assets/profile-images/clement-lena-h88oehgl3ep91ppx9cdg.jpg",
       "status": "failed",
-      "error": "HTTP 403"
-    },
-    {
-      "groupId": "tkbGphCiHj47gpSWwiEx",
-      "name": "Coralie Chevallier",
-      "currentPhotoURL": "https://lnc2.dec.ens.fr/sites/cognition.ens.fr/files/styles/300x300/public/pictures/2017-10/CC.png",
-      "suggestedFileName": "coralie-chevallier-tkbgphcihj47gpswwiex.png",
-      "suggestedLocalPath": "assets/profile-images/coralie-chevallier-tkbgphcihj47gpswwiex.png",
-      "status": "failed",
-      "error": "fetch failed"
-    },
-    {
-      "groupId": "dJnJwvBrAtyOH0QuwoNp",
-      "name": "Cyrille Vaillend",
-      "currentPhotoURL": "https://neuropsi.cnrs.fr/wp-content/uploads/2021/05/Vaillend_square.jpg",
-      "suggestedFileName": "cyrille-vaillend-djnjwvbratyoh0quwonp.jpg",
-      "suggestedLocalPath": "assets/profile-images/cyrille-vaillend-djnjwvbratyoh0quwonp.jpg",
-      "status": "failed",
-      "error": "fetch failed"
-    },
-    {
-      "groupId": "H4KmBsS8XjbSwX95hvYy",
-      "name": "Daniel Pressnitzer",
-      "currentPhotoURL": "https://lsp.dec.ens.fr/sites/cognition.ens.fr/files/styles/300x300/public/pictures/2017-09/DPRESSNITZER.jpg",
-      "suggestedFileName": "daniel-pressnitzer-h4kmbss8xjbswx95hvyy.jpg",
-      "suggestedLocalPath": "assets/profile-images/daniel-pressnitzer-h4kmbss8xjbswx95hvyy.jpg",
-      "status": "failed",
-      "error": "fetch failed"
-    },
-    {
-      "groupId": "8EDQfR7UuHIS8Poxu0vk",
-      "name": "Daniel Vasiliauskas",
-      "currentPhotoURL": "https://neuropsi.cnrs.fr/wp-content/uploads/2021/06/d1-vasiliauskas.jpg",
-      "suggestedFileName": "daniel-vasiliauskas-8edqfr7uuhis8poxu0vk.jpg",
-      "suggestedLocalPath": "assets/profile-images/daniel-vasiliauskas-8edqfr7uuhis8poxu0vk.jpg",
-      "status": "failed",
-      "error": "fetch failed"
+      "error": "HTTP 403",
+      "previousError": "HTTP 403"
     },
     {
       "groupId": "z1rUQcStajysILwcb3iF",
@@ -155,7 +41,8 @@
       "suggestedFileName": "david-germanaud-z1ruqcstajysilwcb3if.png",
       "suggestedLocalPath": "assets/profile-images/david-germanaud-z1ruqcstajysilwcb3if.png",
       "status": "failed",
-      "error": "HTTP 404"
+      "error": "HTTP 404",
+      "previousError": "HTTP 404"
     },
     {
       "groupId": "15FWwCcQB2x4x6Fd5I1k",
@@ -164,187 +51,8 @@
       "suggestedFileName": "dmitrii-i-todorov-15fwwccqb2x4x6fd5i1k.jpg",
       "suggestedLocalPath": "assets/profile-images/dmitrii-i-todorov-15fwwccqb2x4x6fd5i1k.jpg",
       "status": "failed",
-      "error": "HTTP 403"
-    },
-    {
-      "groupId": "GaTpfVjkuEJOUC7Cmgmg",
-      "name": "Elim Hong",
-      "currentPhotoURL": "https://www.ibps.sorbonne-universite.fr/ressources/whoswho/14/105x140,6163-20160707_110524.png",
-      "suggestedFileName": "elim-hong-gatpfvjkuejouc7cmgmg.png",
-      "suggestedLocalPath": "assets/profile-images/elim-hong-gatpfvjkuejouc7cmgmg.png",
-      "status": "failed",
-      "error": "fetch failed"
-    },
-    {
-      "groupId": "CgioN0lVOaqjpdtuS66N",
-      "name": "Emmanuel Dupoux",
-      "currentPhotoURL": "https://lscp.dec.ens.fr/sites/cognition.ens.fr/files/styles/300x300/public/pictures/2021-10/emmanuel_dupoux.png",
-      "suggestedFileName": "emmanuel-dupoux-cgion0lvoaqjpdtus66n.png",
-      "suggestedLocalPath": "assets/profile-images/emmanuel-dupoux-cgion0lvoaqjpdtus66n.png",
-      "status": "failed",
-      "error": "fetch failed"
-    },
-    {
-      "groupId": "jYAXDHZjNbv9vEQzI1qG",
-      "name": "Franck Ramus",
-      "currentPhotoURL": "https://lscp.dec.ens.fr/sites/cognition.ens.fr/files/styles/300x300/public/pictures/2017-12/ramus_m%C3%A9decine_4_1.png",
-      "suggestedFileName": "franck-ramus-jyaxdhzjnbv9veqzi1qg.png",
-      "suggestedLocalPath": "assets/profile-images/franck-ramus-jyaxdhzjnbv9veqzi1qg.png",
-      "status": "failed",
-      "error": "fetch failed"
-    },
-    {
-      "groupId": "3Vmu26CXU1uqtP6wBcMg",
-      "name": "Francois Rouyer",
-      "currentPhotoURL": "https://neuropsi.cnrs.fr/wp-content/uploads/2025/11/fr-rouyer-2025-200p.png",
-      "suggestedFileName": "francois-rouyer-3vmu26cxu1uqtp6wbcmg.png",
-      "suggestedLocalPath": "assets/profile-images/francois-rouyer-3vmu26cxu1uqtp6wbcmg.png",
-      "status": "failed",
-      "error": "fetch failed"
-    },
-    {
-      "groupId": "uJyNgTTehxrQzUsOSM9n",
-      "name": "Ghislaine Dehaene-Lambertz",
-      "currentPhotoURL": "https://cdn-ilakmbb.nitrocdn.com/jIYMIjeZjxbibSovbmtXtpmbltiBOKUt/assets/images/optimized/rev-d2b9beb/cerveau-enfant.org/wp-content/uploads/2024/05/Ghislaine-Dehaene-Lambertz-300x300.jpg",
-      "suggestedFileName": "ghislaine-dehaene-lambertz-ujyngttehxrqzusosm9n.jpg",
-      "suggestedLocalPath": "assets/profile-images/ghislaine-dehaene-lambertz-ujyngttehxrqzusosm9n.jpg",
-      "status": "failed",
-      "error": "HTTP 404"
-    },
-    {
-      "groupId": "59v5pZdZV4AculPU697B",
-      "name": "Gilles Bonvento",
-      "currentPhotoURL": "https://neuropsi.cnrs.fr/wp-content/uploads/2024/05/gilles-bonvento.jpg",
-      "suggestedFileName": "gilles-bonvento-59v5pzdzv4aculpu697b.jpg",
-      "suggestedLocalPath": "assets/profile-images/gilles-bonvento-59v5pzdzv4aculpu697b.jpg",
-      "status": "failed",
-      "error": "fetch failed"
-    },
-    {
-      "groupId": "EQVDrkwVqshClkB6NMAL",
-      "name": "Glenda Comai",
-      "currentPhotoURL": "https://neuropsi.cnrs.fr/wp-content/uploads/2025/12/Glenda-E-comai.jpg",
-      "suggestedFileName": "glenda-comai-eqvdrkwvqshclkb6nmal.jpg",
-      "suggestedLocalPath": "assets/profile-images/glenda-comai-eqvdrkwvqshclkb6nmal.jpg",
-      "status": "failed",
-      "error": "fetch failed"
-    },
-    {
-      "groupId": "KzMkvl5bt1HLYzjPYsHN",
-      "name": "Guy Bouvier",
-      "currentPhotoURL": "https://neuropsi.cnrs.fr/wp-content/uploads/2021/11/guy.png",
-      "suggestedFileName": "guy-bouvier-kzmkvl5bt1hlyzjpyshn.png",
-      "suggestedLocalPath": "assets/profile-images/guy-bouvier-kzmkvl5bt1hlyzjpyshn.png",
-      "status": "failed",
-      "error": "fetch failed"
-    },
-    {
-      "groupId": "bDnPuhiHPQsIP3KzoeRT",
-      "name": "Idoia Quintana-Urzainqui",
-      "currentPhotoURL": "https://neuropsi.cnrs.fr/wp-content/uploads/2025/05/Idoia-Quintana-200p-Urzainqui.jpg",
-      "suggestedFileName": "idoia-quintana-urzainqui-bdnpuhihpqsip3kzoert.jpg",
-      "suggestedLocalPath": "assets/profile-images/idoia-quintana-urzainqui-bdnpuhihpqsip3kzoert.jpg",
-      "status": "failed",
-      "error": "fetch failed"
-    },
-    {
-      "groupId": "xwv9435zTkQyIIcaKkYh",
-      "name": "Isabelle Charrier",
-      "currentPhotoURL": "https://neuropsi.cnrs.fr/wp-content/uploads/2021/05/Charrier_square.jpg",
-      "suggestedFileName": "isabelle-charrier-xwv9435ztkqyiicakkyh.jpg",
-      "suggestedLocalPath": "assets/profile-images/isabelle-charrier-xwv9435ztkqyiicakkyh.jpg",
-      "status": "failed",
-      "error": "fetch failed"
-    },
-    {
-      "groupId": "9JN8EtOIprSyZ84imlG2",
-      "name": "Isabelle Ferezou",
-      "currentPhotoURL": "https://neuropsi.cnrs.fr/wp-content/uploads/2021/06/ferezou1.jpg",
-      "suggestedFileName": "isabelle-ferezou-9jn8etoiprsyz84imlg2.jpg",
-      "suggestedLocalPath": "assets/profile-images/isabelle-ferezou-9jn8etoiprsyz84imlg2.jpg",
-      "status": "failed",
-      "error": "fetch failed"
-    },
-    {
-      "groupId": "DTeqrsmA97IqAQXxigQn",
-      "name": "Jean-Marc Edeline",
-      "currentPhotoURL": "https://neuropsi.cnrs.fr/wp-content/uploads/2021/06/Jean-Marc_Edeline-1.jpg",
-      "suggestedFileName": "jean-marc-edeline-dteqrsma97iqaqxxigqn.jpg",
-      "suggestedLocalPath": "assets/profile-images/jean-marc-edeline-dteqrsma97iqaqxxigqn.jpg",
-      "status": "failed",
-      "error": "fetch failed"
-    },
-    {
-      "groupId": "0wXyFlahrcPOagHsbUCO",
-      "name": "Jean-Pierre Levraud",
-      "currentPhotoURL": "https://neuropsi.cnrs.fr/wp-content/uploads/2023/04/jean-pierre-levraud.jpg",
-      "suggestedFileName": "jean-pierre-levraud-0wxyflahrcpoaghsbuco.jpg",
-      "suggestedLocalPath": "assets/profile-images/jean-pierre-levraud-0wxyflahrcpoaghsbuco.jpg",
-      "status": "failed",
-      "error": "fetch failed"
-    },
-    {
-      "groupId": "Vl5BEP2deHu7U1MxXvb6",
-      "name": "Jean-Rene Martin",
-      "currentPhotoURL": "https://neuropsi.cnrs.fr/wp-content/uploads/2021/07/jr-martin2.jpg",
-      "suggestedFileName": "jean-rene-martin-vl5bep2dehu7u1mxxvb6.jpg",
-      "suggestedLocalPath": "assets/profile-images/jean-rene-martin-vl5bep2dehu7u1mxxvb6.jpg",
-      "status": "failed",
-      "error": "fetch failed"
-    },
-    {
-      "groupId": "PcGqE44eBEHRcWh5bCSp",
-      "name": "Jessica Dubois",
-      "currentPhotoURL": "https://cdn-ilakmbb.nitrocdn.com/jIYMIjeZjxbibSovbmtXtpmbltiBOKUt/assets/images/optimized/rev-d2b9beb/cerveau-enfant.org/wp-content/uploads/2024/10/Jessica-Dubois.jpg",
-      "suggestedFileName": "jessica-dubois-pcgqe44ebehrcwh5bcsp.jpg",
-      "suggestedLocalPath": "assets/profile-images/jessica-dubois-pcgqe44ebehrcwh5bcsp.jpg",
-      "status": "failed",
-      "error": "HTTP 404"
-    },
-    {
-      "groupId": "oXPiGlAVepeA16wRAGvZ",
-      "name": "Julie Grezes",
-      "currentPhotoURL": "https://lnc2.dec.ens.fr/sites/cognition.ens.fr/files/styles/300x300/public/pictures/2017-10/JG.png",
-      "suggestedFileName": "julie-grezes-oxpiglavepea16wragvz.png",
-      "suggestedLocalPath": "assets/profile-images/julie-grezes-oxpiglavepea16wragvz.png",
-      "status": "failed",
-      "error": "fetch failed"
-    },
-    {
-      "groupId": "br3MUE0EAjM9SFP7n8aI",
-      "name": "Julien Bouvier",
-      "currentPhotoURL": "https://neuropsi.cnrs.fr/wp-content/uploads/2021/04/Julien.jpg",
-      "suggestedFileName": "julien-bouvier-br3mue0eajm9sfp7n8ai.jpg",
-      "suggestedLocalPath": "assets/profile-images/julien-bouvier-br3mue0eajm9sfp7n8ai.jpg",
-      "status": "failed",
-      "error": "fetch failed"
-    },
-    {
-      "groupId": "4jBO3m5OlDlOfuTpfevq",
-      "name": "Julien Ferent",
-      "currentPhotoURL": "https://www.ibps.sorbonne-universite.fr/ressources/whoswho/15/105x140,17512-julien.jpeg",
-      "suggestedFileName": "julien-ferent-4jbo3m5oldlofutpfevq.jpg",
-      "suggestedLocalPath": "assets/profile-images/julien-ferent-4jbo3m5oldlofutpfevq.jpg",
-      "status": "failed",
-      "error": "fetch failed"
-    },
-    {
-      "groupId": "PgsDxUViHccvH2rEpQWU",
-      "name": "Kei Yamamoto",
-      "currentPhotoURL": "https://neuropsi.cnrs.fr/wp-content/uploads/2021/05/KEI.jpg",
-      "suggestedFileName": "kei-yamamoto-pgsdxuvihccvh2repqwu.jpg",
-      "suggestedLocalPath": "assets/profile-images/kei-yamamoto-pgsdxuvihccvh2repqwu.jpg",
-      "status": "failed",
-      "error": "fetch failed"
-    },
-    {
-      "groupId": "le4yQ65W2RamY1HyuPiv",
-      "name": "Laure Rondi-Reig",
-      "currentPhotoURL": "https://www.ibps.sorbonne-universite.fr/ressources/whoswho/4/105x140,1374-2014-PublicSenat.jpeg",
-      "suggestedFileName": "laure-rondi-reig-le4yq65w2ramy1hyupiv.jpg",
-      "suggestedLocalPath": "assets/profile-images/laure-rondi-reig-le4yq65w2ramy1hyupiv.jpg",
-      "status": "failed",
-      "error": "fetch failed"
+      "error": "HTTP 403",
+      "previousError": "HTTP 403"
     },
     {
       "groupId": "Gpw07E772hHIddGHFqTF",
@@ -353,25 +61,8 @@
       "suggestedFileName": "laurence-conty-gpw07e772hhiddghfqtf.jpg",
       "suggestedLocalPath": "assets/profile-images/laurence-conty-gpw07e772hhiddghfqtf.jpg",
       "status": "failed",
-      "error": "HTTP 403"
-    },
-    {
-      "groupId": "UVOXfv25V4Bq0xbD2SC7",
-      "name": "Loic Broix",
-      "currentPhotoURL": "https://www.ibps.sorbonne-universite.fr/ressources/whoswho/10/105x140,17736-Photo-idendite1.jpeg",
-      "suggestedFileName": "loic-broix-uvoxfv25v4bq0xbd2sc7.jpg",
-      "suggestedLocalPath": "assets/profile-images/loic-broix-uvoxfv25v4bq0xbd2sc7.jpg",
-      "status": "failed",
-      "error": "fetch failed"
-    },
-    {
-      "groupId": "pYIyhtR61iZIq7me5GBy",
-      "name": "Ludovic Tricoire",
-      "currentPhotoURL": "https://www.ibps.sorbonne-universite.fr/ressources/whoswho/13/105x140,17704-tricoire-ludovic.jpeg",
-      "suggestedFileName": "ludovic-tricoire-pyiyhtr61iziq7me5gby.jpg",
-      "suggestedLocalPath": "assets/profile-images/ludovic-tricoire-pyiyhtr61iziq7me5gby.jpg",
-      "status": "failed",
-      "error": "fetch failed"
+      "error": "HTTP 403",
+      "previousError": "HTTP 403"
     },
     {
       "groupId": "CezZeAPSEuAumAmbsEJe",
@@ -380,187 +71,8 @@
       "suggestedFileName": "marcelo-rozenberg-cezzeapseuaumambseje.jpg",
       "suggestedLocalPath": "assets/profile-images/marcelo-rozenberg-cezzeapseuaumambseje.jpg",
       "status": "failed",
-      "error": "HTTP 403"
-    },
-    {
-      "groupId": "nkXnprZjvme9IT3kdpZE",
-      "name": "Martial Ruat",
-      "currentPhotoURL": "https://neuropsi.cnrs.fr/wp-content/uploads/2026/01/martail-ruat.jpg",
-      "suggestedFileName": "martial-ruat-nkxnprzjvme9it3kdpze.jpg",
-      "suggestedLocalPath": "assets/profile-images/martial-ruat-nkxnprzjvme9it3kdpze.jpg",
-      "status": "failed",
-      "error": "fetch failed"
-    },
-    {
-      "groupId": "fa4oV7aizDSZcBmBEQ8T",
-      "name": "Martin Giurfa",
-      "currentPhotoURL": "https://www.ibps.sorbonne-universite.fr/ressources/whoswho/4/105x140,16013-Giurfa-Acad-Roy.jpeg",
-      "suggestedFileName": "martin-giurfa-fa4ov7aizdszcbmbeq8t.jpg",
-      "suggestedLocalPath": "assets/profile-images/martin-giurfa-fa4ov7aizdszcbmbeq8t.jpg",
-      "status": "failed",
-      "error": "fetch failed"
-    },
-    {
-      "groupId": "NkOP2Ff9U0NDUFwszn8z",
-      "name": "Mohammed Taouis",
-      "currentPhotoURL": "https://neuropsi.cnrs.fr/wp-content/uploads/2025/12/mohammed-taouis-200p.png",
-      "suggestedFileName": "mohammed-taouis-nkop2ff9u0ndufwszn8z.png",
-      "suggestedLocalPath": "assets/profile-images/mohammed-taouis-nkop2ff9u0ndufwszn8z.png",
-      "status": "failed",
-      "error": "fetch failed"
-    },
-    {
-      "groupId": "y2Sw6Mg2hhB43A1d6aQq",
-      "name": "Muriel Perron",
-      "currentPhotoURL": "https://neuropsi.cnrs.fr/wp-content/uploads/2025/12/muriel-perron-200p.jpg",
-      "suggestedFileName": "muriel-perron-y2sw6mg2hhb43a1d6aqq.jpg",
-      "suggestedLocalPath": "assets/profile-images/muriel-perron-y2sw6mg2hhb43a1d6aqq.jpg",
-      "status": "failed",
-      "error": "fetch failed"
-    },
-    {
-      "groupId": "yYYRVVOfecVcSjITo59q",
-      "name": "Nicolas Giret",
-      "currentPhotoURL": "https://neuropsi.cnrs.fr/wp-content/uploads/2026/02/logo-232p-eq-giret.png",
-      "suggestedFileName": "nicolas-giret-yyyrvvofecvcsjito59q.png",
-      "suggestedLocalPath": "assets/profile-images/nicolas-giret-yyyrvvofecvcsjito59q.png",
-      "status": "failed",
-      "error": "fetch failed"
-    },
-    {
-      "groupId": "KBiyDpUHSE4qNEpGKfxF",
-      "name": "Pascal Mamassian",
-      "currentPhotoURL": "https://lsp.dec.ens.fr/sites/cognition.ens.fr/files/styles/300x300/public/pictures/2017-10/PM.jpg",
-      "suggestedFileName": "pascal-mamassian-kbiydpuhse4qnepgkfxf.jpg",
-      "suggestedLocalPath": "assets/profile-images/pascal-mamassian-kbiydpuhse4qnepgkfxf.jpg",
-      "status": "failed",
-      "error": "fetch failed"
-    },
-    {
-      "groupId": "NxSHZh8xmtPY9B730vhO",
-      "name": "Peter Vanhoutte",
-      "currentPhotoURL": "https://www.ibps.sorbonne-universite.fr/ressources/whoswho/6/105x140,1512-Peter.png",
-      "suggestedFileName": "peter-vanhoutte-nxshzh8xmtpy9b730vho.png",
-      "suggestedLocalPath": "assets/profile-images/peter-vanhoutte-nxshzh8xmtpy9b730vho.png",
-      "status": "failed",
-      "error": "fetch failed"
-    },
-    {
-      "groupId": "FToxg1NXm01ky9Q1AnB5",
-      "name": "Pierre Bessi\u00e8re",
-      "currentPhotoURL": "https://bayesian-programming.cnrs.fr/wp-content/uploads/2021/11/Caricature.jpg",
-      "suggestedFileName": "pierre-bessiere-ftoxg1nxm01ky9q1anb5.jpg",
-      "suggestedLocalPath": "assets/profile-images/pierre-bessiere-ftoxg1nxm01ky9q1anb5.jpg",
-      "status": "failed",
-      "error": "fetch failed"
-    },
-    {
-      "groupId": "3fLU0tFRCMELmI31XJ9H",
-      "name": "Sebastien Parnaudeau",
-      "currentPhotoURL": "https://www.ibps.sorbonne-universite.fr/ressources/whoswho/11/105x140,2088-E15_S-Parnaudeau.jpeg",
-      "suggestedFileName": "sebastien-parnaudeau-3flu0tfrcmelmi31xj9h.jpg",
-      "suggestedLocalPath": "assets/profile-images/sebastien-parnaudeau-3flu0tfrcmelmi31xj9h.jpg",
-      "status": "failed",
-      "error": "fetch failed"
-    },
-    {
-      "groupId": "RF4P0FJ6MwrEznVnFcPK",
-      "name": "Sid Kouider",
-      "currentPhotoURL": "https://lscp.dec.ens.fr/sites/cognition.ens.fr/files/styles/300x300/public/pictures/2017-10/sid_kouider.jpg",
-      "suggestedFileName": "sid-kouider-rf4p0fj6mwreznvnfcpk.jpg",
-      "suggestedLocalPath": "assets/profile-images/sid-kouider-rf4p0fj6mwreznvnfcpk.jpg",
-      "status": "failed",
-      "error": "fetch failed"
-    },
-    {
-      "groupId": "rDJJkhA2TTmJ1QD7I6KV",
-      "name": "Sophie Creuzet",
-      "currentPhotoURL": "https://neuropsi.cnrs.fr/wp-content/uploads/2021/06/sophie.png",
-      "suggestedFileName": "sophie-creuzet-rdjjkha2ttmj1qd7i6kv.png",
-      "suggestedLocalPath": "assets/profile-images/sophie-creuzet-rdjjkha2ttmj1qd7i6kv.png",
-      "status": "failed",
-      "error": "fetch failed"
-    },
-    {
-      "groupId": "qLTmyhzzyA0ZgTcqpZcb",
-      "name": "Srdjan Ostojic",
-      "currentPhotoURL": "https://lnc2.dec.ens.fr/sites/cognition.ens.fr/files/styles/300x300/public/pictures/2017-10/srdjan.jpg",
-      "suggestedFileName": "srdjan-ostojic-qltmyhzzya0zgtcqpzcb.jpg",
-      "suggestedLocalPath": "assets/profile-images/srdjan-ostojic-qltmyhzzya0zgtcqpzcb.jpg",
-      "status": "failed",
-      "error": "fetch failed"
-    },
-    {
-      "groupId": "8vzrlhtGYBSVHPNPcaHA",
-      "name": "Stefano Palminteri",
-      "currentPhotoURL": "https://lnc2.dec.ens.fr/sites/cognition.ens.fr/files/styles/300x300/public/pictures/2019-08/stefano.jpg",
-      "suggestedFileName": "stefano-palminteri-8vzrlhtgybsvhpnpcaha.jpg",
-      "suggestedLocalPath": "assets/profile-images/stefano-palminteri-8vzrlhtgybsvhpnpcaha.jpg",
-      "status": "failed",
-      "error": "fetch failed"
-    },
-    {
-      "groupId": "zanrqlACQ63sdH2NQlMb",
-      "name": "Stephanie Daumas",
-      "currentPhotoURL": "https://www.ibps.sorbonne-universite.fr/ressources/whoswho/13/105x140,1581-SDaumas1.jpeg",
-      "suggestedFileName": "stephanie-daumas-zanrqlacq63sdh2nqlmb.jpg",
-      "suggestedLocalPath": "assets/profile-images/stephanie-daumas-zanrqlacq63sdh2nqlmb.jpg",
-      "status": "failed",
-      "error": "fetch failed"
-    },
-    {
-      "groupId": "xyiVH8b6lpaYqtSpPTTA",
-      "name": "Sylvie Granon",
-      "currentPhotoURL": "https://neuropsi.cnrs.fr/wp-content/uploads/2021/06/granon_square.jpg",
-      "suggestedFileName": "sylvie-granon-xyivh8b6lpayqtspptta.jpg",
-      "suggestedLocalPath": "assets/profile-images/sylvie-granon-xyivh8b6lpayqtspptta.jpg",
-      "status": "failed",
-      "error": "fetch failed"
-    },
-    {
-      "groupId": "QZrQD8iyurPt2jyFuaHf",
-      "name": "Sylvie Retaux",
-      "currentPhotoURL": "https://neuropsi.cnrs.fr/wp-content/uploads/2025/12/sylvie-retaux-200p.jpg",
-      "suggestedFileName": "sylvie-retaux-qzrqd8iyurpt2jyfuahf.jpg",
-      "suggestedLocalPath": "assets/profile-images/sylvie-retaux-qzrqd8iyurpt2jyfuahf.jpg",
-      "status": "failed",
-      "error": "fetch failed"
-    },
-    {
-      "groupId": "lk20n2TAzVxmxaBntbDQ",
-      "name": "Thierry Bal",
-      "currentPhotoURL": "https://neuropsi.cnrs.fr/wp-content/uploads/2021/06/thierry_bal.jpg",
-      "suggestedFileName": "thierry-bal-lk20n2tazvxmxabntbdq.jpg",
-      "suggestedLocalPath": "assets/profile-images/thierry-bal-lk20n2tazvxmxabntbdq.jpg",
-      "status": "failed",
-      "error": "fetch failed"
-    },
-    {
-      "groupId": "f3S2lcgHOM3C6f5NmFqZ",
-      "name": "Valentin Wyart",
-      "currentPhotoURL": "https://lnc2.dec.ens.fr/sites/cognition.ens.fr/files/styles/300x300/public/pictures/2025-03/Valentin.jpg",
-      "suggestedFileName": "valentin-wyart-f3s2lcghom3c6f5nmfqz.jpg",
-      "suggestedLocalPath": "assets/profile-images/valentin-wyart-f3s2lcghom3c6f5nmfqz.jpg",
-      "status": "failed",
-      "error": "fetch failed"
-    },
-    {
-      "groupId": "b1EgwKUtR5vM75TdwSiD",
-      "name": "Valerie Doyere",
-      "currentPhotoURL": "https://neuropsi.cnrs.fr/wp-content/uploads/2026/01/Valerie-Doyere.jpg",
-      "suggestedFileName": "valerie-doyere-b1egwkutr5vm75tdwsid.jpg",
-      "suggestedLocalPath": "assets/profile-images/valerie-doyere-b1egwkutr5vm75tdwsid.jpg",
-      "status": "failed",
-      "error": "fetch failed"
-    },
-    {
-      "groupId": "XyWy9UN4CJEssCoPs8Jh",
-      "name": "Valerie Ego-Stengel",
-      "currentPhotoURL": "https://neuropsi.cnrs.fr/wp-content/uploads/2024/03/valerie-ego-stg-2024.jpg",
-      "suggestedFileName": "valerie-ego-stengel-xywy9un4cjesscops8jh.jpg",
-      "suggestedLocalPath": "assets/profile-images/valerie-ego-stengel-xywy9un4cjesscops8jh.jpg",
-      "status": "failed",
-      "error": "fetch failed"
+      "error": "HTTP 403",
+      "previousError": "HTTP 403"
     },
     {
       "groupId": "awPqJJfe9h8Ew7uLxQlC",
@@ -569,16 +81,8 @@
       "suggestedFileName": "vincent-de-gardelle-awpqjjfe9h8ew7ulxqlc.jpg",
       "suggestedLocalPath": "assets/profile-images/vincent-de-gardelle-awpqjjfe9h8ew7ulxqlc.jpg",
       "status": "failed",
-      "error": "HTTP 404"
-    },
-    {
-      "groupId": "AgZESf9wdg97Y2dotjOh",
-      "name": "Vincent El Ghouzzi",
-      "currentPhotoURL": "https://cdn-ilakmbb.nitrocdn.com/jIYMIjeZjxbibSovbmtXtpmbltiBOKUt/assets/images/optimized/rev-d2b9beb/cerveau-enfant.org/wp-content/uploads/2024/10/Vincent-El-Ghouzzi.jpg",
-      "suggestedFileName": "vincent-el-ghouzzi-agzesf9wdg97y2dotjoh.jpg",
-      "suggestedLocalPath": "assets/profile-images/vincent-el-ghouzzi-agzesf9wdg97y2dotjoh.jpg",
-      "status": "failed",
-      "error": "HTTP 404"
+      "error": "HTTP 404",
+      "previousError": "HTTP 404"
     }
   ],
   "relinkFollowup": []
