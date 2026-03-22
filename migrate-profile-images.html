@@ -8,10 +8,8 @@
   button { padding: 10px 24px; font-size: 16px; cursor: pointer; border: none; border-radius: 6px; }
   button:disabled { background: #555; cursor: not-allowed; color: #999; }
   #loginBtn { background: #4285f4; color: white; }
-  #exportBtn { background: #34a853; color: white; }
-  #applyBtn { background: #fbbc04; color: #111; }
-  input[type="email"], input[type="password"], input[type="file"] { padding: 8px 12px; font-size: 14px; border-radius: 4px; border: 1px solid #444; background: #222; color: #eee; width: 240px; }
-  input[type="file"] { width: auto; max-width: 100%; }
+  #migrateBtn { background: #fbbc04; color: #111; }
+  input[type="email"], input[type="password"] { padding: 8px 12px; font-size: 14px; border-radius: 4px; border: 1px solid #444; background: #222; color: #eee; width: 240px; }
   #authSection { margin-bottom: 24px; }
   .panel { margin: 20px 0; padding: 16px; border-radius: 8px; background: #171717; border: 1px solid #2b2b2b; }
   .muted { color: #aaa; }
@@ -26,6 +24,12 @@
   .success { color: #34a853; }
   .error { color: #ea4335; }
   .info { color: #4285f4; }
+  .status-pill { display: inline-block; padding: 3px 8px; border-radius: 999px; font-size: 12px; font-weight: 600; letter-spacing: 0.02em; }
+  .status-pending { background: rgba(66, 133, 244, 0.15); color: #8ab4f8; }
+  .status-processing { background: rgba(251, 188, 4, 0.15); color: #fbbc04; }
+  .status-migrated { background: rgba(52, 168, 83, 0.15); color: #81c995; }
+  .status-skipped { background: rgba(170, 170, 170, 0.16); color: #ccc; }
+  .status-failed { background: rgba(234, 67, 53, 0.15); color: #f28b82; }
 </style>
 </head>
 <body>
@@ -43,7 +47,7 @@
 
 <div class="panel">
   <h2>Run one-click migration</h2>
-  <p class="muted">Already migrated storage-backed images are skipped automatically. External image URLs are fetched and mirrored into managed storage.</p>
+  <p class="muted">Already migrated storage-backed images are skipped automatically. External image URLs are fetched and mirrored into managed storage. Each row below updates live while it is processed.</p>
   <div class="actions">
     <button id="migrateBtn" disabled onclick="runMigration()">Migrate external profile images</button>
   </div>
@@ -68,6 +72,9 @@
 import { initializeApp } from 'https://www.gstatic.com/firebasejs/11.4.0/firebase-app.js';
 import { getAuth, signInWithEmailAndPassword, onAuthStateChanged } from 'https://www.gstatic.com/firebasejs/11.4.0/firebase-auth.js';
 import { getFunctions, httpsCallable } from 'https://www.gstatic.com/firebasejs/11.4.0/firebase-functions.js';
+import { collection, getDocs, getFirestore, orderBy, query } from 'https://www.gstatic.com/firebasejs/11.4.0/firebase-firestore.js';
+
+import { isSupportedRemoteImageUrl } from './js/image-url-utils.mjs';
 
 const firebaseConfig = {
   apiKey: "AIzaSyCEUSVBEAPYfsoG00GKPqw_lHJQKelgVbk",
@@ -81,6 +88,7 @@ const firebaseConfig = {
 const app = initializeApp(firebaseConfig);
 const auth = getAuth(app);
 const functions = getFunctions(app);
+const db = getFirestore(app);
 
 const logEl = document.getElementById('log');
 const migrationSummaryEl = document.getElementById('migrationSummary');
@@ -89,6 +97,8 @@ const migrationPreviewTableEl = document.getElementById('migrationPreviewTable')
 const migrationPreviewBodyEl = document.getElementById('migrationPreviewBody');
 
 let currentUser = null;
+let migrationCandidates = [];
+let isMigrating = false;
 
 function log(message, cls = '') {
   const span = document.createElement('span');
@@ -107,36 +117,35 @@ function escapeHtml(value) {
     .replaceAll("'", '&#39;');
 }
 
-function renderMigrationResults(result) {
-  const items = result?.results || [];
-  const statusCounts = new Map();
-  for (const item of items) {
-    const key = item.status || 'unknown';
-    statusCounts.set(key, (statusCounts.get(key) || 0) + 1);
+function getStatusLabel(status, reason = '') {
+  switch (status) {
+    case 'pending': return 'Pending';
+    case 'processing': return 'Processing';
+    case 'migrated': return 'Migrated';
+    case 'skipped': return `Skipped${reason ? `: ${reason}` : ''}`;
+    case 'failed': return `Failed${reason ? `: ${reason}` : ''}`;
+    default: return status || 'Unknown';
   }
+}
 
-  migrationSummaryEl.textContent = `Scanned ${result.total || items.length} groups. Migrated ${result.migrated || 0}, skipped ${result.skipped || 0}, failed ${result.failed || 0}.`;
-  migrationStatusListEl.innerHTML = '';
-  for (const [status, count] of [...statusCounts.entries()].sort((a, b) => a[0].localeCompare(b[0]))) {
-    const li = document.createElement('li');
-    li.textContent = `${status}: ${count}`;
-    migrationStatusListEl.appendChild(li);
-  }
+function renderStatusPill(status, reason = '') {
+  return `<span class="status-pill status-${escapeHtml(status || 'pending')}">${escapeHtml(getStatusLabel(status, reason))}</span>`;
+}
 
+function renderMigrationTable() {
   migrationPreviewBodyEl.innerHTML = '';
-  const previewItems = items.filter((item) => item.status === 'migrated' || item.status === 'failed').slice(0, 50);
-  if (!previewItems.length) {
+  if (!migrationCandidates.length) {
     migrationPreviewTableEl.style.display = 'none';
     return;
   }
 
-  for (const item of previewItems) {
+  for (const item of migrationCandidates) {
     const row = document.createElement('tr');
     row.innerHTML = `
       <td>${escapeHtml(item.name)}</td>
       <td><code>${escapeHtml(item.currentPhotoURL)}</code></td>
       <td><code>${escapeHtml(item.managedPhotoURL || '')}</code></td>
-      <td>${escapeHtml(item.status || item.reason || '')}</td>
+      <td>${renderStatusPill(item.status, item.reason || '')}</td>
     `;
     migrationPreviewBodyEl.appendChild(row);
   }
@@ -144,12 +153,67 @@ function renderMigrationResults(result) {
   migrationPreviewTableEl.style.display = '';
 }
 
+function renderMigrationResultsFromCandidates() {
+  const items = migrationCandidates;
+  const statusCounts = new Map();
+  for (const item of items) {
+    const key = item.status || 'unknown';
+    statusCounts.set(key, (statusCounts.get(key) || 0) + 1);
+  }
+
+  const migrated = statusCounts.get('migrated') || 0;
+  const skipped = statusCounts.get('skipped') || 0;
+  const failed = statusCounts.get('failed') || 0;
+  const processing = statusCounts.get('processing') || 0;
+  const pending = statusCounts.get('pending') || 0;
+  migrationSummaryEl.textContent = `Queued ${items.length} external-image profiles. Migrated ${migrated}, skipped ${skipped}, failed ${failed}, processing ${processing}, pending ${pending}.`;
+  migrationStatusListEl.innerHTML = '';
+  for (const [status, count] of [...statusCounts.entries()].sort((a, b) => a[0].localeCompare(b[0]))) {
+    const li = document.createElement('li');
+    li.textContent = `${status}: ${count}`;
+    migrationStatusListEl.appendChild(li);
+  }
+  renderMigrationTable();
+}
+
+async function loadMigrationCandidates() {
+  migrationSummaryEl.textContent = 'Loading candidate profiles...';
+  migrationStatusListEl.innerHTML = '';
+  migrationPreviewBodyEl.innerHTML = '';
+  migrationPreviewTableEl.style.display = 'none';
+
+  const groupsSnap = await getDocs(query(collection(db, 'groups'), orderBy('name')));
+  migrationCandidates = groupsSnap.docs
+    .map((groupDoc) => ({ id: groupDoc.id, ...groupDoc.data() }))
+    .filter((group) => isSupportedRemoteImageUrl(group.photoURL || ''))
+    .map((group) => ({
+      groupId: group.id,
+      name: group.name || '',
+      currentPhotoURL: group.photoURL || '',
+      managedPhotoURL: '',
+      status: 'pending',
+      reason: '',
+    }));
+
+  if (!migrationCandidates.length) {
+    migrationSummaryEl.textContent = 'No profiles currently use external image URLs.';
+    document.getElementById('migrateBtn').disabled = true;
+    return;
+  }
+
+  renderMigrationResultsFromCandidates();
+  document.getElementById('migrateBtn').disabled = false;
+}
+
 onAuthStateChanged(auth, (user) => {
   currentUser = user;
   if (user) {
     document.getElementById('authStatus').textContent = `Logged in as ${user.email}`;
     document.getElementById('loginForm').style.display = 'none';
-    document.getElementById('migrateBtn').disabled = false;
+    loadMigrationCandidates().catch((error) => {
+      migrationSummaryEl.textContent = 'Could not load migration candidates.';
+      log(`Candidate load error: ${error.message}`, 'error');
+    });
   }
 });
 
@@ -166,27 +230,50 @@ window.doLogin = async () => {
 };
 
 window.runMigration = async () => {
+  if (isMigrating) return;
   if (!confirm('Migrate all external profile images now? Already migrated images will be skipped automatically.')) {
     return;
   }
 
+  isMigrating = true;
   document.getElementById('migrateBtn').disabled = true;
   logEl.textContent = '';
-  migrationSummaryEl.textContent = '';
-  migrationStatusListEl.innerHTML = '';
-  migrationPreviewBodyEl.innerHTML = '';
-  migrationPreviewTableEl.style.display = 'none';
 
   try {
-    log('Starting one-click image migration...', 'info');
+    if (!migrationCandidates.length) {
+      await loadMigrationCandidates();
+    }
+
+    log(`Starting one-click image migration for ${migrationCandidates.length} profiles...`, 'info');
     const migrateProfileImages = httpsCallable(functions, 'migrateProfileImages');
-    const result = await migrateProfileImages({});
-    renderMigrationResults(result.data || {});
-    log(`Migration finished. Migrated ${result.data?.migrated || 0}, skipped ${result.data?.skipped || 0}, failed ${result.data?.failed || 0}.`, 'success');
+
+    for (const item of migrationCandidates) {
+      item.status = 'processing';
+      item.reason = '';
+      renderMigrationResultsFromCandidates();
+      log(`Processing ${item.name}...`, 'info');
+
+      try {
+        const result = await migrateProfileImages({ groupIds: [item.groupId] });
+        const entry = result.data?.results?.[0] || { status: 'failed', reason: 'No result returned.' };
+        item.status = entry.status || 'failed';
+        item.reason = entry.reason || '';
+        item.managedPhotoURL = entry.managedPhotoURL || '';
+      } catch (error) {
+        item.status = 'failed';
+        item.reason = error.message || 'Unknown error';
+      }
+      renderMigrationResultsFromCandidates();
+      log(`${item.name}: ${getStatusLabel(item.status, item.reason)}`, item.status === 'failed' ? 'error' : 'success');
+    }
+
+    log('Image migration queue finished.', 'success');
   } catch (error) {
     log(`ERROR: ${error.message}`, 'error');
+  } finally {
+    isMigrating = false;
+    document.getElementById('migrateBtn').disabled = false;
   }
-  document.getElementById('migrateBtn').disabled = false;
 };
 </script>
 </body>

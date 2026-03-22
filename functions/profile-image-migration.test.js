@@ -7,6 +7,7 @@ const {
   buildManagedProfileImagePath,
   getDefaultStorageBucketName,
   isManagedProfileImageUrl,
+  normalizeRequestedGroupIds,
   shouldMigrateProfileImageUrl,
 } = require("./profile-image-migration");
 
@@ -63,4 +64,12 @@ test("getDefaultStorageBucketName prefers an explicit bucket and falls back to p
     getDefaultStorageBucketName("compneuroparis"),
     "compneuroparis.firebasestorage.app",
   );
+});
+
+test("normalizeRequestedGroupIds trims, deduplicates, and ignores empty values", () => {
+  assert.deepEqual(
+    normalizeRequestedGroupIds([" group-a ", "", "group-b", "group-a", null]),
+    ["group-a", "group-b"],
+  );
+  assert.deepEqual(normalizeRequestedGroupIds(null), []);
 });

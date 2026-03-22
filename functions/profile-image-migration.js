@@ -108,6 +108,15 @@ function getDefaultStorageBucketName(projectId, explicitBucketName = "") {
   return String(explicitBucketName || "").trim() || `${projectId}.firebasestorage.app`;
 }
 
+function normalizeRequestedGroupIds(value) {
+  if (!Array.isArray(value)) return [];
+  return [...new Set(
+    value
+      .map((entry) => String(entry || "").trim())
+      .filter(Boolean),
+  )];
+}
+
 async function migrateSingleProfileImage({
   groupDoc,
   bucket,
@@ -209,5 +218,6 @@ module.exports = {
   isManagedProfileImageUrl,
   isSupportedRemoteImageUrl,
   migrateSingleProfileImage,
+  normalizeRequestedGroupIds,
   shouldMigrateProfileImageUrl,
 };

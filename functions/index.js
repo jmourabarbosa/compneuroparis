@@ -8,6 +8,7 @@ const { planGroupClaimChange } = require("./group-claim-logic");
 const {
   getDefaultStorageBucketName,
   migrateSingleProfileImage,
+  normalizeRequestedGroupIds,
 } = require("./profile-image-migration");
 
 const storageBucket = getDefaultStorageBucketName(
@@ -673,14 +674,18 @@ exports.migrateProfileImages = functions
 
   const firestore = admin.firestore();
   const bucket = admin.storage().bucket(bucketName);
+  const requestedGroupIds = normalizeRequestedGroupIds(data?.groupIds);
   const groupsSnap = await firestore.collection("groups").orderBy("name").get();
+  const groupDocs = requestedGroupIds.length > 0
+    ? groupsSnap.docs.filter((groupDoc) => requestedGroupIds.includes(groupDoc.id))
+    : groupsSnap.docs;
 
   let migrated = 0;
   let skipped = 0;
   let failed = 0;
   const results = [];
 
-  for (const groupDoc of groupsSnap.docs) {
+  for (const groupDoc of groupDocs) {
     try {
       const result = await migrateSingleProfileImage({
         groupDoc,
@@ -710,7 +715,7 @@ exports.migrateProfileImages = functions
     migrated,
     skipped,
     failed,
-    total: groupsSnap.size,
+    total: groupDocs.length,
     results,
   };
-  });
+});
