@@ -1,79 +1,8 @@
 {
   "generatedAt": "2026-03-22T14:37:54.240Z",
   "sourceMapping": "profile-image-manifest-2026-03-22 (1).json",
-  "downloadFailureCount": 7,
+  "downloadFailureCount": 0,
   "relinkFollowupCount": 0,
-  "downloadFailures": [
-    {
-      "groupId": "rlGrCsGNg6lZpdXQDlYC",
-      "name": "Alex Cayco Gajic",
-      "currentPhotoURL": "https://lh3.googleusercontent.com/sitesv/APaQ0SQAbaYn8d_W_BwtzMHzwIqhVbmdig_7ujCQIXBHh9QbiymysMnjgy9U24_CJ0LfYnSzXqN6w3_tyM5c_Ha9cGqpKmSHTcEGd6xedyLwxe1s6If9w2LW7dD73H9pYdx5StEKvs7l7AkErhuaoDc8Dvt52QjnswTFyKqwmLywp2-AmvilAll1WOyZT_2B_uyujmQ29SYYL9U8fBDSbBjMM0RF_Tqyfa4REKQ0pm0=w1280",
-      "suggestedFileName": "alex-cayco-gajic-rlgrcsgng6lzpdxqdlyc.jpg",
-      "suggestedLocalPath": "assets/profile-images/alex-cayco-gajic-rlgrcsgng6lzpdxqdlyc.jpg",
-      "status": "failed",
-      "error": "HTTP 403",
-      "previousError": "HTTP 403"
-    },
-    {
-      "groupId": "H88OEhgL3EP91PPx9cDG",
-      "name": "Clement Lena",
-      "currentPhotoURL": "https://i1.rgstatic.net/ii/profile.image/11431281308763552-1739088422995_Q512/Clement-Lena.jpg",
-      "suggestedFileName": "clement-lena-h88oehgl3ep91ppx9cdg.jpg",
-      "suggestedLocalPath": "assets/profile-images/clement-lena-h88oehgl3ep91ppx9cdg.jpg",
-      "status": "failed",
-      "error": "HTTP 403",
-      "previousError": "HTTP 403"
-    },
-    {
-      "groupId": "z1rUQcStajysILwcb3iF",
-      "name": "David Germanaud",
-      "currentPhotoURL": "https://joliot.cea.fr/drf/i2bm/PublishingImages/NeuroSpin/UNIACT/David%20GERMANAUD.png",
-      "suggestedFileName": "david-germanaud-z1ruqcstajysilwcb3if.png",
-      "suggestedLocalPath": "assets/profile-images/david-germanaud-z1ruqcstajysilwcb3if.png",
-      "status": "failed",
-      "error": "HTTP 404",
-      "previousError": "HTTP 404"
-    },
-    {
-      "groupId": "15FWwCcQB2x4x6Fd5I1k",
-      "name": "Dmitrii I. Todorov",
-      "currentPhotoURL": "https://lh3.googleusercontent.com/sitesv/APaQ0SRqxEQNVILuKbEntIAYsrd8U2u-QsK5hjsxzkzC5yno40DwjfvAoV8N-dRWmF015aGPDwxCDkR1t4vINCTVAnY00q2C21WuJJI8s710wWPSBnnb-c-vDEbKB4aPB0ZAykPvsszRWCF-DY5I6_mfuJ8IL0tGYuq0ZxH3Y17kAmU9t325jK3hfDL7v7_m7QtKJUw-c48nNmPLmcllwxSYNR95xHJlP6dfaS3wSgo=w1280",
-      "suggestedFileName": "dmitrii-i-todorov-15fwwccqb2x4x6fd5i1k.jpg",
-      "suggestedLocalPath": "assets/profile-images/dmitrii-i-todorov-15fwwccqb2x4x6fd5i1k.jpg",
-      "status": "failed",
-      "error": "HTTP 403",
-      "previousError": "HTTP 403"
-    },
-    {
-      "groupId": "Gpw07E772hHIddGHFqTF",
-      "name": "Laurence Conty",
-      "currentPhotoURL": "https://lh3.googleusercontent.com/sitesv/APaQ0SS-pJQBHhVK9Dnq8Tnda7iMPxq5nEM3ns5wsHPbQdggHAfylSioZeAkU_MG1iLxFpz3rIBmXSFvNDgpvplz50YWffwvN6vnP9WGS3d-uZ8zGdAL5VjKJDhJMhp_2_W00xeJClMTQ0fzmwPk-l2YAHmYbVXwjhGpDgR6N69BI_xLRUtI7Ogo7gM2_VAuDNxv0Xs5M99_3-DY0NZwhc0HHlB5afgRuS5gcLT4_Kk=w1280",
-      "suggestedFileName": "laurence-conty-gpw07e772hhiddghfqtf.jpg",
-      "suggestedLocalPath": "assets/profile-images/laurence-conty-gpw07e772hhiddghfqtf.jpg",
-      "status": "failed",
-      "error": "HTTP 403",
-      "previousError": "HTTP 403"
-    },
-    {
-      "groupId": "CezZeAPSEuAumAmbsEJe",
-      "name": "Marcelo Rozenberg",
-      "currentPhotoURL": "https://lh3.googleusercontent.com/sitesv/APaQ0SSCAl05osgSl88NttLK4FhRHn_P-AQMbdQbEu8aZucMbWXADy99NC5YMNEbfX505Ptm-f0IeLkwJVu30hFlnDMPZ6GSmVGKwX_ho7YO-M4HVRGPMCrmLKscgOU2wslgFoToPzm2r_FwQvvJ-7f7M_kpWhsJCdkSClLJLlY014t5I-XBu4MpYxXGrb9dG5XB8HLtmlFudFNhLpzpa7bva1nAuP7lUPqQ8JUp3rc=w1280",
-      "suggestedFileName": "marcelo-rozenberg-cezzeapseuaumambseje.jpg",
-      "suggestedLocalPath": "assets/profile-images/marcelo-rozenberg-cezzeapseuaumambseje.jpg",
-      "status": "failed",
-      "error": "HTTP 403",
-      "previousError": "HTTP 403"
-    },
-    {
-      "groupId": "awPqJJfe9h8Ew7uLxQlC",
-      "name": "Vincent De Gardelle",
-      "currentPhotoURL": "https://www.parisschoolofeconomics.eu/app/uploads/2026/02/de-gardelle-vincent_x3-260x260.jpg",
-      "suggestedFileName": "vincent-de-gardelle-awpqjjfe9h8ew7ulxqlc.jpg",
-      "suggestedLocalPath": "assets/profile-images/vincent-de-gardelle-awpqjjfe9h8ew7ulxqlc.jpg",
-      "status": "failed",
-      "error": "HTTP 404",
-      "previousError": "HTTP 404"
-    }
-  ],
+  "downloadFailures": [],
   "relinkFollowup": []
 }
