@@ -1,16 +1,16 @@
-import { loadGroups, initSearch, initSections, loadPublicInstitutes, loadPublicJobs, initPiDetail, initInstituteDetail, initJobDetail, handleDeepLink } from './ui-groups.js';
+import { loadGroups, initSearch, initSections, loadPublicInstitutes, loadPublicJobs, loadPublicJobApplicants, initPiDetail, initInstituteDetail, initJobDetail, initJobApplicantDetail, handleDeepLink } from './ui-groups.js';
 import { initForm, initJobForm, updateSubmissionAuthUI } from './ui-form.js';
 import { onAuthChange, login, logout, resetPassword, createAccount, isEmailVerified, resendVerification, authReady, getAuthErrorMessage } from './auth.js';
 import {
   initTabs, loadPending, loadManageGroups, loadAdmins,
-  initSubmissionActions, initEditForm, initAddAdmin,
+  initSubmissionActions, initJobApplicantReviewActions, initEditForm, initAddAdmin,
   showEditModalForCreator,
   showEditInstituteModalForCreator, initEditInstituteForm,
   loadPendingInstitutes, loadApprovedInstitutes,
-  loadPendingClaims, loadMessages, primeEditModalReferenceData,
+  loadPendingClaims, loadMessages, loadPendingJobApplicants, primeEditModalReferenceData,
   initEditUserForm, initSettings
 } from './ui-admin.js';
-import { fetchPendingSubmissions, fetchPendingClaims as dbFetchPendingClaims, fetchPendingInstitutes as dbFetchPendingInstitutes, fetchOpenReports, fetchOpenMessages as dbFetchOpenMessages } from './db.js';
+import { fetchPendingSubmissions, fetchPendingClaims as dbFetchPendingClaims, fetchPendingInstitutes as dbFetchPendingInstitutes, fetchPendingJobApplicants as dbFetchPendingJobApplicants, fetchOpenReports, fetchOpenMessages as dbFetchOpenMessages } from './db.js';
 import { initCreatorPanel } from './ui-creator.js';
 import { getPreferredUserName } from './manager-name-utils.mjs';
 
@@ -48,6 +48,7 @@ const adminPageStatus = document.getElementById('admin-page-status');
 function openAdminWorkspace() {
   openModal(modalAdmin);
   loadPending();
+  loadPendingJobApplicants();
   loadManageGroups();
   loadPendingClaims();
   loadAdmins();
@@ -246,14 +247,15 @@ async function updateAdminBadge() {
   const badge = document.getElementById('admin-badge');
   try {
     const safe = (p) => p.catch(() => []);
-    const [submissions, claims, institutes, reports, messages] = await Promise.all([
+    const [submissions, claims, institutes, jobApplicants, reports, messages] = await Promise.all([
       safe(fetchPendingSubmissions()),
       safe(dbFetchPendingClaims()),
       safe(dbFetchPendingInstitutes()),
+      safe(dbFetchPendingJobApplicants()),
       safe(fetchOpenReports()),
       safe(dbFetchOpenMessages())
     ]);
-    const total = submissions.length + claims.length + institutes.length + reports.length + messages.length;
+    const total = submissions.length + claims.length + institutes.length + jobApplicants.length + reports.length + messages.length;
     if (total > 0) {
       badge.textContent = total;
       badge.classList.remove('hidden');
@@ -263,6 +265,7 @@ async function updateAdminBadge() {
 
     // Per-tab badges inside admin panel
     setTabBadge('tab-pending', submissions.length);
+    setTabBadge('tab-job-applicants', jobApplicants.length);
     setTabBadge('tab-claims', claims.length);
     setTabBadge('tab-institutes', institutes.length);
     setTabBadge('tab-reports', reports.length);
@@ -358,6 +361,7 @@ initSections();
 initForm();
 initTabs();
 initSubmissionActions();
+initJobApplicantReviewActions();
 initEditForm();
 initEditInstituteForm();
 initAddAdmin();
@@ -366,11 +370,12 @@ initSettings();
 initPiDetail();
 initInstituteDetail();
 initJobDetail();
+initJobApplicantDetail();
 initJobForm();
 initCreatorPanel();
 
 // Load public datasets in parallel and let each section render as its data arrives.
-Promise.all([loadGroups(), loadPublicInstitutes(), loadPublicJobs()])
+Promise.all([loadGroups(), loadPublicInstitutes(), loadPublicJobs(), loadPublicJobApplicants()])
   .then(() => handleDeepLink());
 
 // Handle #admin deep link (wait for auth to resolve)

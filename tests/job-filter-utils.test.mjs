@@ -1,7 +1,7 @@
 import test from 'node:test';
 import assert from 'node:assert/strict';
 
-import { filterVisibleJobs, getCombinedJobKeywords } from '../js/job-filter-utils.mjs';
+import { filterVisibleJobs, filterVisibleJobApplicants, getCombinedJobKeywords } from '../js/job-filter-utils.mjs';
 
 test('filterVisibleJobs returns all jobs when there is no search text', () => {
   const jobs = [{ id: 'job-1' }, { id: 'job-2' }];
@@ -33,4 +33,35 @@ test('getCombinedJobKeywords deduplicates keywords case-insensitively while keep
   }];
 
   assert.deepEqual(getCombinedJobKeywords(job, groups), ['vision', 'systems', 'electrophysiology']);
+});
+
+test('filterVisibleJobApplicants searches across applicant fields, target fields, and legacy institute names', () => {
+  const applicants = [
+    {
+      id: 'app-1',
+      name: 'Alice Example',
+      email: 'alice@example.org',
+      lookingFor: ['Postdoc'],
+      subfields: ['systems'],
+      targetSubfields: ['human'],
+      summary: 'Works on vision'
+    },
+    {
+      id: 'app-2',
+      name: 'Bob Example',
+      email: 'bob@example.org',
+      lookingFor: ['PhD'],
+      subfields: ['computational'],
+      instituteIds: ['inst-2'],
+      summary: 'Works on memory'
+    }
+  ];
+  const institutes = [
+    { id: 'inst-1', name: 'ICM' },
+    { id: 'inst-2', name: 'ENS' }
+  ];
+
+  assert.deepEqual(filterVisibleJobApplicants({ applicants, institutes, searchText: 'vision' }).map(applicant => applicant.id), ['app-1']);
+  assert.deepEqual(filterVisibleJobApplicants({ applicants, institutes, searchText: 'human' }).map(applicant => applicant.id), ['app-1']);
+  assert.deepEqual(filterVisibleJobApplicants({ applicants, institutes, searchText: 'ens' }).map(applicant => applicant.id), ['app-2']);
 });

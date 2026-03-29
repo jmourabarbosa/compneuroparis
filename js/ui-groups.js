@@ -1,16 +1,17 @@
-import { fetchGroups, fetchApprovedInstitutes, fetchJobs, fetchJobsByPi, updateJob, deleteJob, updateGroup, createClaim, fetchMyClaimForTarget, fetchApprovedClaimForTarget, revokeClaim, deleteGroup, deleteInstitute, createReport } from './db.js';
+import { fetchGroups, fetchApprovedInstitutes, fetchJobs, fetchJobsByPi, fetchApprovedJobApplicants, updateJob, deleteJob, deleteJobApplicant, updateGroup, createClaim, fetchMyClaimForTarget, fetchApprovedClaimForTarget, revokeClaim, deleteGroup, deleteInstitute, createReport } from './db.js';
 import { getCurrentUser, getIsAdmin, createAccount, login, isEmailVerified, resendVerification, getAuthErrorMessage } from './auth.js';
 import { getInstituteDisplayNames, resolveInstituteRefsFromRecord, toArray } from './institute-links.mjs';
 import { buildKeywordCounts, getMatchingKeywords } from './keyword-pill-utils.mjs';
 import { filterVisibleGroups, fuzzyMatch, partitionGroupsBySubfield } from './group-filter-utils.mjs';
 import { buildInstitutePiCountMap, getInstitutePiCount } from './institute-count-utils.mjs';
-import { filterVisibleJobs, getCombinedJobKeywords } from './job-filter-utils.mjs';
-import { buildInstituteCardMarkup, buildJobCardMarkup, buildPiCardMarkup, escapeHTML, formatCardDate } from './public-card-utils.mjs';
+import { filterVisibleJobs, filterVisibleJobApplicants, getCombinedJobKeywords } from './job-filter-utils.mjs';
+import { buildInstituteCardMarkup, buildJobApplicantCardMarkup, buildJobCardMarkup, buildPiCardMarkup, escapeHTML, formatCardDate } from './public-card-utils.mjs';
 import { getClaimManagerName, getPreferredUserName } from './manager-name-utils.mjs';
 
 let allGroups = [];
 let allInstitutes = [];
 let allJobs = [];
+let allJobApplicants = [];
 let activeKeywords = new Set();
 let searchText = '';
 let activeInstituteId = null;
@@ -156,6 +157,7 @@ export async function loadGroups(shouldFetch = true) {
   renderGroups();
   renderInstitutes();
   renderJobs();
+  renderJobApplicants();
 }
 
 function buildKeywordFilters() {
@@ -186,6 +188,7 @@ export function filterGroups() {
   renderGroups();
   renderInstitutes();
   renderJobs();
+  renderJobApplicants();
 }
 
 function renderGroups() {
@@ -458,11 +461,11 @@ async function openPiDetail(group) {
     const piJobs = await fetchJobsByPi(group.id);
     if (piJobs.length > 0) {
       // Add clickable badge in managed-by area
-      const jobLabel = piJobs.length === 1 ? '1 job ad' : `${piJobs.length} job ads`;
+      const jobLabel = piJobs.length === 1 ? '1 job offer' : `${piJobs.length} job offers`;
       const jobBadge = document.createElement('span');
       jobBadge.className = 'pi-detail-jobs-badge';
       jobBadge.textContent = ` · ${jobLabel}`;
-      jobBadge.title = 'Click to view job ads';
+      jobBadge.title = 'Click to view job offers';
       jobBadge.addEventListener('click', () => {
         piDetailJobs.classList.toggle('hidden');
       });
@@ -862,6 +865,7 @@ export async function loadPublicInstitutes() {
     allInstitutes = [];
   }
   renderInstitutes();
+  renderJobApplicants();
 }
 
 function renderInstitutes() {
@@ -936,6 +940,9 @@ function createInstituteCard(inst, piCount = 0) {
 const jobsSection = document.querySelector('.subfield-section[data-subfield="jobs"]');
 const jobsPublicList = document.getElementById('jobs-public-list');
 const jobsPublicCount = document.getElementById('jobs-public-count');
+const jobApplicantsSection = document.querySelector('.subfield-section[data-subfield="job-applicants"]');
+const jobApplicantsPublicList = document.getElementById('job-applicants-public-list');
+const jobApplicantsPublicCount = document.getElementById('job-applicants-public-count');
 
 export async function loadPublicJobs() {
   try {
@@ -946,6 +953,16 @@ export async function loadPublicJobs() {
   }
   renderJobs();
   renderGroups();
+}
+
+export async function loadPublicJobApplicants() {
+  try {
+    allJobApplicants = await fetchApprovedJobApplicants();
+  } catch (err) {
+    console.error('Error loading public job applicants:', err);
+    allJobApplicants = [];
+  }
+  renderJobApplicants();
 }
 
 function renderJobs() {
@@ -966,7 +983,7 @@ function renderJobs() {
   jobsSection.classList.remove('section-hidden');
 
   if (filtered.length === 0) {
-    jobsPublicList.innerHTML = '<p class="empty-state" style="padding:1rem">No job ads yet.</p>';
+    jobsPublicList.innerHTML = '<p class="empty-state" style="padding:1rem">No job offers yet.</p>';
     return;
   }
 
@@ -981,6 +998,43 @@ function renderJobs() {
   jobsHeader.setAttribute('aria-expanded', jobsSection.classList.contains('collapsed') ? 'false' : 'true');
 }
 
+function renderJobApplicants() {
+  if (!jobApplicantsSection || !jobApplicantsPublicList || !jobApplicantsPublicCount) return;
+  jobApplicantsPublicList.innerHTML = '';
+
+  const isSearching = hasActivePublicFilters();
+  const autoExpandSections = shouldAutoExpandSections();
+  const filtered = filterVisibleJobApplicants({
+    applicants: allJobApplicants,
+    institutes: allInstitutes,
+    searchText
+  });
+
+  jobApplicantsPublicCount.textContent = filtered.length;
+
+  if (isSearching && filtered.length === 0) {
+    jobApplicantsSection.classList.add('section-hidden');
+    return;
+  }
+
+  jobApplicantsSection.classList.remove('section-hidden');
+
+  if (filtered.length === 0) {
+    jobApplicantsPublicList.innerHTML = '<p class="empty-state" style="padding:1rem">No job searches yet.</p>';
+    return;
+  }
+
+  filtered.forEach(applicant => {
+    jobApplicantsPublicList.appendChild(createJobApplicantCard(applicant));
+  });
+
+  const header = jobApplicantsSection.querySelector('.subfield-header');
+  if (autoExpandSections) {
+    jobApplicantsSection.classList.remove('collapsed');
+  }
+  header.setAttribute('aria-expanded', jobApplicantsSection.classList.contains('collapsed') ? 'false' : 'true');
+}
+
 function createJobCard(job) {
   const card = document.createElement('article');
   card.className = 'job-card';
@@ -990,6 +1044,22 @@ function createJobCard(job) {
   card.addEventListener('click', (e) => {
     if (e.target.closest('a') || e.target.closest('button')) return;
     openJobDetail(job);
+  });
+
+  return card;
+}
+
+function createJobApplicantCard(applicant) {
+  const card = document.createElement('article');
+  card.className = 'job-card job-applicant-card';
+  card.innerHTML = buildJobApplicantCardMarkup(applicant, {
+    subfieldLabels: SUBFIELD_LABELS,
+    instituteRefs: resolveInstituteRefsFromRecord(applicant, allInstitutes)
+  });
+
+  card.addEventListener('click', (e) => {
+    if (e.target.closest('a') || e.target.closest('button')) return;
+    openJobApplicantDetail(applicant);
   });
 
   return card;
@@ -1149,7 +1219,7 @@ export function initJobDetail() {
 
   btnDelete.addEventListener('click', async () => {
     if (!currentDetailJob) return;
-    if (!confirm('Delete this job ad? This cannot be undone.')) return;
+    if (!confirm('Delete this job offer? This cannot be undone.')) return;
     btnDelete.disabled = true;
     btnDelete.textContent = 'Deleting...';
     try {
@@ -1159,6 +1229,113 @@ export function initJobDetail() {
     } catch (err) {
       console.error('Delete job error:', err);
       alert('Error deleting job.');
+    } finally {
+      btnDelete.disabled = false;
+      btnDelete.textContent = 'Delete';
+    }
+  });
+}
+
+let currentDetailJobApplicant = null;
+const modalJobApplicantDetail = document.getElementById('modal-job-applicant-detail');
+
+function openJobApplicantDetail(applicant) {
+  currentDetailJobApplicant = applicant;
+
+  document.getElementById('job-applicant-detail-title').textContent = applicant.name || 'Job Search';
+  const emailEl = document.getElementById('job-applicant-detail-email');
+  emailEl.innerHTML = applicant.email
+    ? `Email: <a href="mailto:${escapeHTML(applicant.email)}">${escapeHTML(applicant.email)}</a>`
+    : '';
+
+  const lookingForEl = document.getElementById('job-applicant-detail-looking-for');
+  if ((applicant.lookingFor || []).length > 0) {
+    lookingForEl.innerHTML = (applicant.lookingFor || [])
+      .map(item => `<span class="job-position-badge">${escapeHTML(item)}</span>`)
+      .join('');
+    lookingForEl.classList.remove('hidden');
+  } else {
+    lookingForEl.innerHTML = '';
+    lookingForEl.classList.add('hidden');
+  }
+
+  const backgroundsEl = document.getElementById('job-applicant-detail-backgrounds');
+  if ((applicant.subfields || []).length > 0) {
+    backgroundsEl.innerHTML = (applicant.subfields || [])
+      .map(subfield => `<span class="keyword-pill">${escapeHTML(SUBFIELD_LABELS[subfield] || subfield)}</span>`)
+      .join('');
+    backgroundsEl.classList.remove('hidden');
+  } else {
+    backgroundsEl.innerHTML = '';
+    backgroundsEl.classList.add('hidden');
+  }
+
+  const institutesEl = document.getElementById('job-applicant-detail-institutes');
+  const targetFields = (applicant.targetSubfields || [])
+    .map(subfield => SUBFIELD_LABELS[subfield] || subfield)
+    .filter(Boolean);
+  const instituteNames = getInstituteDisplayNames(applicant, allInstitutes);
+  if (targetFields.length > 0) {
+    institutesEl.textContent = `Looking in fields: ${targetFields.join(', ')}`;
+    institutesEl.classList.remove('hidden');
+  } else if (instituteNames.length > 0) {
+    institutesEl.textContent = `Looking in: ${instituteNames.join(', ')}`;
+    institutesEl.classList.remove('hidden');
+  } else {
+    institutesEl.textContent = '';
+    institutesEl.classList.add('hidden');
+  }
+
+  const dateStr = formatCardDate(applicant.createdAt);
+  document.getElementById('job-applicant-detail-date').textContent = dateStr ? `Posted ${dateStr}` : '';
+
+  const summaryEl = document.getElementById('job-applicant-detail-summary');
+  if (applicant.summary) {
+    summaryEl.textContent = applicant.summary;
+    summaryEl.classList.remove('hidden');
+  } else {
+    summaryEl.textContent = '';
+    summaryEl.classList.add('hidden');
+  }
+
+  const notesEl = document.getElementById('job-applicant-detail-notes');
+  if (applicant.notes) {
+    notesEl.textContent = applicant.notes;
+    notesEl.classList.remove('hidden');
+  } else {
+    notesEl.textContent = '';
+    notesEl.classList.add('hidden');
+  }
+
+  let link = applicant.link || '';
+  if (link && !/^https?:\/\//i.test(link)) link = 'https://' + link;
+  document.getElementById('job-applicant-detail-link').innerHTML = link
+    ? `<a href="${escapeHTML(link)}" target="_blank" rel="noopener noreferrer">Website or long CV</a>`
+    : '';
+
+  const adminSection = document.getElementById('job-applicant-detail-admin-section');
+  adminSection.classList.toggle('hidden', !getIsAdmin());
+
+  modalJobApplicantDetail.classList.remove('hidden');
+}
+
+export function initJobApplicantDetail() {
+  const btnDelete = document.getElementById('btn-job-applicant-delete');
+  if (!btnDelete || !modalJobApplicantDetail) return;
+
+  btnDelete.addEventListener('click', async () => {
+    if (!currentDetailJobApplicant) return;
+    if (!confirm('Delete this job search? This cannot be undone.')) return;
+
+    btnDelete.disabled = true;
+    btnDelete.textContent = 'Deleting...';
+    try {
+      await deleteJobApplicant(currentDetailJobApplicant.id);
+      await loadPublicJobApplicants();
+      modalJobApplicantDetail.classList.add('hidden');
+    } catch (err) {
+      console.error('Delete job applicant error:', err);
+      alert('Error deleting job search.');
     } finally {
       btnDelete.disabled = false;
       btnDelete.textContent = 'Delete';
@@ -1408,6 +1585,14 @@ export function initSections() {
     const isCollapsed = jobsSection.classList.toggle('collapsed');
     jobsHeader.setAttribute('aria-expanded', !isCollapsed);
   });
+
+  if (jobApplicantsSection) {
+    const jobApplicantsHeader = jobApplicantsSection.querySelector('.subfield-header');
+    jobApplicantsHeader.addEventListener('click', () => {
+      const isCollapsed = jobApplicantsSection.classList.toggle('collapsed');
+      jobApplicantsHeader.setAttribute('aria-expanded', !isCollapsed);
+    });
+  }
 
   // Institute filter clear
   instituteFilterClear.addEventListener('click', () => {

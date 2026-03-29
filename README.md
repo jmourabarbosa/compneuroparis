@@ -2,7 +2,7 @@
 
 A directory of computational neuroscience research groups in the Paris area. Static site hosted on GitHub Pages with Firebase backend.
 
-**Live site**: https://jmourabarbosa.github.io/compneuroparis/
+**Live site**: https://parisneuro.fr/
 
 ## Architecture
 
@@ -96,7 +96,7 @@ Add documents to the `groups` collection in Firestore:
 1. Push all files to the `main` branch
 2. Go to repo Settings > Pages
 3. Set source to "Deploy from a branch", select `main` / `/ (root)`
-4. The site will be live at `https://jmourabarbosa.github.io/compneuroparis/`
+4. The site will be live at `https://parisneuro.fr/`
 
 ## Testing
 

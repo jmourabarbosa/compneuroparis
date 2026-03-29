@@ -201,7 +201,7 @@ async function loadCreatorJobs(uid) {
   } catch (err) {
     console.error('Error loading creator jobs:', err);
     loading.classList.add('hidden');
-    empty.textContent = 'Error loading job ads.';
+    empty.textContent = 'Error loading job offers.';
     empty.classList.remove('hidden');
   }
 }

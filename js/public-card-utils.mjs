@@ -15,6 +15,11 @@ export function formatCardDate(dateValue) {
     : '';
 }
 
+function formatSubfieldLabel(subfield, subfieldLabels = {}) {
+  if (!subfield) return '';
+  return subfieldLabels[subfield] || `${subfield.charAt(0).toUpperCase()}${subfield.slice(1)}`;
+}
+
 export function buildPiCardMarkup(group, {
   subfieldLabel,
   instituteRefs = [],
@@ -112,6 +117,41 @@ export function buildJobCardMarkup(job, keywords = []) {
         <span class="job-position-badge">${escapeHTML(job.positionType)}</span>
         ${dateStr ? `<span class="job-card-date">${dateStr}</span>` : ''}
       </div>
+    </div>
+  `;
+}
+
+export function buildJobApplicantCardMarkup(applicant, {
+  subfieldLabels = {},
+  instituteRefs = []
+} = {}) {
+  const lookingForBadges = (applicant.lookingFor || [])
+    .map(item => `<span class="job-position-badge">${escapeHTML(item)}</span>`)
+    .join('');
+  const backgroundBadges = (applicant.subfields || [])
+    .map(subfield => `<span class="keyword-pill">${escapeHTML(formatSubfieldLabel(subfield, subfieldLabels))}</span>`)
+    .join('');
+  const targetFields = (applicant.targetSubfields || [])
+    .map(subfield => escapeHTML(formatSubfieldLabel(subfield, subfieldLabels)))
+    .filter(Boolean);
+  const targetFieldsHTML = targetFields.length > 0
+    ? `<div class="card-institute">Looking in fields: ${targetFields.join(', ')}</div>`
+    : '';
+  const institutesHTML = instituteRefs.length > 0 && targetFields.length === 0
+    ? `<div class="card-institute">${instituteRefs.map(ref => escapeHTML(ref.name || '')).filter(Boolean).join(', ')}</div>`
+    : '';
+  const dateStr = formatCardDate(applicant.createdAt);
+
+  return `
+    <div class="card-body">
+      <div class="card-name-row">
+        <h3 class="job-card-title">${escapeHTML(applicant.name || 'Job Search')}</h3>
+      </div>
+      ${applicant.email ? `<div class="job-card-pi">${escapeHTML(applicant.email)}</div>` : ''}
+      ${targetFieldsHTML || institutesHTML}
+      ${lookingForBadges ? `<div class="job-card-meta">${lookingForBadges}${dateStr ? `<span class="job-card-date">${dateStr}</span>` : ''}</div>` : (dateStr ? `<div class="job-card-meta"><span class="job-card-date">${dateStr}</span></div>` : '')}
+      ${backgroundBadges ? `<div class="card-keywords">${backgroundBadges}</div>` : ''}
+      ${applicant.summary ? `<p class="job-card-description">${escapeHTML(applicant.summary)}</p>` : ''}
     </div>
   `;
 }

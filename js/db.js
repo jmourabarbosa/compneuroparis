@@ -448,6 +448,93 @@ export async function deleteJob(id) {
   await deleteDoc(doc(db, 'jobs', id));
 }
 
+export async function createJobApplicant({
+  name,
+  email,
+  lookingFor,
+  subfields,
+  targetSubfields,
+  instituteIds,
+  summary,
+  link,
+  notes,
+  publicEmailConsent
+}) {
+  const docRef = await addDoc(collection(db, 'jobApplicants'), {
+    name,
+    email,
+    lookingFor: lookingFor || [],
+    subfields: subfields || [],
+    subfield: (subfields || [])[0] || '',
+    targetSubfields: targetSubfields || [],
+    targetSubfield: (targetSubfields || [])[0] || '',
+    instituteIds: instituteIds || [],
+    summary: summary || '',
+    link: link || '',
+    notes: notes || '',
+    publicEmailConsent: !!publicEmailConsent,
+    status: 'pending',
+    createdAt: serverTimestamp()
+  });
+  return docRef.id;
+}
+
+export async function fetchApprovedJobApplicants() {
+  const q = query(
+    collection(db, 'jobApplicants'),
+    where('status', '==', 'approved'),
+    orderBy('createdAt', 'desc')
+  );
+  const snapshot = await getDocs(q);
+  return snapshot.docs.map(d => ({ id: d.id, ...d.data() }));
+}
+
+export async function fetchPendingJobApplicants() {
+  const q = query(
+    collection(db, 'jobApplicants'),
+    where('status', '==', 'pending'),
+    orderBy('createdAt', 'desc')
+  );
+  const snapshot = await getDocs(q);
+  return snapshot.docs.map(d => ({ id: d.id, ...d.data() }));
+}
+
+export async function updateJobApplicant(id, data) {
+  await updateDoc(doc(db, 'jobApplicants', id), {
+    ...data,
+    subfield: (data.subfields || [])[0] || '',
+    targetSubfield: (data.targetSubfields || [])[0] || '',
+    updatedAt: serverTimestamp()
+  });
+}
+
+export async function approveJobApplicant(id, adminUid, overrideData = null) {
+  const applicantRef = doc(db, 'jobApplicants', id);
+  const payload = overrideData || {};
+  await updateDoc(applicantRef, {
+    ...payload,
+    subfield: (payload.subfields || [])[0] || '',
+    targetSubfield: (payload.targetSubfields || [])[0] || '',
+    status: 'approved',
+    reviewedBy: adminUid,
+    reviewedAt: serverTimestamp(),
+    updatedAt: serverTimestamp()
+  });
+}
+
+export async function rejectJobApplicant(id, adminUid) {
+  await updateDoc(doc(db, 'jobApplicants', id), {
+    status: 'rejected',
+    reviewedBy: adminUid,
+    reviewedAt: serverTimestamp(),
+    updatedAt: serverTimestamp()
+  });
+}
+
+export async function deleteJobApplicant(id) {
+  await deleteDoc(doc(db, 'jobApplicants', id));
+}
+
 // ========== SETTINGS ==========
 
 export async function fetchNotificationSettings() {

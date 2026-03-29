@@ -8,7 +8,7 @@
   <meta property="og:title" content="Neuroscience in Paris Admin">
   <meta property="og:description" content="Admin workspace for the Neuroscience in Paris directory.">
   <meta property="og:type" content="website">
-  <meta property="og:url" content="https://jmourabarbosa.github.io/compneuroparis/">
+  <meta property="og:url" content="https://parisneuro.fr/">
   <link rel="icon" href="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'><text y='.9em' font-size='90'>🧠</text></svg>">
   <link rel="preconnect" href="https://fonts.googleapis.com">
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
@@ -81,7 +81,7 @@
         <input type="text" name="fake-user" style="display:none" tabindex="-1" autocomplete="username">
         <input type="password" name="fake-pass" style="display:none" tabindex="-1" autocomplete="current-password">
         <svg class="search-icon" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><circle cx="11" cy="11" r="8"/><line x1="21" y1="21" x2="16.65" y2="16.65"/></svg>
-        <input type="search" id="search-input" name="pi-search" placeholder="Search PIs and institutes by name, keyword, or summary..." aria-label="Search PIs and institutes" autocomplete="off" role="searchbox" data-form-type="other" data-lpignore="true" data-1p-ignore>
+        <input type="search" id="search-input" name="pi-search" placeholder="Search PIs, institutions, job offers, and applicants..." aria-label="Search PIs, institutions, job offers, and applicants" autocomplete="off" role="searchbox" data-form-type="other" data-lpignore="true" data-1p-ignore>
       </form>
       <div id="keyword-filters" class="keyword-filters" aria-label="Filter by keyword"></div>
     </div>
@@ -108,7 +108,7 @@
     </div>
 
     <div class="subfield-section collapsed" data-subfield="computational">
-      <button class="subfield-header" aria-expanded="false">
+      <button class="subfield-header" aria-expanded="true">
         <h2>Computational</h2>
         <span class="subfield-count">0</span>
         <span class="subfield-count-secondary"></span>
@@ -192,12 +192,22 @@
 
     <div class="subfield-section collapsed" data-subfield="jobs">
       <button class="subfield-header" aria-expanded="false">
-        <h2>Jobs</h2>
+        <h2>Job offers</h2>
         <span class="subfield-count" id="jobs-public-count">0</span>
         <svg class="subfield-arrow" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><polyline points="6 9 12 15 18 9"/></svg>
       </button>
       <div class="subfield-content">
         <div id="jobs-public-list" class="jobs-grid"></div>
+      </div>
+    </div>
+    <div class="subfield-section" data-subfield="job-applicants">
+      <button class="subfield-header" aria-expanded="false">
+        <h2>Job searches</h2>
+        <span class="subfield-count" id="job-applicants-public-count">0</span>
+        <svg class="subfield-arrow" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><polyline points="6 9 12 15 18 9"/></svg>
+      </button>
+      <div class="subfield-content">
+        <div id="job-applicants-public-list" class="jobs-grid"></div>
       </div>
     </div>
   </main>
@@ -208,11 +218,12 @@
       <div class="submit-buttons">
         <button id="btn-show-form" class="btn btn-primary btn-add-group">Add New PI</button>
         <button id="btn-show-institute-form" class="btn btn-outline btn-add-group">Add New Institution</button>
-        <button id="btn-show-job-form" class="btn btn-outline btn-add-group">Add New Job</button>
+        <button id="btn-show-job-form" class="btn btn-outline btn-add-group">Add new job offer</button>
+        <button id="btn-show-job-applicant-form" class="btn btn-outline btn-add-group">Add new job search</button>
         <button id="btn-show-contact" class="btn btn-outline btn-add-group">Contact Admins</button>
       </div>
       <div id="job-form-wrapper" class="hidden">
-        <h2>Post a Job Ad</h2>
+        <h2>Post a Job Offer</h2>
         <p class="submit-description">Post a job opening linked to a PI page you manage. Only users who have claimed a PI page can post jobs.</p>
         <div id="job-form-auth-warning" class="form-message error hidden" role="alert"></div>
         <form id="job-form" class="submission-form" novalidate>
@@ -251,8 +262,78 @@
           </div>
           <div id="job-form-message" class="form-message hidden" role="alert"></div>
           <div style="display:flex;gap:0.5rem">
-            <button type="submit" id="btn-job-submit" class="btn btn-primary">Post Job</button>
+            <button type="submit" id="btn-job-submit" class="btn btn-primary">Post Job Offer</button>
             <button type="button" id="btn-cancel-job-form" class="btn btn-outline">Cancel</button>
+          </div>
+        </form>
+      </div>
+      <div id="job-applicant-form-wrapper" class="hidden">
+        <h2>Post a Job Search</h2>
+        <p class="submit-description">Looking for a position in Paris neuroscience? Share a short public job search. No account is required, and your post will appear after admin review.</p>
+        <form id="job-applicant-form" class="submission-form" novalidate>
+          <div class="form-row">
+            <div class="form-group">
+              <label for="job-applicant-name">Name <span class="required">*</span></label>
+              <input type="text" id="job-applicant-name" placeholder="Your name" required>
+            </div>
+            <div class="form-group">
+              <label for="job-applicant-email">Email <span class="required">*</span></label>
+              <input type="email" id="job-applicant-email" placeholder="you@example.com" required>
+            </div>
+          </div>
+          <div class="form-group">
+            <label>Looking for <span class="required">*</span></label>
+            <div class="secondary-subfields job-applicant-checkboxes">
+              <label class="subfield-checkbox"><input type="checkbox" name="job-applicant-looking-for" value="Master 1 internship"> Master 1 internship</label>
+              <label class="subfield-checkbox"><input type="checkbox" name="job-applicant-looking-for" value="Master 2 internship"> Master 2 internship</label>
+              <label class="subfield-checkbox"><input type="checkbox" name="job-applicant-looking-for" value="Undergraduate internship"> Undergraduate internship</label>
+              <label class="subfield-checkbox"><input type="checkbox" name="job-applicant-looking-for" value="Research Assistant"> Research Assistant</label>
+              <label class="subfield-checkbox"><input type="checkbox" name="job-applicant-looking-for" value="PhD"> PhD</label>
+              <label class="subfield-checkbox"><input type="checkbox" name="job-applicant-looking-for" value="Postdoc"> Postdoc</label>
+            </div>
+          </div>
+          <div class="form-group">
+            <label>Background <span class="required">*</span></label>
+            <div class="secondary-subfields job-applicant-checkboxes">
+              <label class="subfield-checkbox"><input type="checkbox" name="job-applicant-subfield" value="computational"> Computational</label>
+              <label class="subfield-checkbox"><input type="checkbox" name="job-applicant-subfield" value="systems"> Systems</label>
+              <label class="subfield-checkbox"><input type="checkbox" name="job-applicant-subfield" value="human"> Human</label>
+              <label class="subfield-checkbox"><input type="checkbox" name="job-applicant-subfield" value="molecular"> Molecular</label>
+              <label class="subfield-checkbox"><input type="checkbox" name="job-applicant-subfield" value="developmental"> Developmental</label>
+              <label class="subfield-checkbox"><input type="checkbox" name="job-applicant-subfield" value="clinical"> Clinical</label>
+            </div>
+          </div>
+          <div class="form-group">
+            <label>Which field are you looking for opportunities in?</label>
+            <div class="secondary-subfields job-applicant-checkboxes">
+              <label class="subfield-checkbox"><input type="checkbox" name="job-applicant-target-subfield" value="computational"> Computational</label>
+              <label class="subfield-checkbox"><input type="checkbox" name="job-applicant-target-subfield" value="systems"> Systems</label>
+              <label class="subfield-checkbox"><input type="checkbox" name="job-applicant-target-subfield" value="human"> Human</label>
+              <label class="subfield-checkbox"><input type="checkbox" name="job-applicant-target-subfield" value="molecular"> Molecular</label>
+              <label class="subfield-checkbox"><input type="checkbox" name="job-applicant-target-subfield" value="developmental"> Developmental</label>
+              <label class="subfield-checkbox"><input type="checkbox" name="job-applicant-target-subfield" value="clinical"> Clinical</label>
+            </div>
+          </div>
+          <div class="form-group">
+            <label for="job-applicant-summary">Short CV <span class="required">*</span></label>
+            <textarea id="job-applicant-summary" rows="4" maxlength="1200" placeholder="Short public profile, research interests, methods, and experience..." required></textarea>
+          </div>
+          <div class="form-group">
+            <label for="job-applicant-link">Website or long CV link <span class="hint">(optional)</span></label>
+            <input type="url" id="job-applicant-link" placeholder="https://...">
+          </div>
+          <div class="form-group">
+            <label for="job-applicant-notes">Other info <span class="hint">(optional)</span></label>
+            <textarea id="job-applicant-notes" rows="3" maxlength="500" placeholder="Anything else people should know..."></textarea>
+          </div>
+          <label class="remember-choice" for="job-applicant-public-email-consent">
+            <input type="checkbox" id="job-applicant-public-email-consent" required>
+            <span>I understand that my email will be shown publicly on this job search.</span>
+          </label>
+          <div id="job-applicant-form-message" class="form-message hidden" role="alert"></div>
+          <div style="display:flex;gap:0.5rem">
+            <button type="submit" id="btn-job-applicant-submit" class="btn btn-primary">Submit Job Search</button>
+            <button type="button" id="btn-cancel-job-applicant-form" class="btn btn-outline">Cancel</button>
           </div>
         </form>
       </div>
@@ -558,6 +639,7 @@
       <div class="modal-body">
         <div class="tabs" role="tablist">
           <button class="tab active" data-tab="tab-pending" role="tab" aria-selected="true">Pending</button>
+          <button class="tab" data-tab="tab-job-applicants" role="tab" aria-selected="false">Job searches</button>
           <button class="tab" data-tab="tab-manage" role="tab" aria-selected="false">Manage PIs</button>
           <button class="tab" data-tab="tab-claims" role="tab" aria-selected="false">Claims</button>
           <button class="tab" data-tab="tab-admins" role="tab" aria-selected="false">Admins</button>
@@ -577,6 +659,16 @@
             <p>No pending submissions.</p>
           </div>
           <div id="pending-list" class="admin-list"></div>
+        </div>
+
+        <div id="tab-job-applicants" class="tab-panel" role="tabpanel">
+          <div id="job-applicants-pending-loading" class="loading-state hidden">
+            <div class="spinner"></div>
+          </div>
+          <div id="job-applicants-pending-empty" class="empty-state hidden">
+            <p>No pending job searches.</p>
+          </div>
+          <div id="job-applicants-pending-list" class="admin-list"></div>
         </div>
 
         <!-- Manage PIs Tab -->
@@ -705,7 +797,7 @@
         <div class="tabs" role="tablist">
           <button class="tab active" data-tab="ctab-pages" role="tab" aria-selected="true">My Pages</button>
           <button class="tab" data-tab="ctab-institutes" role="tab" aria-selected="false">My Institutions</button>
-          <button class="tab" data-tab="ctab-jobs" role="tab" aria-selected="false">My Job Ads</button>
+          <button class="tab" data-tab="ctab-jobs" role="tab" aria-selected="false">My Job Offers</button>
         </div>
 
         <!-- My Pages Tab -->
@@ -730,13 +822,13 @@
           <div id="creator-institutes-list" class="admin-list"></div>
         </div>
 
-        <!-- My Job Ads Tab -->
+        <!-- My Job Offers Tab -->
         <div id="ctab-jobs" class="tab-panel" role="tabpanel">
           <div id="creator-jobs-loading" class="loading-state">
             <div class="spinner"></div>
           </div>
           <div id="creator-jobs-empty" class="empty-state hidden">
-            <p>You haven't posted any job ads yet.</p>
+            <p>You haven't posted any job offers yet.</p>
           </div>
           <div id="creator-jobs-list" class="admin-list"></div>
         </div>
@@ -946,6 +1038,28 @@
             <button id="btn-job-edit-save" class="btn btn-primary btn-sm">Save</button>
             <button id="btn-job-edit-cancel" class="btn btn-outline-dark btn-sm">Cancel</button>
           </div>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <div id="modal-job-applicant-detail" class="modal-overlay hidden" role="dialog" aria-modal="true" aria-label="Job Search Details">
+    <div class="modal">
+      <div class="modal-header">
+        <h3 id="job-applicant-detail-title">Job Search</h3>
+        <button class="modal-close" data-close-modal="modal-job-applicant-detail" aria-label="Close">&times;</button>
+      </div>
+      <div class="modal-body">
+        <div id="job-applicant-detail-email" class="job-detail-pi"></div>
+        <div id="job-applicant-detail-looking-for" class="card-keywords hidden" style="margin-top:0.5rem"></div>
+        <div id="job-applicant-detail-backgrounds" class="card-keywords hidden" style="margin-top:0.5rem"></div>
+        <div id="job-applicant-detail-institutes" class="job-detail-pi hidden"></div>
+        <div id="job-applicant-detail-date" class="job-detail-date"></div>
+        <p id="job-applicant-detail-summary" class="job-detail-description"></p>
+        <p id="job-applicant-detail-notes" class="job-detail-description hidden"></p>
+        <div id="job-applicant-detail-link" class="job-detail-link"></div>
+        <div id="job-applicant-detail-admin-section" class="pi-detail-edit-section hidden">
+          <button id="btn-job-applicant-delete" class="btn btn-danger btn-sm">Delete</button>
         </div>
       </div>
     </div>
@@ -1161,6 +1275,78 @@
         <div class="submission-actions">
           <button id="btn-approve" class="btn btn-success">Approve</button>
           <button id="btn-reject" class="btn btn-danger">Reject</button>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <div id="modal-job-applicant-review" class="modal-overlay hidden" role="dialog" aria-modal="true" aria-label="Review Job Search">
+    <div class="modal modal-lg">
+      <div class="modal-header">
+        <h3>Review Job Search</h3>
+        <button class="modal-close" data-close-modal="modal-job-applicant-review" aria-label="Close">&times;</button>
+      </div>
+      <div class="modal-body">
+        <div class="form-row">
+          <div class="form-group">
+            <label for="review-job-applicant-name">Name</label>
+            <input type="text" id="review-job-applicant-name">
+          </div>
+          <div class="form-group">
+            <label for="review-job-applicant-email">Email</label>
+            <input type="email" id="review-job-applicant-email">
+          </div>
+        </div>
+        <div class="form-group">
+          <label>Looking for</label>
+          <div class="secondary-subfields job-applicant-checkboxes">
+            <label class="subfield-checkbox"><input type="checkbox" name="review-job-applicant-looking-for" value="Master 1 internship"> Master 1 internship</label>
+            <label class="subfield-checkbox"><input type="checkbox" name="review-job-applicant-looking-for" value="Master 2 internship"> Master 2 internship</label>
+            <label class="subfield-checkbox"><input type="checkbox" name="review-job-applicant-looking-for" value="Undergraduate internship"> Undergraduate internship</label>
+            <label class="subfield-checkbox"><input type="checkbox" name="review-job-applicant-looking-for" value="Research Assistant"> Research Assistant</label>
+            <label class="subfield-checkbox"><input type="checkbox" name="review-job-applicant-looking-for" value="PhD"> PhD</label>
+            <label class="subfield-checkbox"><input type="checkbox" name="review-job-applicant-looking-for" value="Postdoc"> Postdoc</label>
+          </div>
+        </div>
+        <div class="form-group">
+          <label>Background</label>
+          <div class="secondary-subfields job-applicant-checkboxes">
+            <label class="subfield-checkbox"><input type="checkbox" name="review-job-applicant-subfield" value="computational"> Computational</label>
+            <label class="subfield-checkbox"><input type="checkbox" name="review-job-applicant-subfield" value="systems"> Systems</label>
+            <label class="subfield-checkbox"><input type="checkbox" name="review-job-applicant-subfield" value="human"> Human</label>
+            <label class="subfield-checkbox"><input type="checkbox" name="review-job-applicant-subfield" value="molecular"> Molecular</label>
+            <label class="subfield-checkbox"><input type="checkbox" name="review-job-applicant-subfield" value="developmental"> Developmental</label>
+            <label class="subfield-checkbox"><input type="checkbox" name="review-job-applicant-subfield" value="clinical"> Clinical</label>
+          </div>
+        </div>
+        <div class="form-group">
+          <label>Which field are they looking for opportunities in?</label>
+          <div class="secondary-subfields job-applicant-checkboxes">
+            <label class="subfield-checkbox"><input type="checkbox" name="review-job-applicant-target-subfield" value="computational"> Computational</label>
+            <label class="subfield-checkbox"><input type="checkbox" name="review-job-applicant-target-subfield" value="systems"> Systems</label>
+            <label class="subfield-checkbox"><input type="checkbox" name="review-job-applicant-target-subfield" value="human"> Human</label>
+            <label class="subfield-checkbox"><input type="checkbox" name="review-job-applicant-target-subfield" value="molecular"> Molecular</label>
+            <label class="subfield-checkbox"><input type="checkbox" name="review-job-applicant-target-subfield" value="developmental"> Developmental</label>
+            <label class="subfield-checkbox"><input type="checkbox" name="review-job-applicant-target-subfield" value="clinical"> Clinical</label>
+          </div>
+        </div>
+        <div class="form-group">
+          <label for="review-job-applicant-summary">Short CV</label>
+          <textarea id="review-job-applicant-summary" rows="4"></textarea>
+        </div>
+        <div class="form-group">
+          <label for="review-job-applicant-link">Website or long CV link</label>
+          <input type="url" id="review-job-applicant-link" placeholder="https://...">
+        </div>
+        <div class="form-group">
+          <label for="review-job-applicant-notes">Other info</label>
+          <textarea id="review-job-applicant-notes" rows="3"></textarea>
+        </div>
+        <div id="review-job-applicant-message" class="form-message hidden" role="alert"></div>
+        <div id="review-job-applicant-meta" class="review-meta"></div>
+        <div class="submission-actions">
+          <button id="btn-approve-job-applicant" class="btn btn-success">Approve</button>
+          <button id="btn-reject-job-applicant" class="btn btn-danger">Reject</button>
         </div>
       </div>
     </div>

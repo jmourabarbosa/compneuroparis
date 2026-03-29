@@ -1,6 +1,6 @@
-import { createSubmission, createGroup, fetchApprovedInstitutes, createInstitute, createMessage, fetchGroupsClaimedBy, createJob, fetchGroups } from './db.js';
+import { createSubmission, createGroup, fetchApprovedInstitutes, createInstitute, createMessage, fetchGroupsClaimedBy, createJob, createJobApplicant, fetchGroups } from './db.js';
 import { getCurrentUser, getIsAdmin, createAccount, login, logout, resetPassword, isEmailVerified, resendVerification, getAuthErrorMessage } from './auth.js';
-import { loadGroups, loadPublicInstitutes, loadPublicJobs } from './ui-groups.js';
+import { loadGroups, loadPublicInstitutes, loadPublicJobs, loadPublicJobApplicants } from './ui-groups.js';
 import { validateImageUrl } from './image-url-utils.mjs';
 import { buildInstituteFieldData } from './institute-links.mjs';
 import { getPreferredUserName } from './manager-name-utils.mjs';
@@ -77,16 +77,20 @@ export function initForm() {
   const btnShowContact = document.getElementById('btn-show-contact');
   const jobFormWrapper = document.getElementById('job-form-wrapper');
   const btnShowJobForm = document.getElementById('btn-show-job-form');
+  const jobApplicantFormWrapper = document.getElementById('job-applicant-form-wrapper');
+  const btnShowJobApplicantForm = document.getElementById('btn-show-job-applicant-form');
 
   function showAllButtons() {
     btnShowForm.classList.remove('hidden');
     btnShowInstForm.classList.remove('hidden');
     btnShowContact.classList.remove('hidden');
     btnShowJobForm.classList.remove('hidden');
+    btnShowJobApplicantForm.classList.remove('hidden');
     formWrapper.classList.add('hidden');
     instFormWrapper.classList.add('hidden');
     contactFormWrapper.classList.add('hidden');
     jobFormWrapper.classList.add('hidden');
+    jobApplicantFormWrapper.classList.add('hidden');
   }
 
   function hideAllForms() {
@@ -94,10 +98,12 @@ export function initForm() {
     instFormWrapper.classList.add('hidden');
     contactFormWrapper.classList.add('hidden');
     jobFormWrapper.classList.add('hidden');
+    jobApplicantFormWrapper.classList.add('hidden');
     btnShowForm.classList.add('hidden');
     btnShowInstForm.classList.add('hidden');
     btnShowContact.classList.add('hidden');
     btnShowJobForm.classList.add('hidden');
+    btnShowJobApplicantForm.classList.add('hidden');
   }
 
   btnShowForm.addEventListener('click', () => {
@@ -122,10 +128,16 @@ export function initForm() {
     populateJobPiSelector();
   });
 
+  btnShowJobApplicantForm.addEventListener('click', () => {
+    hideAllForms();
+    jobApplicantFormWrapper.classList.remove('hidden');
+  });
+
   // Cancel buttons
   document.getElementById('btn-cancel-form').addEventListener('click', showAllButtons);
   document.getElementById('btn-cancel-institute-form').addEventListener('click', showAllButtons);
   document.getElementById('btn-cancel-job-form').addEventListener('click', showAllButtons);
+  document.getElementById('btn-cancel-job-applicant-form').addEventListener('click', showAllButtons);
   document.getElementById('btn-cancel-contact').addEventListener('click', showAllButtons);
 
   // Contact form
@@ -926,6 +938,8 @@ const jobForm = document.getElementById('job-form');
 const jobPiSelect = document.getElementById('job-pi-select');
 const jobFormMessage = document.getElementById('job-form-message');
 const jobFormAuthWarning = document.getElementById('job-form-auth-warning');
+const jobApplicantForm = document.getElementById('job-applicant-form');
+const jobApplicantFormMessage = document.getElementById('job-applicant-form-message');
 
 async function populateJobPiSelector() {
   const user = getCurrentUser();
@@ -933,14 +947,14 @@ async function populateJobPiSelector() {
   jobPiSelect.innerHTML = '<option value="" disabled selected>Select a PI you manage...</option>';
 
   if (!user) {
-    jobFormAuthWarning.textContent = 'Please log in to post a job ad.';
+    jobFormAuthWarning.textContent = 'Please log in to post a job offer.';
     jobFormAuthWarning.classList.remove('hidden');
     document.getElementById('btn-job-submit').disabled = true;
     return;
   }
 
   if (!isEmailVerified()) {
-    jobFormAuthWarning.textContent = 'Please verify your email before posting a job ad.';
+    jobFormAuthWarning.textContent = 'Please verify your email before posting a job offer.';
     jobFormAuthWarning.classList.remove('hidden');
     document.getElementById('btn-job-submit').disabled = true;
     return;
@@ -949,7 +963,7 @@ async function populateJobPiSelector() {
   try {
     const claimedPIs = await fetchGroupsClaimedBy(user.uid);
     if (claimedPIs.length === 0) {
-      jobFormAuthWarning.textContent = 'You must claim a PI page before posting a job ad.';
+      jobFormAuthWarning.textContent = 'You must claim a PI page before posting a job offer.';
       jobFormAuthWarning.classList.remove('hidden');
       document.getElementById('btn-job-submit').disabled = true;
       return;
@@ -973,6 +987,7 @@ async function populateJobPiSelector() {
 
 export function initJobForm() {
   jobForm.addEventListener('submit', handleJobSubmit);
+  jobApplicantForm?.addEventListener('submit', handleJobApplicantSubmit);
 }
 
 async function handleJobSubmit(e) {
@@ -981,7 +996,7 @@ async function handleJobSubmit(e) {
 
   const user = getCurrentUser();
   if (!user) {
-    showMessage(jobFormMessage, 'Please log in to post a job ad.', 'error');
+    showMessage(jobFormMessage, 'Please log in to post a job offer.', 'error');
     return;
   }
   if (!isEmailVerified()) {
@@ -1033,6 +1048,64 @@ async function handleJobSubmit(e) {
     showMessage(jobFormMessage, 'Error posting job. Please try again.', 'error');
   } finally {
     submitBtn.disabled = false;
-    submitBtn.textContent = 'Post Job';
+    submitBtn.textContent = 'Post Job Offer';
+  }
+}
+
+function getCheckedValues(name) {
+  return [...document.querySelectorAll(`input[name="${name}"]:checked`)]
+    .map(input => input.value)
+    .filter(Boolean);
+}
+
+async function handleJobApplicantSubmit(e) {
+  e.preventDefault();
+  hideMessage(jobApplicantFormMessage);
+
+  const name = document.getElementById('job-applicant-name').value.trim();
+  const email = document.getElementById('job-applicant-email').value.trim();
+  const lookingFor = getCheckedValues('job-applicant-looking-for');
+  const subfields = getCheckedValues('job-applicant-subfield');
+  const targetSubfields = getCheckedValues('job-applicant-target-subfield');
+  const summary = document.getElementById('job-applicant-summary').value.trim();
+  const notes = document.getElementById('job-applicant-notes').value.trim();
+  const publicEmailConsent = !!document.getElementById('job-applicant-public-email-consent').checked;
+  let link = document.getElementById('job-applicant-link').value.trim();
+
+  if (!name || !email || lookingFor.length === 0 || subfields.length === 0 || !summary || !publicEmailConsent) {
+    showMessage(jobApplicantFormMessage, 'Please fill in all required fields and confirm that your email can be shown publicly.', 'error');
+    return;
+  }
+
+  if (link && !/^https?:\/\//i.test(link)) {
+    link = 'https://' + link;
+  }
+
+  const submitBtn = document.getElementById('btn-job-applicant-submit');
+  submitBtn.disabled = true;
+  submitBtn.textContent = 'Submitting...';
+
+  try {
+    await createJobApplicant({
+      name,
+      email,
+      lookingFor,
+      subfields,
+      targetSubfields,
+      summary,
+      notes,
+      link,
+      publicEmailConsent,
+      instituteIds: []
+    });
+    showMessage(jobApplicantFormMessage, 'Job search submitted successfully! It will appear after admin review.', 'success');
+    jobApplicantForm.reset();
+    await loadPublicJobApplicants();
+  } catch (err) {
+    console.error('Job search submission error:', err);
+    showMessage(jobApplicantFormMessage, 'Error submitting job search. Please try again.', 'error');
+  } finally {
+    submitBtn.disabled = false;
+    submitBtn.textContent = 'Submit Job Search';
   }
 }

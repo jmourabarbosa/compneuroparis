@@ -39,6 +39,9 @@
   --color-jobs: #374151;
   --color-jobs-light: #F3F4F6;
   --color-jobs-dark: #111827;
+  --color-job-applicants: #0D7377;
+  --color-job-applicants-light: #E0F2F2;
+  --color-job-applicants-dark: #095B5E;
   --shadow-sm: 0 1px 3px rgba(0, 0, 0, 0.08);
   --shadow-md: 0 4px 12px rgba(0, 0, 0, 0.1);
   --shadow-lg: 0 8px 24px rgba(0, 0, 0, 0.12);
@@ -515,6 +518,12 @@ img {
   --sf-color-dark: var(--color-jobs-dark);
 }
 
+.subfield-section[data-subfield="job-applicants"] {
+  --sf-color: var(--color-job-applicants);
+  --sf-color-light: var(--color-job-applicants-light);
+  --sf-color-dark: var(--color-job-applicants-dark);
+}
+
 .subfield-arrow {
   margin-left: auto;
   color: var(--sf-color, var(--color-text-secondary));
@@ -815,6 +824,22 @@ img {
 
 .job-card-delete:hover {
   color: var(--color-danger);
+}
+
+.job-applicant-card {
+  border-left-color: var(--color-job-applicants);
+}
+
+.job-applicant-checkboxes {
+  gap: 0.75rem 1rem;
+}
+
+.job-detail-pi a {
+  color: var(--color-primary);
+}
+
+.job-detail-pi a:hover {
+  color: var(--color-primary-dark);
 }
 
 /* ========== JOB DETAIL MODAL ========== */

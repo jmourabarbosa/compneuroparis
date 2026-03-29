@@ -4,6 +4,7 @@ import {
   fetchAdmins, removeAdmin,
   fetchApprovedInstitutes, fetchPendingInstitutes,
   approveInstitute, rejectInstitute, updateInstitute, deleteInstitute,
+  fetchPendingJobApplicants, approveJobApplicant, rejectJobApplicant,
   fetchPendingClaims, approveClaim, rejectClaim,
   fetchOpenReports, resolveReport,
   fetchOpenMessages, resolveMessage,
@@ -12,7 +13,7 @@ import {
   fetchNotificationSettings, updateNotificationSettings, setGroupClaimAdmin
 } from './db.js';
 import { getCurrentUser, getIsAdmin, createAdminUser } from './auth.js';
-import { loadGroups, loadPublicInstitutes } from './ui-groups.js';
+import { loadGroups, loadPublicInstitutes, loadPublicJobApplicants } from './ui-groups.js';
 import { getSubfieldsFromPicker, setSubfieldDropdown, syncSecondaryCheckboxes } from './ui-form.js';
 import { loadInstituteOptions } from './ui-form.js';
 import { getImageUrlValidationMessage, validateImageUrl } from './image-url-utils.mjs';
@@ -35,6 +36,9 @@ import { escapeHTML } from './public-card-utils.mjs';
 const pendingList = document.getElementById('pending-list');
 const pendingLoading = document.getElementById('pending-loading');
 const pendingEmpty = document.getElementById('pending-empty');
+const jobApplicantsPendingList = document.getElementById('job-applicants-pending-list');
+const jobApplicantsPendingLoading = document.getElementById('job-applicants-pending-loading');
+const jobApplicantsPendingEmpty = document.getElementById('job-applicants-pending-empty');
 const manageList = document.getElementById('manage-list');
 const manageLoading = document.getElementById('manage-loading');
 const manageEmpty = document.getElementById('manage-empty');
@@ -58,6 +62,16 @@ const btnReject = document.getElementById('btn-reject');
 const reviewPrimarySubfield = document.getElementById('review-primary-subfield');
 const reviewInstituteDisplay = document.getElementById('review-institute-display');
 const reviewInstituteWarning = document.getElementById('review-institute-warning');
+const modalJobApplicantReview = document.getElementById('modal-job-applicant-review');
+const reviewJobApplicantName = document.getElementById('review-job-applicant-name');
+const reviewJobApplicantEmail = document.getElementById('review-job-applicant-email');
+const reviewJobApplicantSummary = document.getElementById('review-job-applicant-summary');
+const reviewJobApplicantLink = document.getElementById('review-job-applicant-link');
+const reviewJobApplicantNotes = document.getElementById('review-job-applicant-notes');
+const reviewJobApplicantMessage = document.getElementById('review-job-applicant-message');
+const reviewJobApplicantMeta = document.getElementById('review-job-applicant-meta');
+const btnApproveJobApplicant = document.getElementById('btn-approve-job-applicant');
+const btnRejectJobApplicant = document.getElementById('btn-reject-job-applicant');
 
 // Edit modal
 const modalEdit = document.getElementById('modal-edit');
@@ -143,6 +157,7 @@ const editUserClaimed = document.getElementById('edit-user-claimed');
 const editUserClaimedList = document.getElementById('edit-user-claimed-list');
 
 let currentSubmission = null;
+let currentJobApplicant = null;
 let currentEditGroup = null;
 let cachedManageGroups = [];
 let cachedUsers = [];
@@ -412,6 +427,8 @@ export function initTabs() {
         loadMessages();
       } else if (target === 'tab-users') {
         loadUsers();
+      } else if (target === 'tab-job-applicants') {
+        loadPendingJobApplicants();
       } else if (target === 'tab-settings') {
         loadSettings();
       }
@@ -455,6 +472,78 @@ export async function loadPending() {
     console.error('Error loading submissions:', err);
     pendingLoading.classList.add('hidden');
   }
+}
+
+function getCheckedValues(name) {
+  return [...document.querySelectorAll(`input[name="${name}"]:checked`)]
+    .map(input => input.value)
+    .filter(Boolean);
+}
+
+function setCheckedValues(name, values = []) {
+  document.querySelectorAll(`input[name="${name}"]`).forEach(input => {
+    input.checked = values.includes(input.value);
+  });
+}
+
+export async function loadPendingJobApplicants() {
+  if (!jobApplicantsPendingList || !jobApplicantsPendingLoading || !jobApplicantsPendingEmpty) return;
+
+  jobApplicantsPendingLoading.classList.remove('hidden');
+  jobApplicantsPendingEmpty.classList.add('hidden');
+  jobApplicantsPendingList.innerHTML = '';
+
+  try {
+    const applicants = await fetchPendingJobApplicants();
+    jobApplicantsPendingLoading.classList.add('hidden');
+
+    if (applicants.length === 0) {
+      jobApplicantsPendingEmpty.classList.remove('hidden');
+      return;
+    }
+
+    applicants.forEach(applicant => {
+      const item = document.createElement('div');
+      item.className = 'admin-item';
+      item.innerHTML = `
+        <div class="admin-item-info">
+          <div class="admin-item-name">${escapeHTML(applicant.name || 'Job Search')}</div>
+          <div class="admin-item-meta">${escapeHTML((applicant.lookingFor || []).join(', '))}</div>
+          <div class="admin-item-meta">${escapeHTML(applicant.email || '')}</div>
+        </div>
+        <div class="admin-item-actions">
+          <button class="btn btn-primary btn-sm btn-review-applicant" aria-label="Review ${escapeHTML(applicant.name || 'applicant')}">Review</button>
+        </div>
+      `;
+      item.querySelector('.btn-review-applicant').addEventListener('click', () => {
+        void showJobApplicantReview(applicant);
+      });
+      jobApplicantsPendingList.appendChild(item);
+    });
+  } catch (err) {
+    console.error('Error loading pending job applicants:', err);
+    jobApplicantsPendingLoading.classList.add('hidden');
+  }
+}
+
+async function showJobApplicantReview(applicant) {
+  currentJobApplicant = applicant;
+
+  reviewJobApplicantName.value = applicant.name || '';
+  reviewJobApplicantEmail.value = applicant.email || '';
+  reviewJobApplicantSummary.value = applicant.summary || '';
+  reviewJobApplicantLink.value = applicant.link || '';
+  reviewJobApplicantNotes.value = applicant.notes || '';
+  setCheckedValues('review-job-applicant-looking-for', applicant.lookingFor || []);
+  setCheckedValues('review-job-applicant-subfield', applicant.subfields || []);
+  setCheckedValues('review-job-applicant-target-subfield', applicant.targetSubfields || []);
+
+  const meta = [];
+  if (applicant.createdAt?.toDate) meta.push(`<p><strong>Created:</strong> ${escapeHTML(applicant.createdAt.toDate().toLocaleString())}</p>`);
+  if (applicant.status) meta.push(`<p><strong>Status:</strong> ${escapeHTML(applicant.status)}</p>`);
+  reviewJobApplicantMeta.innerHTML = meta.join('');
+  reviewJobApplicantMessage.classList.add('hidden');
+  modalJobApplicantReview.classList.remove('hidden');
 }
 
 async function showSubmissionDetail(sub) {
@@ -611,6 +700,71 @@ export function initSubmissionActions() {
       alert('Error rejecting submission.');
     } finally {
       btnReject.disabled = false;
+    }
+  });
+}
+
+function getReviewJobApplicantFormData() {
+  const lookingFor = getCheckedValues('review-job-applicant-looking-for');
+  const subfields = getCheckedValues('review-job-applicant-subfield');
+  const targetSubfields = getCheckedValues('review-job-applicant-target-subfield');
+
+  return {
+    name: reviewJobApplicantName.value.trim(),
+    email: reviewJobApplicantEmail.value.trim(),
+    lookingFor,
+    subfields,
+    targetSubfields,
+    summary: reviewJobApplicantSummary.value.trim(),
+    link: reviewJobApplicantLink.value.trim(),
+    notes: reviewJobApplicantNotes.value.trim(),
+    instituteIds: currentJobApplicant?.instituteIds || []
+  };
+}
+
+export function initJobApplicantReviewActions() {
+  btnApproveJobApplicant?.addEventListener('click', async () => {
+    if (!currentJobApplicant) return;
+
+    const user = getCurrentUser();
+    const data = getReviewJobApplicantFormData();
+    if (!data.name || !data.email || data.lookingFor.length === 0 || data.subfields.length === 0 || !data.summary) {
+      showMsg(reviewJobApplicantMessage, 'Please fill in all required job search fields before approval.', 'error');
+      return;
+    }
+    if (data.link && !/^https?:\/\//i.test(data.link)) {
+      data.link = 'https://' + data.link;
+    }
+
+    btnApproveJobApplicant.disabled = true;
+    try {
+      await approveJobApplicant(currentJobApplicant.id, user.uid, data);
+      modalJobApplicantReview.classList.add('hidden');
+      await Promise.all([loadPendingJobApplicants(), loadPublicJobApplicants()]);
+      notifyAdminDataChanged();
+    } catch (err) {
+      console.error('Approve job applicant error:', err);
+      showMsg(reviewJobApplicantMessage, 'Error approving job search.', 'error');
+    } finally {
+      btnApproveJobApplicant.disabled = false;
+    }
+  });
+
+  btnRejectJobApplicant?.addEventListener('click', async () => {
+    if (!currentJobApplicant) return;
+
+    btnRejectJobApplicant.disabled = true;
+    try {
+      const user = getCurrentUser();
+      await rejectJobApplicant(currentJobApplicant.id, user.uid);
+      modalJobApplicantReview.classList.add('hidden');
+      await loadPendingJobApplicants();
+      notifyAdminDataChanged();
+    } catch (err) {
+      console.error('Reject job applicant error:', err);
+      showMsg(reviewJobApplicantMessage, 'Error rejecting job search.', 'error');
+    } finally {
+      btnRejectJobApplicant.disabled = false;
     }
   });
 }

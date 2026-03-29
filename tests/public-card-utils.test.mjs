@@ -4,6 +4,7 @@ import assert from 'node:assert/strict';
 import {
   MAX_VISIBLE_KEYWORDS,
   buildInstituteCardMarkup,
+  buildJobApplicantCardMarkup,
   buildJobCardMarkup,
   buildPiCardMarkup,
   escapeHTML
@@ -70,4 +71,30 @@ test('buildJobCardMarkup includes job metadata and keywords', () => {
   assert.match(html, /Alice Example/);
   assert.match(html, /vision/);
   assert.match(html, /19 Mar 2026/);
+});
+
+test('buildJobApplicantCardMarkup includes public applicant fields', () => {
+  const html = buildJobApplicantCardMarkup({
+    name: 'Alice Applicant',
+    email: 'alice@example.org',
+    lookingFor: ['Postdoc'],
+    subfields: ['systems'],
+    targetSubfields: ['human'],
+    summary: 'Interested in circuit neuroscience',
+    createdAt: {
+      toDate() {
+        return new Date('2026-03-20T00:00:00Z');
+      }
+    }
+  }, {
+    subfieldLabels: { systems: 'Systems' },
+    instituteRefs: [{ id: 'inst-1', name: 'ICM' }]
+  });
+
+  assert.match(html, /Alice Applicant/);
+  assert.match(html, /alice@example.org/);
+  assert.match(html, /Postdoc/);
+  assert.match(html, /Systems/);
+  assert.match(html, /Looking in fields: Human/);
+  assert.match(html, /20 Mar 2026/);
 });

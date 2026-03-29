@@ -26,3 +26,26 @@ export function getCombinedJobKeywords(job = {}, groups = []) {
     ...(job.keywords || []).filter(keyword => !piKeywordSet.has(keyword.toLowerCase()))
   ];
 }
+
+export function filterVisibleJobApplicants({ applicants = [], institutes = [], searchText = '' }) {
+  if (!searchText) return applicants;
+
+  return applicants.filter(applicant => {
+    const instituteNames = (applicant.instituteIds || [])
+      .map(id => institutes.find(inst => inst.id === id)?.name || '')
+      .filter(Boolean);
+    const haystack = [
+      applicant.name || '',
+      applicant.email || '',
+      applicant.summary || '',
+      applicant.notes || '',
+      applicant.link || '',
+      ...(applicant.lookingFor || []),
+      ...(applicant.subfields || []),
+      ...(applicant.targetSubfields || []),
+      ...instituteNames
+    ].join(' ').toLowerCase();
+
+    return haystack.includes(searchText);
+  });
+}
