@@ -244,6 +244,8 @@ function renderEditInstituteOptions() {
     opt.textContent = inst.name;
     editInstituteSelect.appendChild(opt);
   });
+
+  editInstituteSelect.disabled = approvedInstitutes.length === 0;
 }
 
 function resetReviewPhotoApprovalWarning() {
