@@ -20,7 +20,7 @@ test('buildInstitutePiCountMap counts PI links by institute id and deduplicates 
   assert.equal(getInstitutePiCount(institutes[1], countMap), 2);
 });
 
-test('buildInstitutePiCountMap ignores legacy name-only records', () => {
+test('buildInstitutePiCountMap counts legacy name-only records when they match a canonical institute', () => {
   const institutes = [{ id: 'inst-1', name: 'NeuroSpin (CEA)' }];
   const groups = [
     { institutes: ['NeuroSpin'] },
@@ -29,5 +29,5 @@ test('buildInstitutePiCountMap ignores legacy name-only records', () => {
 
   const countMap = buildInstitutePiCountMap(groups, institutes);
 
-  assert.equal(getInstitutePiCount(institutes[0], countMap), 0);
+  assert.equal(getInstitutePiCount(institutes[0], countMap), 1);
 });

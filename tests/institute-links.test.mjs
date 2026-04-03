@@ -19,7 +19,18 @@ test('resolveInstituteRefsFromRecord preserves ID links and refreshes names from
   ]);
 });
 
-test('resolveInstituteRefsFromRecord ignores legacy institute names without IDs', () => {
+test('resolveInstituteRefsFromRecord matches legacy institute names when a canonical institute exists', () => {
+  const record = {
+    institutes: ['ISIR - Sorbonne Universite']
+  };
+  const institutes = [{ id: 'inst-1', name: 'ISIR - Sorbonne Université' }];
+
+  assert.deepEqual(resolveInstituteRefsFromRecord(record, institutes), [
+    { id: 'inst-1', name: 'ISIR - Sorbonne Université' }
+  ]);
+});
+
+test('resolveInstituteRefsFromRecord ignores unmatched legacy institute names', () => {
   const record = {
     institutes: ['NeuroSpin']
   };
@@ -44,4 +55,13 @@ test('getInstituteDisplayNames omits missing institute IDs', () => {
   };
 
   assert.deepEqual(getInstituteDisplayNames(record, []), []);
+});
+
+test('getInstituteDisplayNames resolves legacy single institute field', () => {
+  const record = {
+    institute: 'Institut du Cerveau'
+  };
+  const institutes = [{ id: 'inst-1', name: 'Institut du Cerveau' }];
+
+  assert.deepEqual(getInstituteDisplayNames(record, institutes), ['Institut du Cerveau']);
 });

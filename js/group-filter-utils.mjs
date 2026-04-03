@@ -1,4 +1,4 @@
-import { getInstituteDisplayNames, toArray } from './institute-links.mjs';
+import { getInstituteDisplayNames, resolveInstituteRefsFromRecord, toArray } from './institute-links.mjs';
 
 export function editDistance(a, b) {
   const m = a.length;
@@ -50,7 +50,7 @@ export function filterVisibleGroups({
 }) {
   return groups.filter(group => {
     if (activeInstituteId) {
-      const instituteIds = toArray(group.instituteIds);
+      const instituteIds = resolveInstituteRefsFromRecord(group, institutes).map(ref => ref.id);
       if (!instituteIds.includes(activeInstituteId)) return false;
     }
 

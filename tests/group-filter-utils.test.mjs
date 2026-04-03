@@ -31,6 +31,20 @@ test('filterVisibleGroups matches institutes only by stable ID', () => {
   );
 });
 
+test('filterVisibleGroups matches legacy name-only institute records through canonical IDs', () => {
+  const groups = [
+    { id: 'pi-1', name: 'Legacy PI', institutes: ['ISIR - Sorbonne Universite'] }
+  ];
+  const institutes = [
+    { id: 'inst-1', name: 'ISIR - Sorbonne Université' }
+  ];
+
+  assert.deepEqual(
+    filterVisibleGroups({ groups, institutes, activeInstituteId: 'inst-1' }).map(group => group.id),
+    ['pi-1']
+  );
+});
+
 test('filterVisibleGroups requires all active keywords and respects hiring and validation filters', () => {
   const groups = [
     {
