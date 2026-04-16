@@ -6,6 +6,7 @@ import { filterVisibleGroups, fuzzyMatch, partitionGroupsBySubfield } from './gr
 import { buildInstitutePiCountMap, getInstitutePiCount } from './institute-count-utils.mjs';
 import { filterVisibleJobs, filterVisibleJobApplicants, getCombinedJobKeywords } from './job-filter-utils.mjs';
 import { buildInstituteCardMarkup, buildJobApplicantCardMarkup, buildJobCardMarkup, buildPiCardMarkup, escapeHTML, formatCardDate } from './public-card-utils.mjs';
+import { buildPublicDetailHash, parsePublicDetailHash } from './public-detail-hash-utils.mjs';
 import { getClaimManagerName, getPreferredUserName } from './manager-name-utils.mjs';
 
 let allGroups = [];
@@ -372,7 +373,7 @@ function createCard(group) {
 
 async function openPiDetail(group) {
   currentDetailGroup = group;
-  history.replaceState(null, '', '#pi-' + group.id);
+  history.replaceState(null, '', buildPublicDetailHash('pi', group.id));
 
   // Populate modal fields
   const isHiringDetail = group.hiring || allJobs.some(j => j.piId === group.id);
@@ -1071,6 +1072,7 @@ const modalJobDetail = document.getElementById('modal-job-detail');
 
 function openJobDetail(job, fromPiDetail = false) {
   currentDetailJob = job;
+  history.replaceState(null, '', buildPublicDetailHash('job', job.id));
 
   document.getElementById('job-detail-title').textContent = job.title || 'Job Details';
 
@@ -1152,6 +1154,24 @@ function openJobDetail(job, fromPiDetail = false) {
 }
 
 export function initJobDetail() {
+  document.getElementById('btn-job-share').addEventListener('click', async () => {
+    const url = window.location.origin + window.location.pathname + buildPublicDetailHash('job', currentDetailJob?.id);
+    if (!currentDetailJob?.id) return;
+    try {
+      await navigator.clipboard.writeText(url);
+      const btn = document.getElementById('btn-job-share');
+      btn.classList.add('btn-share-copied');
+      setTimeout(() => btn.classList.remove('btn-share-copied'), 1500);
+    } catch (e) { /* ignore */ }
+  });
+
+  document.querySelector('[data-close-modal="modal-job-detail"]').addEventListener('click', () => {
+    history.replaceState(null, '', window.location.pathname);
+  });
+  modalJobDetail.addEventListener('click', (e) => {
+    if (e.target === modalJobDetail) history.replaceState(null, '', window.location.pathname);
+  });
+
   const btnEdit = document.getElementById('btn-job-detail-edit');
   const btnDelete = document.getElementById('btn-job-detail-delete');
   const editForm = document.getElementById('job-detail-edit-form');
@@ -1345,7 +1365,7 @@ export function initJobApplicantDetail() {
 
 async function openInstituteDetail(inst) {
   currentDetailInstitute = inst;
-  history.replaceState(null, '', '#inst-' + inst.id);
+  history.replaceState(null, '', buildPublicDetailHash('inst', inst.id));
 
   instDetailTitle.textContent = inst.name || 'Institution Details';
   instDetailLogo.src = inst.logoURL || 'assets/placeholder-lab.svg';
@@ -1550,16 +1570,24 @@ export function initInstituteDetail() {
 }
 
 export function handleDeepLink() {
-  const hash = window.location.hash;
-  if (!hash) return;
-  if (hash.startsWith('#pi-')) {
-    const id = hash.slice(4);
-    const group = allGroups.find(g => g.id === id);
+  const detail = parsePublicDetailHash(window.location.hash);
+  if (!detail) return;
+
+  if (detail.type === 'pi') {
+    const group = allGroups.find(g => g.id === detail.id);
     if (group) openPiDetail(group);
-  } else if (hash.startsWith('#inst-')) {
-    const id = hash.slice(6);
-    const inst = allInstitutes.find(i => i.id === id);
+    return;
+  }
+
+  if (detail.type === 'inst') {
+    const inst = allInstitutes.find(i => i.id === detail.id);
     if (inst) openInstituteDetail(inst);
+    return;
+  }
+
+  if (detail.type === 'job') {
+    const job = allJobs.find(j => j.id === detail.id);
+    if (job) openJobDetail(job);
   }
 }
 
