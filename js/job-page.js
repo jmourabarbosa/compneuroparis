@@ -20,9 +20,16 @@ const ogTitleMeta = document.getElementById('job-page-og-title');
 const ogDescriptionMeta = document.getElementById('job-page-og-description');
 const ogUrlMeta = document.getElementById('job-page-og-url');
 
-const JOB_MARKDOWN_BY_LINK = {
-  'https://jbarbosa.org/files/Interpretable%20AI%20for%20unveiling%20distributed%20computations%20in%20the%20brain.pdf':
-    'assets/job-descriptions/interpretable-ai-distributed-computations.md'
+const JOB_PAGE_CONFIG_BY_LINK = {
+  'https://jbarbosa.org/files/Interpretable%20AI%20for%20unveiling%20distributed%20computations%20in%20the%20brain.pdf': {
+    markdownPath: 'assets/job-descriptions/interpretable-ai-distributed-computations.md',
+    submitters: [
+      {
+        name: 'Srdjan Ostojic',
+        href: 'https://parisneuro.fr/#pi-qLTmyhzzyA0ZgTcqpZcb'
+      }
+    ]
+  }
 };
 
 function showState({ loading = false, error = false, notFound = false, content = false }) {
@@ -42,7 +49,7 @@ function normalizeExternalUrl(url = '') {
 }
 
 async function resolveJobBody(job, externalUrl) {
-  const markdownPath = JOB_MARKDOWN_BY_LINK[externalUrl];
+  const markdownPath = JOB_PAGE_CONFIG_BY_LINK[externalUrl]?.markdownPath;
   if (!markdownPath) {
     return { html: '', text: (job.description || '').trim() };
   }
@@ -57,6 +64,51 @@ async function resolveJobBody(job, externalUrl) {
     html: renderMarkdownToHtml(markdown),
     text: stripMarkdownToText(markdown)
   };
+}
+
+function renderSubmitters({ group, job, externalUrl }) {
+  const configSubmitters = JOB_PAGE_CONFIG_BY_LINK[externalUrl]?.submitters || [];
+  const submitters = [...configSubmitters];
+
+  if (group) {
+    submitters.push({
+      name: job.piName || group.name || 'View PI',
+      href: buildDirectoryHashLink('pi', group.id)
+    });
+  } else if (job.piName) {
+    submitters.push({
+      name: job.piName,
+      href: ''
+    });
+  }
+
+  if (submitters.length === 0) {
+    piEl.textContent = '';
+    return;
+  }
+
+  piEl.innerHTML = '';
+  const label = document.createElement('span');
+  label.textContent = submitters.length > 1 ? 'PIs: ' : 'PI: ';
+  piEl.appendChild(label);
+
+  submitters.forEach((submitter, index) => {
+    if (index > 0) {
+      piEl.appendChild(document.createTextNode(', '));
+    }
+
+    if (submitter.href) {
+      const link = document.createElement('a');
+      link.href = submitter.href;
+      link.textContent = submitter.name;
+      piEl.appendChild(link);
+      return;
+    }
+
+    const text = document.createElement('span');
+    text.textContent = submitter.name;
+    piEl.appendChild(text);
+  });
 }
 
 async function renderJobPage() {
@@ -91,19 +143,7 @@ async function renderJobPage() {
     positionEl.textContent = job.positionType || 'Job Offer';
     dateEl.textContent = dateStr ? `Posted ${dateStr}` : '';
 
-    if (group) {
-      piEl.innerHTML = '';
-      const label = document.createElement('span');
-      label.textContent = 'PI: ';
-      const link = document.createElement('a');
-      link.href = buildDirectoryHashLink('pi', group.id);
-      link.textContent = job.piName || group.name || 'View PI';
-      piEl.append(label, link);
-    } else if (job.piName) {
-      piEl.textContent = `PI: ${job.piName}`;
-    } else {
-      piEl.textContent = '';
-    }
+    renderSubmitters({ group, job, externalUrl });
 
     keywordsEl.innerHTML = '';
     const keywords = job.keywords || [];
