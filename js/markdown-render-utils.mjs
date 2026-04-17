@@ -26,7 +26,7 @@ function renderParagraph(lines) {
     const trimmed = line.replace(/\s+$/, '');
     html += renderInlineMarkdown(trimmed);
     if (index < lines.length - 1) {
-      html += line.endsWith('  ') ? '<br>' : ' ';
+      html += '<br>';
     }
   });
   return `<p>${html}</p>`;

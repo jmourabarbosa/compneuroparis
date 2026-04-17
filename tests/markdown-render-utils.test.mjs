@@ -11,6 +11,12 @@ test('renderMarkdownToHtml supports headings, bold text, lists, and line breaks'
   assert.match(html, /<ul><li>first<\/li><li>second<\/li><\/ul>/);
 });
 
+test('renderMarkdownToHtml preserves explicit single-line breaks inside paragraphs', () => {
+  const html = renderMarkdownToHtml('Line one\nLine two\nLine three');
+
+  assert.match(html, /<p>Line one<br>Line two<br>Line three<\/p>/);
+});
+
 test('renderMarkdownToHtml escapes HTML while preserving markdown emphasis', () => {
   const html = renderMarkdownToHtml('**Safe** <script>alert(1)</script>');
 
