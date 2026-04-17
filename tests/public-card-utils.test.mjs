@@ -58,7 +58,7 @@ test('buildJobCardMarkup includes job metadata and keywords', () => {
   const html = buildJobCardMarkup({
     title: 'Postdoc',
     piName: 'Alice Example',
-    description: 'Study brains',
+    description: 'Study brains\n- electrophysiology\n- modeling',
     positionType: 'Postdoc',
     createdAt: {
       toDate() {
@@ -69,6 +69,7 @@ test('buildJobCardMarkup includes job metadata and keywords', () => {
 
   assert.match(html, /Postdoc/);
   assert.match(html, /Alice Example/);
+  assert.match(html, /Study brains\s+- electrophysiology\s+- modeling/);
   assert.match(html, /vision/);
   assert.match(html, /19 Mar 2026/);
 });
