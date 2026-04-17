@@ -848,12 +848,12 @@ img {
 }
 
 .job-page-markdown p {
-  margin: 0;
+  margin: 0 0 1.1rem;
   color: var(--color-text-secondary);
 }
 
 .job-page-markdown ul {
-  margin: 0 0 0 1.25rem;
+  margin: 0 0 1.1rem 1.25rem;
   color: var(--color-text-secondary);
 }
 
