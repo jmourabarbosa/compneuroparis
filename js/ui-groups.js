@@ -6,7 +6,7 @@ import { filterVisibleGroups, fuzzyMatch, partitionGroupsBySubfield } from './gr
 import { buildInstitutePiCountMap, getInstitutePiCount } from './institute-count-utils.mjs';
 import { filterVisibleJobs, filterVisibleJobApplicants, getCombinedJobKeywords } from './job-filter-utils.mjs';
 import { buildInstituteCardMarkup, buildJobApplicantCardMarkup, buildJobCardMarkup, buildPiCardMarkup, escapeHTML, formatCardDate } from './public-card-utils.mjs';
-import { buildPublicDetailHash, parsePublicDetailHash } from './public-detail-hash-utils.mjs';
+import { buildPublicDetailHash, buildPublicJobPageUrl, parsePublicDetailHash } from './public-detail-hash-utils.mjs';
 import { getClaimManagerName, getPreferredUserName } from './manager-name-utils.mjs';
 
 let allGroups = [];
@@ -1134,9 +1134,13 @@ function openJobDetail(job, fromPiDetail = false) {
   // External link
   let jobLink = job.link || '';
   if (jobLink && !/^https?:\/\//i.test(jobLink)) jobLink = 'https://' + jobLink;
-  document.getElementById('job-detail-link').innerHTML = jobLink
-    ? `<a href="${escapeHTML(jobLink)}" target="_blank" rel="noopener noreferrer">External link to job details</a>`
-    : '';
+  const jobLinks = [
+    `<a href="${buildPublicJobPageUrl(job.id)}" class="card-link">Open standalone page</a>`
+  ];
+  if (jobLink) {
+    jobLinks.push(`<a href="${escapeHTML(jobLink)}" class="card-link" target="_blank" rel="noopener noreferrer">External link to job details</a>`);
+  }
+  document.getElementById('job-detail-link').innerHTML = `<div class="card-links">${jobLinks.join('')}</div>`;
 
   // Edit/delete section
   const editSection = document.getElementById('job-detail-edit-section');
@@ -1155,7 +1159,7 @@ function openJobDetail(job, fromPiDetail = false) {
 
 export function initJobDetail() {
   document.getElementById('btn-job-share').addEventListener('click', async () => {
-    const url = window.location.origin + window.location.pathname + buildPublicDetailHash('job', currentDetailJob?.id);
+    const url = new URL(buildPublicJobPageUrl(currentDetailJob?.id), window.location.href).toString();
     if (!currentDetailJob?.id) return;
     try {
       await navigator.clipboard.writeText(url);

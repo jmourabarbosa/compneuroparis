@@ -1,3 +1,5 @@
+import { buildPublicJobPageUrl } from './public-detail-hash-utils.mjs';
+
 export const MAX_VISIBLE_KEYWORDS = 5;
 
 export function escapeHTML(str) {
@@ -104,6 +106,9 @@ export function buildJobCardMarkup(job, keywords = []) {
   const keywordHTML = keywords.length > 0
     ? `<div class="card-keywords">${keywords.map(keyword => `<span class="keyword-pill">${escapeHTML(keyword)}</span>`).join('')}</div>`
     : '';
+  const pageLinkHTML = job.id
+    ? `<div class="job-card-link"><a href="${buildPublicJobPageUrl(job.id)}">Open page</a></div>`
+    : '';
 
   return `
     <div class="card-body">
@@ -117,6 +122,7 @@ export function buildJobCardMarkup(job, keywords = []) {
         <span class="job-position-badge">${escapeHTML(job.positionType)}</span>
         ${dateStr ? `<span class="job-card-date">${dateStr}</span>` : ''}
       </div>
+      ${pageLinkHTML}
     </div>
   `;
 }

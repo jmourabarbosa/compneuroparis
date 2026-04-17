@@ -425,6 +425,11 @@ export async function fetchJobs() {
   return snapshot.docs.map(d => ({ id: d.id, ...d.data() }));
 }
 
+export async function fetchJobById(id) {
+  const snap = await getDoc(doc(db, 'jobs', id));
+  return snap.exists() ? { id: snap.id, ...snap.data() } : null;
+}
+
 export async function fetchJobsByPi(piId) {
   const q = query(collection(db, 'jobs'), where('piId', '==', piId));
   const snapshot = await getDocs(q);

@@ -1,0 +1,67 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Job Offer | Neuroscience in Paris</title>
+  <meta id="job-page-meta-description" name="description" content="Standalone job offer page for Neuroscience in Paris.">
+  <meta id="job-page-og-title" property="og:title" content="Job Offer | Neuroscience in Paris">
+  <meta id="job-page-og-description" property="og:description" content="Standalone job offer page for Neuroscience in Paris.">
+  <meta property="og:type" content="website">
+  <meta id="job-page-og-url" property="og:url" content="https://parisneuro.fr/job.html">
+  <link rel="icon" href="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'><text y='.9em' font-size='90'>🧠</text></svg>">
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
+  <link rel="stylesheet" href="css/styles.css">
+</head>
+<body>
+  <header class="site-header">
+    <div class="header-inner">
+      <div class="header-title">
+        <h1>Neuroscience in Paris</h1>
+        <p class="subtitle">Standalone job offer</p>
+      </div>
+    </div>
+  </header>
+
+  <nav class="nav-bar">
+    <div class="nav-bar-inner">
+      <div class="nav-links-text" aria-label="Page links">
+        <a href="index.html">Back to directory</a>
+        <a id="job-page-back-directory" href="index.html">Open in directory popup</a>
+      </div>
+    </div>
+  </nav>
+
+  <main class="job-page-main">
+    <div id="job-page-loading" class="loading-state">
+      <div class="spinner" aria-label="Loading"></div>
+      <p>Loading job offer...</p>
+    </div>
+
+    <div id="job-page-error" class="empty-state hidden">
+      <p>There was a problem loading this job offer.</p>
+    </div>
+
+    <div id="job-page-not-found" class="empty-state hidden">
+      <p>Job offer not found.</p>
+    </div>
+
+    <article id="job-page-content" class="job-page-card hidden" aria-label="Job offer details">
+      <div class="job-page-meta">
+        <span id="job-page-position" class="job-position-badge"></span>
+        <span id="job-page-date" class="job-card-date"></span>
+      </div>
+      <h2 id="job-page-title" class="job-page-title"></h2>
+      <div id="job-page-pi" class="job-detail-pi"></div>
+      <div id="job-page-pi-keywords" class="card-keywords hidden"></div>
+      <div id="job-page-keywords" class="card-keywords hidden"></div>
+      <p id="job-page-description" class="job-detail-description hidden"></p>
+      <div id="job-page-links" class="card-links"></div>
+    </article>
+  </main>
+
+  <script type="module" src="js/job-page.js"></script>
+</body>
+</html>

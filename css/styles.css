@@ -796,6 +796,35 @@ img {
   overflow-wrap: anywhere;
 }
 
+.job-page-main {
+  width: 100%;
+  max-width: 900px;
+  margin: 0 auto;
+  padding: 2rem 1.5rem 3rem;
+}
+
+.job-page-card {
+  background: var(--color-surface);
+  border-radius: var(--radius-lg);
+  box-shadow: var(--shadow-md);
+  padding: 1.5rem;
+  display: flex;
+  flex-direction: column;
+  gap: 1rem;
+}
+
+.job-page-title {
+  font-size: 1.9rem;
+  line-height: 1.2;
+}
+
+.job-page-meta {
+  display: flex;
+  align-items: center;
+  gap: 0.75rem;
+  flex-wrap: wrap;
+}
+
 .job-card-link {
   margin-top: auto;
 }

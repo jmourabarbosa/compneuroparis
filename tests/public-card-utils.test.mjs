@@ -56,6 +56,7 @@ test('buildInstituteCardMarkup truncates summaries and shows website links', () 
 
 test('buildJobCardMarkup includes job metadata and keywords', () => {
   const html = buildJobCardMarkup({
+    id: 'job-1',
     title: 'Postdoc',
     piName: 'Alice Example',
     description: 'Study brains\n- electrophysiology\n- modeling',
@@ -72,6 +73,8 @@ test('buildJobCardMarkup includes job metadata and keywords', () => {
   assert.match(html, /Study brains\s+- electrophysiology\s+- modeling/);
   assert.match(html, /vision/);
   assert.match(html, /19 Mar 2026/);
+  assert.match(html, /job\.html\?id=job-1/);
+  assert.match(html, /Open page/);
 });
 
 test('buildJobApplicantCardMarkup includes public applicant fields', () => {
