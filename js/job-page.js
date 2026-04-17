@@ -23,6 +23,19 @@ const ogUrlMeta = document.getElementById('job-page-og-url');
 const JOB_PAGE_CONFIG_BY_LINK = {
   'https://jbarbosa.org/files/Interpretable%20AI%20for%20unveiling%20distributed%20computations%20in%20the%20brain.pdf': {
     markdownPath: 'assets/job-descriptions/interpretable-ai-distributed-computations.md',
+    introMarkdown: `# **Interpretable AI for unveiling distributed computations in the brain**
+
+**Advisors:** **Srdjan OSTOJIC (ENS \\- PSL)**, **Joao BARBOSA (Inserm)**  
+**Framework:** This PhD thesis will be conducted within the **PR\\[AI\\]RIE-PSAI research program**.
+
+**Deadline for Applications**: 15/05/2026
+**Application address**: Applications should be sent directly to the supervisors: srdjan.ostojic@ens.psl.eu, joao.barbosa@inserm.fr
+
+**Required Documents**
+* CV of the candidate
+* A one-page cover letter describing the ambitions for the described subject and the relevance of the application in relation to the subject description
+* Copy of the latest diplomas
+* Results will be communicated in two phases between May 30th and mid-June at the latest.`,
     submitters: [
       {
         name: 'Srdjan Ostojic',
@@ -48,8 +61,24 @@ function normalizeExternalUrl(url = '') {
   return /^https?:\/\//i.test(url) ? url : `https://${url}`;
 }
 
+function ensureIntroBeforeContext(markdown = '', introMarkdown = '') {
+  if (!introMarkdown) {
+    return markdown;
+  }
+
+  const contextHeading = '# **Context and Motivation for the Project**';
+  const contextIndex = markdown.indexOf(contextHeading);
+  if (contextIndex === -1) {
+    return markdown ? `${introMarkdown}\n\n${markdown}` : introMarkdown;
+  }
+
+  const contentFromContext = markdown.slice(contextIndex).trimStart();
+  return `${introMarkdown}\n\n${contentFromContext}`;
+}
+
 async function resolveJobBody(job, externalUrl) {
-  const markdownPath = JOB_PAGE_CONFIG_BY_LINK[externalUrl]?.markdownPath;
+  const jobPageConfig = JOB_PAGE_CONFIG_BY_LINK[externalUrl];
+  const markdownPath = jobPageConfig?.markdownPath;
   if (!markdownPath) {
     return { html: '', text: (job.description || '').trim() };
   }
@@ -59,7 +88,7 @@ async function resolveJobBody(job, externalUrl) {
     throw new Error(`Failed to load job markdown: ${response.status}`);
   }
 
-  const markdown = await response.text();
+  const markdown = ensureIntroBeforeContext(await response.text(), jobPageConfig?.introMarkdown);
   return {
     html: renderMarkdownToHtml(markdown),
     text: stripMarkdownToText(markdown)
