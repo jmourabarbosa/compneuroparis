@@ -798,23 +798,23 @@ img {
 
 .job-page-main {
   width: 100%;
-  max-width: 900px;
+  max-width: 1200px;
   margin: 0 auto;
-  padding: 2rem 1.5rem 3rem;
+  padding: 2.5rem 2rem 4rem;
 }
 
 .job-page-card {
   background: var(--color-surface);
   border-radius: var(--radius-lg);
   box-shadow: var(--shadow-md);
-  padding: 1.5rem;
+  padding: 2rem 2.25rem;
   display: flex;
   flex-direction: column;
-  gap: 1rem;
+  gap: 1.25rem;
 }
 
 .job-page-title {
-  font-size: 1.9rem;
+  font-size: 2.1rem;
   line-height: 1.2;
 }
 
