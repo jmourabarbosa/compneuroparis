@@ -3,6 +3,15 @@
 **Advisors:** **Srdjan OSTOJIC (ENS \- PSL)**, **Joao BARBOSA (Inserm)**  
 **Framework:** This PhD thesis will be conducted within the **PR\[AI\]RIE-PSAI research program**.
 
+**Deadline for Applications**: 15/05/2026
+**Application address**: Applications should be sent directly to the supervisors: srdjan.ostojic@ens.psl.eu, joao.barbosa@inserm.fr
+
+**Required Documents**
+* CV of the candidate
+* A one-page cover letter describing the ambitions for the described subject and the relevance of the application in relation to the subject description
+* Copy of the latest diplomas
+* Results will be communicated in two phases between May 30th and mid-June at the latest.
+
 # **Context and Motivation for the Project**
 
 The central objective of this PhD is to develop interpretable artificial intelligence methods for uncovering the principles of distributed computations in biological neural systems. A central question in neuroscience is how cognition emerges from the coordinated activity of large populations of neurons distributed across multiple brain regions. Recent advances in electrophysiology now make it possible to record simultaneously from hundreds to thousands of neurons across cortical and subcortical areas while animals perform complex cognitive tasks. These recordings (Steinmetz et al., 2019; International Brain Laboratory, 2025\) have revealed that many task-relevant variables—such as sensory evidence, choice or feedback—can often be decoded from many brain regions. This has led to the influential view that cognition is fundamentally distributed across the brain. However, an important conceptual question remains unresolved: **does distributed representation imply distributed computation?** In other words, if similar information is present across many regions, does this mean that computations are uniformly spread across the brain, or do distinct regions still carry out specific computations?
