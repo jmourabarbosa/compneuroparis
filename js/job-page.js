@@ -1,5 +1,6 @@
 import { fetchGroupById, fetchJobById } from './db.js';
 import { buildPublicDetailHash, parsePublicJobPageId } from './public-detail-hash-utils.mjs';
+import { renderMarkdownToHtml, stripMarkdownToText } from './markdown-render-utils.mjs';
 import { formatCardDate } from './public-card-utils.mjs';
 
 const loadingEl = document.getElementById('job-page-loading');
@@ -19,6 +20,11 @@ const ogTitleMeta = document.getElementById('job-page-og-title');
 const ogDescriptionMeta = document.getElementById('job-page-og-description');
 const ogUrlMeta = document.getElementById('job-page-og-url');
 
+const JOB_MARKDOWN_BY_LINK = {
+  'https://jbarbosa.org/files/Interpretable%20AI%20for%20unveiling%20distributed%20computations%20in%20the%20brain.pdf':
+    'assets/job-descriptions/interpretable-ai-distributed-computations.md'
+};
+
 function showState({ loading = false, error = false, notFound = false, content = false }) {
   loadingEl.classList.toggle('hidden', !loading);
   errorEl.classList.toggle('hidden', !error);
@@ -33,6 +39,24 @@ function buildDirectoryHashLink(type, id) {
 function normalizeExternalUrl(url = '') {
   if (!url) return '';
   return /^https?:\/\//i.test(url) ? url : `https://${url}`;
+}
+
+async function resolveJobBody(job, externalUrl) {
+  const markdownPath = JOB_MARKDOWN_BY_LINK[externalUrl];
+  if (!markdownPath) {
+    return { html: '', text: (job.description || '').trim() };
+  }
+
+  const response = await fetch(markdownPath);
+  if (!response.ok) {
+    throw new Error(`Failed to load job markdown: ${response.status}`);
+  }
+
+  const markdown = await response.text();
+  return {
+    html: renderMarkdownToHtml(markdown),
+    text: stripMarkdownToText(markdown)
+  };
 }
 
 async function renderJobPage() {
@@ -54,7 +78,8 @@ async function renderJobPage() {
     const group = job.piId ? await fetchGroupById(job.piId) : null;
     const dateStr = formatCardDate(job.createdAt);
     const externalUrl = normalizeExternalUrl(job.link);
-    const summaryText = (job.description || '').trim() || 'Job offer from Neuroscience in Paris.';
+    const bodyContent = await resolveJobBody(job, externalUrl);
+    const summaryText = bodyContent.text || 'Job offer from Neuroscience in Paris.';
 
     document.title = `${job.title || 'Job Offer'} | Neuroscience in Paris`;
     pageDescriptionMeta?.setAttribute('content', summaryText.slice(0, 160));
@@ -100,8 +125,16 @@ async function renderJobPage() {
       piKeywordsEl.appendChild(pill);
     });
 
-    descriptionEl.textContent = job.description || '';
-    descriptionEl.classList.toggle('hidden', !job.description);
+    if (bodyContent.html) {
+      descriptionEl.innerHTML = bodyContent.html;
+      descriptionEl.classList.remove('hidden');
+    } else if (job.description) {
+      descriptionEl.textContent = job.description;
+      descriptionEl.classList.remove('hidden');
+    } else {
+      descriptionEl.textContent = '';
+      descriptionEl.classList.add('hidden');
+    }
 
     linksEl.innerHTML = '';
     const links = [];

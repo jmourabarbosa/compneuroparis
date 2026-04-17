@@ -825,6 +825,42 @@ img {
   flex-wrap: wrap;
 }
 
+.job-page-markdown {
+  font-size: 1.02rem;
+  line-height: 1.75;
+}
+
+.job-page-markdown h1,
+.job-page-markdown h2,
+.job-page-markdown h3 {
+  color: var(--color-text);
+  line-height: 1.25;
+}
+
+.job-page-markdown h1 {
+  font-size: 1.85rem;
+  margin: 0.75rem 0 0.25rem;
+}
+
+.job-page-markdown h2 {
+  font-size: 1.35rem;
+  margin: 1rem 0 0.25rem;
+}
+
+.job-page-markdown p {
+  margin: 0;
+  color: var(--color-text-secondary);
+}
+
+.job-page-markdown ul {
+  margin: 0 0 0 1.25rem;
+  color: var(--color-text-secondary);
+}
+
+.job-page-markdown li + li {
+  margin-top: 0.35rem;
+}
+
 .job-card-link {
   margin-top: auto;
 }
