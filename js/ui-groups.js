@@ -1134,13 +1134,18 @@ function openJobDetail(job, fromPiDetail = false) {
   // External link
   let jobLink = job.link || '';
   if (jobLink && !/^https?:\/\//i.test(jobLink)) jobLink = 'https://' + jobLink;
-  const jobLinks = [
-    `<a href="${buildPublicJobPageUrl(job.id)}" class="card-link">Open standalone page</a>`
-  ];
+  const openPageLink = document.getElementById('btn-job-open-page');
+  openPageLink.href = buildPublicJobPageUrl(job.id);
+  openPageLink.target = '_blank';
+  openPageLink.rel = 'noopener noreferrer';
+
+  const jobLinks = [];
   if (jobLink) {
     jobLinks.push(`<a href="${escapeHTML(jobLink)}" class="card-link" target="_blank" rel="noopener noreferrer">External link to job details</a>`);
   }
-  document.getElementById('job-detail-link').innerHTML = `<div class="card-links">${jobLinks.join('')}</div>`;
+  document.getElementById('job-detail-link').innerHTML = jobLinks.length > 0
+    ? `<div class="card-links">${jobLinks.join('')}</div>`
+    : '';
 
   // Edit/delete section
   const editSection = document.getElementById('job-detail-edit-section');

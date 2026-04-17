@@ -14,7 +14,6 @@ const keywordsEl = document.getElementById('job-page-keywords');
 const piKeywordsEl = document.getElementById('job-page-pi-keywords');
 const descriptionEl = document.getElementById('job-page-description');
 const linksEl = document.getElementById('job-page-links');
-const backToDirectoryEl = document.getElementById('job-page-back-directory');
 const pageDescriptionMeta = document.getElementById('job-page-meta-description');
 const ogTitleMeta = document.getElementById('job-page-og-title');
 const ogDescriptionMeta = document.getElementById('job-page-og-description');
@@ -66,7 +65,6 @@ async function renderJobPage() {
     titleEl.textContent = job.title || 'Job Offer';
     positionEl.textContent = job.positionType || 'Job Offer';
     dateEl.textContent = dateStr ? `Posted ${dateStr}` : '';
-    backToDirectoryEl.href = buildDirectoryHashLink('job', job.id);
 
     if (group) {
       piEl.innerHTML = '';
@@ -106,9 +104,7 @@ async function renderJobPage() {
     descriptionEl.classList.toggle('hidden', !job.description);
 
     linksEl.innerHTML = '';
-    const links = [
-      { href: buildDirectoryHashLink('job', job.id), label: 'Open in directory popup' }
-    ];
+    const links = [];
     if (externalUrl) {
       links.push({ href: externalUrl, label: 'External link to job details', external: true });
     }

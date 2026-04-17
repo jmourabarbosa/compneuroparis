@@ -1646,6 +1646,12 @@ img {
   font-weight: 600;
 }
 
+.modal-header-actions {
+  display: flex;
+  align-items: center;
+  margin-left: auto;
+}
+
 .btn-share {
   background: none;
   border: 1px solid var(--color-border);
@@ -1653,11 +1659,11 @@ img {
   color: var(--color-text-light);
   cursor: pointer;
   padding: 4px 6px;
-  margin-left: auto;
   margin-right: 8px;
   display: flex;
   align-items: center;
   transition: color 0.15s, border-color 0.15s;
+  text-decoration: none;
 }
 .btn-share:hover {
   color: var(--color-primary);
