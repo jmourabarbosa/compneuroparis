@@ -80,7 +80,10 @@ async function resolveJobBody(job, externalUrl) {
   const jobPageConfig = JOB_PAGE_CONFIG_BY_LINK[externalUrl];
   const markdownPath = jobPageConfig?.markdownPath;
   if (!markdownPath) {
-    return { html: '', text: (job.description || '').trim() };
+    const markdown = (job.description || '').trim();
+    return markdown
+      ? { html: renderMarkdownToHtml(markdown), text: stripMarkdownToText(markdown) }
+      : { html: '', text: '' };
   }
 
   const response = await fetch(markdownPath);

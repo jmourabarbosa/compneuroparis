@@ -5,6 +5,7 @@ import { validateImageUrl } from './image-url-utils.mjs';
 import { buildInstituteFieldData } from './institute-links.mjs';
 import { getPreferredUserName } from './manager-name-utils.mjs';
 import { canSubmitWithPhotoUrlWarning, getPhotoUrlWarningState } from './photo-url-warning-utils.mjs';
+import { initMarkdownToolbars } from './markdown-editor-utils.mjs';
 
 const form = document.getElementById('submission-form');
 const formWrapper = document.getElementById('submission-form-wrapper');
@@ -986,6 +987,7 @@ async function populateJobPiSelector() {
 }
 
 export function initJobForm() {
+  initMarkdownToolbars();
   jobForm.addEventListener('submit', handleJobSubmit);
   jobApplicantForm?.addEventListener('submit', handleJobApplicantSubmit);
 }

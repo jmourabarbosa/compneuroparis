@@ -792,8 +792,47 @@ img {
 }
 
 .job-detail-description {
-  white-space: pre-wrap;
   overflow-wrap: anywhere;
+}
+
+.job-markdown {
+  line-height: 1.65;
+}
+
+.job-markdown h1,
+.job-markdown h2,
+.job-markdown h3 {
+  color: var(--color-text);
+  line-height: 1.25;
+}
+
+.job-markdown h1 {
+  font-size: 1.5rem;
+  margin: 0.75rem 0 0.25rem;
+}
+
+.job-markdown h2 {
+  font-size: 1.2rem;
+  margin: 1rem 0 0.25rem;
+}
+
+.job-markdown h3 {
+  font-size: 1.05rem;
+  margin: 0.9rem 0 0.2rem;
+}
+
+.job-markdown p {
+  margin: 0 0 0.95rem;
+  color: var(--color-text-secondary);
+}
+
+.job-markdown ul {
+  margin: 0 0 0.95rem 1.25rem;
+  color: var(--color-text-secondary);
+}
+
+.job-markdown li + li {
+  margin-top: 0.3rem;
 }
 
 .job-page-main {
@@ -830,13 +869,6 @@ img {
   line-height: 1.75;
 }
 
-.job-page-markdown h1,
-.job-page-markdown h2,
-.job-page-markdown h3 {
-  color: var(--color-text);
-  line-height: 1.25;
-}
-
 .job-page-markdown h1 {
   font-size: 1.85rem;
   margin: 0.75rem 0 0.25rem;
@@ -847,18 +879,34 @@ img {
   margin: 1rem 0 0.25rem;
 }
 
-.job-page-markdown p {
-  margin: 0 0 1.1rem;
-  color: var(--color-text-secondary);
-}
-
 .job-page-markdown ul {
   margin: 0 0 1.1rem 1.25rem;
-  color: var(--color-text-secondary);
 }
 
 .job-page-markdown li + li {
   margin-top: 0.35rem;
+}
+
+.markdown-toolbar {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.5rem;
+  margin: 0.35rem 0 0.5rem;
+}
+
+.markdown-toolbar-btn {
+  padding: 0.35rem 0.65rem;
+}
+
+.form-hint {
+  margin-top: 0.4rem;
+  font-size: 0.8rem;
+  color: var(--color-text-secondary);
+}
+
+.form-hint code {
+  font-family: var(--font-mono, 'SFMono-Regular', Consolas, 'Liberation Mono', Menlo, monospace);
+  font-size: 0.78rem;
 }
 
 .job-card-link {

@@ -1,4 +1,11 @@
-import { escapeHTML } from './public-card-utils.mjs';
+function escapeHTML(str) {
+  return String(str ?? '')
+    .replaceAll('&', '&amp;')
+    .replaceAll('<', '&lt;')
+    .replaceAll('>', '&gt;')
+    .replaceAll('"', '&quot;')
+    .replaceAll("'", '&#39;');
+}
 
 function unescapeMarkdownEscapes(text) {
   return text.replace(/\\([\\`*_{}\[\]()#+\-.!])/g, '$1');

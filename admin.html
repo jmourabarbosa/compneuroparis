@@ -256,8 +256,15 @@
             <input type="text" id="job-title" placeholder="e.g. Postdoc in computational neuroscience" required>
           </div>
           <div class="form-group">
-            <label for="job-description">Description <span class="hint">(optional, max 1500 characters)</span></label>
+            <label for="job-description">Description <span class="hint">(optional, markdown supported, max 1500 characters)</span></label>
+            <div class="markdown-toolbar" aria-label="Job description formatting tools">
+              <button type="button" class="btn btn-outline btn-sm markdown-toolbar-btn" data-md-action="bold" data-md-target="job-description">Bold</button>
+              <button type="button" class="btn btn-outline btn-sm markdown-toolbar-btn" data-md-action="italic" data-md-target="job-description">Italic</button>
+              <button type="button" class="btn btn-outline btn-sm markdown-toolbar-btn" data-md-action="heading" data-md-target="job-description">Heading</button>
+              <button type="button" class="btn btn-outline btn-sm markdown-toolbar-btn" data-md-action="bullet" data-md-target="job-description">Bullets</button>
+            </div>
             <textarea id="job-description" rows="3" maxlength="1500" placeholder="Brief description of the position..."></textarea>
+            <p class="form-hint">Supports headings with <code>#</code>, <code>**bold**</code>, <code>*italic*</code>, bullet lists with <code>*</code>, and paragraph breaks.</p>
           </div>
           <div class="form-group">
             <label for="job-keywords">Keywords <span class="hint">(optional, comma-separated)</span></label>
@@ -1015,7 +1022,7 @@
         <div id="job-detail-pi-keywords" class="card-keywords hidden" style="margin-top:0.5rem"></div>
         <div id="job-detail-date" class="job-detail-date"></div>
         <div id="job-detail-keywords" class="card-keywords hidden" style="margin-top:0.5rem"></div>
-        <p id="job-detail-description" class="job-detail-description"></p>
+        <div id="job-detail-description" class="job-detail-description job-markdown"></div>
         <div id="job-detail-link" class="job-detail-link"></div>
         <div id="job-detail-edit-section" class="pi-detail-edit-section hidden">
           <button id="btn-job-detail-edit" class="btn btn-primary btn-sm">Edit</button>
@@ -1037,8 +1044,15 @@
             </select>
           </div>
           <div class="form-group">
-            <label for="job-edit-description-input">Description <span class="hint">(optional, max 1500 characters)</span></label>
+            <label for="job-edit-description-input">Description <span class="hint">(optional, markdown supported, max 1500 characters)</span></label>
+            <div class="markdown-toolbar" aria-label="Job description formatting tools">
+              <button type="button" class="btn btn-outline btn-sm markdown-toolbar-btn" data-md-action="bold" data-md-target="job-edit-description-input">Bold</button>
+              <button type="button" class="btn btn-outline btn-sm markdown-toolbar-btn" data-md-action="italic" data-md-target="job-edit-description-input">Italic</button>
+              <button type="button" class="btn btn-outline btn-sm markdown-toolbar-btn" data-md-action="heading" data-md-target="job-edit-description-input">Heading</button>
+              <button type="button" class="btn btn-outline btn-sm markdown-toolbar-btn" data-md-action="bullet" data-md-target="job-edit-description-input">Bullets</button>
+            </div>
             <textarea id="job-edit-description-input" rows="3" maxlength="1500" placeholder="Brief description of the position..."></textarea>
+            <p class="form-hint">Supports headings with <code>#</code>, <code>**bold**</code>, <code>*italic*</code>, bullet lists with <code>*</code>, and paragraph breaks.</p>
           </div>
           <div class="form-group">
             <label for="job-edit-keywords-input">Keywords <span class="hint">(optional, comma-separated)</span></label>

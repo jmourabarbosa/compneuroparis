@@ -8,6 +8,8 @@ import { filterVisibleJobs, filterVisibleJobApplicants, getCombinedJobKeywords }
 import { buildInstituteCardMarkup, buildJobApplicantCardMarkup, buildJobCardMarkup, buildPiCardMarkup, escapeHTML, formatCardDate } from './public-card-utils.mjs';
 import { buildPublicDetailHash, buildPublicJobPageUrl, parsePublicDetailHash } from './public-detail-hash-utils.mjs';
 import { getClaimManagerName, getPreferredUserName } from './manager-name-utils.mjs';
+import { renderMarkdownToHtml } from './markdown-render-utils.mjs';
+import { initMarkdownToolbars } from './markdown-editor-utils.mjs';
 
 let allGroups = [];
 let allInstitutes = [];
@@ -1124,10 +1126,10 @@ function openJobDetail(job, fromPiDetail = false) {
   // Description
   const descEl = document.getElementById('job-detail-description');
   if (job.description) {
-    descEl.textContent = job.description;
+    descEl.innerHTML = renderMarkdownToHtml(job.description);
     descEl.classList.remove('hidden');
   } else {
-    descEl.textContent = '';
+    descEl.innerHTML = '';
     descEl.classList.add('hidden');
   }
 
@@ -1163,6 +1165,7 @@ function openJobDetail(job, fromPiDetail = false) {
 }
 
 export function initJobDetail() {
+  initMarkdownToolbars();
   document.getElementById('btn-job-share').addEventListener('click', async () => {
     const url = new URL(buildPublicJobPageUrl(currentDetailJob?.id), window.location.href).toString();
     if (!currentDetailJob?.id) return;

@@ -1,4 +1,5 @@
 import { buildPublicJobPageUrl } from './public-detail-hash-utils.mjs';
+import { stripMarkdownToText } from './markdown-render-utils.mjs';
 
 export const MAX_VISIBLE_KEYWORDS = 5;
 
@@ -103,6 +104,7 @@ export function buildInstituteCardMarkup(institute, { piCount = 0 } = {}) {
 
 export function buildJobCardMarkup(job, keywords = []) {
   const dateStr = formatCardDate(job.createdAt);
+  const descriptionText = stripMarkdownToText(job.description || '');
   const keywordHTML = keywords.length > 0
     ? `<div class="card-keywords">${keywords.map(keyword => `<span class="keyword-pill">${escapeHTML(keyword)}</span>`).join('')}</div>`
     : '';
@@ -117,7 +119,7 @@ export function buildJobCardMarkup(job, keywords = []) {
       </div>
       <div class="job-card-pi">${escapeHTML(job.piName || '')}</div>
       ${keywordHTML}
-      ${job.description ? `<p class="job-card-description">${escapeHTML(job.description)}</p>` : ''}
+      ${descriptionText ? `<p class="job-card-description">${escapeHTML(descriptionText)}</p>` : ''}
       <div class="job-card-meta">
         <span class="job-position-badge">${escapeHTML(job.positionType)}</span>
         ${dateStr ? `<span class="job-card-date">${dateStr}</span>` : ''}
