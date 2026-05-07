@@ -219,20 +219,42 @@ This keeps persistence explicit instead of silently remembering users by default
 
 ```
 /
-├── index.html              # Single page with all sections and modals
-├── css/styles.css          # Full styling (responsive, cards, modals)
+├── index.html                        # Single page with all sections and modals
+├── css/styles.css                    # Full styling (responsive, cards, modals)
 ├── js/
-│   ├── firebase-config.js  # Firebase SDK init (CDN imports)
-│   ├── db.js               # Firestore CRUD helpers
-│   ├── auth.js             # Firebase Auth (login, logout, state)
-│   ├── ui-groups.js        # Render group cards, search/filter
-│   ├── ui-form.js          # Submission form handling
-│   ├── ui-admin.js         # Admin panel (pending, manage, admins)
-│   └── app.js              # Main entry point
+│   ├── firebase-config.js            # Firebase SDK init (CDN imports)
+│   ├── db.js                         # Firestore CRUD helpers
+│   ├── auth.js                       # Firebase Auth (login, logout, state)
+│   ├── app.js                        # Main entry point
+│   ├── ui-groups.js                  # Render group cards, search/filter
+│   ├── ui-form.js                    # Submission form handling
+│   ├── ui-admin.js                   # Admin panel (pending, manage, admins)
+│   ├── ui-creator.js                 # Creator panel (user's managed pages)
+│   ├── admin-utils.mjs               # Admin filtering/management utilities
+│   ├── claim-record-utils.mjs        # Claim record field accessor helpers
+│   ├── group-filter-utils.mjs        # Group search and filter logic
+│   ├── image-url-utils.mjs           # Image URL validation utilities
+│   ├── institute-count-utils.mjs     # Institute PI count map building
+│   ├── institute-links.mjs           # Institute reference resolution helpers
+│   ├── job-filter-utils.mjs          # Job filtering utilities
+│   ├── keyword-pill-utils.mjs        # Keyword normalization and pill rendering
+│   ├── manager-name-utils.mjs        # Derive display name from email address
+│   ├── ownership-utils.mjs           # Ownership and claim logic helpers
+│   ├── photo-url-warning-utils.mjs   # Photo URL warning state helpers
+│   └── public-card-utils.mjs         # HTML escaping and card rendering utilities
+├── functions/                        # Firebase Cloud Functions (Node.js)
+│   ├── index.js                      # Cloud Functions entry point
+│   ├── auth-service.js               # Auth-related cloud functions
+│   ├── claim-service.js              # Claim processing logic
+│   ├── email-service.js              # Email notification handling
+│   ├── group-claim-logic.js          # Group claiming rules
+│   └── ownership-logic.js            # Ownership assignment rules
+├── tests/                            # Frontend unit tests (Node.js / ESM)
 ├── assets/
-│   └── placeholder-lab.svg # Default group avatar
-├── .nojekyll               # Prevent Jekyll processing
-└── README.md               # This file
+│   ├── banner.jpg                    # Header banner image
+│   └── placeholder-lab.svg           # Default group avatar
+├── .nojekyll                         # Prevent Jekyll processing
+└── README.md                         # This file
 ```
 
 ## Firestore Collections
@@ -242,3 +264,8 @@ This keeps persistence explicit instead of silently remembering users by default
 | `groups` | Approved research groups | Public read, admin write |
 | `submissions` | Pending group submissions | Public create, admin read/write |
 | `admins` | Admin user registry | Admin only |
+| `claims` | User-submitted profile claims | Authenticated create, admin read/write |
+| `institutes` | Research institutions | Public read, admin write |
+| `jobs` | Job postings by PI managers | Authenticated create/delete, public read |
+| `messages` | Contact form messages | Public create, admin read |
+| `reports` | Content reports | Public create, admin read |
